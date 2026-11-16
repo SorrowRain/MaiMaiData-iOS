@@ -1,0 +1,43 @@
+name: MaimaiData
+schemes:
+  MaimaiData:
+    build:
+      targets:
+        MaimaiData: all
+    run:
+      config: Debug
+options:
+  bundleIdPrefix: dev.0xsr
+  deploymentTarget:
+    iOS: "26.0"
+  developmentLanguage: zh-Hans
+  usesTabs: false
+  indentWidth: 4
+  tabWidth: 4
+
+settings:
+  base:
+    DEVELOPMENT_TEAM: D5F492VR43
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  MaimaiData:
+    type: application
+    platform: iOS
+    sources:
+      - path: MaimaiData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.0xsr.maimaidata
+        PRODUCT_NAME: MaimaiData
+        INFOPLIST_KEY_CFBundleDisplayName: MaimaiData
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 需要访问您的相册以保存曲绘封面与 Best50 成绩图
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 需要访问您的相册以保存图片
+        INFOPLIST_KEY_UILaunchScreen_Generation: true
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
+        INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad: "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: true

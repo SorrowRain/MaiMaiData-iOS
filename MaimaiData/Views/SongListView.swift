@@ -1,0 +1,318 @@
+import SwiftUI
+
+struct SongListView: View {
+    @Environment(DataStore.self) private var store
+    @State private var criteria = SongFilterCriteria()
+    @State private var displayedSongs: [SongData] = []
+    @State private var showFilterSheet = false
+    @State private var showSearchHistory = false
+    @FocusState private var isSearchFocused: Bool
+
+    private func refreshDisplayedSongs() {
+        displayedSongs = store.filteredSongs(criteria: criteria)
+    }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVStack(spacing: AppTheme.itemSpacing) {
+                    SyncStatusBanner(store: store)
+
+                    if showSearchHistory && !store.searchHistory.isEmpty {
+                        searchHistoryCard
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    if criteria.isActive {
+                        activeFilterSummaryCard
+                    }
+
+                    if store.isLoadingLocalData {
+                        ProgressView("正在读取曲库…")
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 56)
+                    } else if displayedSongs.isEmpty {
+                        ContentUnavailableView(
+                            criteria.onlyFavorites && store.favoriteIds.isEmpty ? "还没有收藏歌曲" : "未找到匹配曲目",
+                            systemImage: criteria.onlyFavorites && store.favoriteIds.isEmpty ? "heart" : "magnifyingglass",
+                            description: Text(
+                                criteria.onlyFavorites && store.favoriteIds.isEmpty
+                                    ? "在曲目详情页点击右上角心形按钮即可收藏"
+                                    : "试试修改关键词或重置筛选条件"
+                            )
+                        )
+                        .padding(.top, 48)
+                    } else {
+                        ForEach(displayedSongs) { song in
+                            NavigationLink(value: song) {
+                                SongRowView(song: song, isFavorite: store.isFavorite(song))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .padding(.horizontal, AppTheme.pagePadding)
+                .padding(.vertical, 10)
+            }
+            .scrollDismissesKeyboard(.immediately)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                searchInputBar
+            }
+            .appPageBackground()
+            .navigationTitle("曲目列表")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    Button {
+                        isSearchFocused = false
+                        criteria.onlyFavorites.toggle()
+                    } label: {
+                        Image(systemName: criteria.onlyFavorites ? "heart.fill" : "heart")
+                            .foregroundStyle(criteria.onlyFavorites ? AppTheme.favoritePink : .primary)
+                    }
+                    .accessibilityLabel(criteria.onlyFavorites ? "取消收藏筛选" : "仅显示收藏歌曲")
+                    .accessibilityValue(criteria.onlyFavorites ? "已开启" : "未开启")
+
+                    Button {
+                        isSearchFocused = false
+                        showFilterSheet = true
+                    } label: {
+                        Image(
+                            systemName: criteria.isActive
+                                ? "line.3.horizontal.decrease.circle.fill"
+                                : "line.3.horizontal.decrease.circle"
+                        )
+                        .foregroundStyle(criteria.isActive ? AppTheme.accent : .primary)
+                    }
+                    .accessibilityLabel("筛选")
+                }
+            }
+            .sheet(isPresented: $showFilterSheet) {
+                SearchFilterSheet(criteria: $criteria)
+            }
+            .navigationDestination(for: SongData.self) { song in
+                SongDetailView(song: song)
+            }
+            .onAppear {
+                if displayedSongs.isEmpty && !store.songs.isEmpty {
+                    refreshDisplayedSongs()
+                }
+            }
+            .onDisappear {
+                // 若键盘弹起时直接点进歌曲详情页，无动画收起焦点与最近搜索，避免返回时页面跳动
+                if isSearchFocused || showSearchHistory {
+                    if !criteria.keyword.isEmpty {
+                        store.addSearchHistory(criteria.keyword)
+                    }
+                    var transaction = Transaction()
+                    transaction.disablesAnimations = true
+                    withTransaction(transaction) {
+                        isSearchFocused = false
+                        showSearchHistory = false
+                    }
+                }
+            }
+            .onChange(of: isSearchFocused) { _, focused in
+                withAnimation(.snappy(duration: 0.24)) {
+                    showSearchHistory = focused
+                }
+            }
+            .onChange(of: criteria) { _, _ in refreshDisplayedSongs() }
+            .onChange(of: store.songs.count) { _, _ in refreshDisplayedSongs() }
+            .onChange(of: store.favoriteIds) { _, _ in
+                if criteria.onlyFavorites { refreshDisplayedSongs() }
+            }
+            .onChange(of: store.enableAliasSearch) { _, _ in
+                if !criteria.keyword.isEmpty { refreshDisplayedSongs() }
+            }
+            .onChange(of: store.enableCharterSearch) { _, _ in
+                if !criteria.keyword.isEmpty { refreshDisplayedSongs() }
+            }
+        }
+    }
+
+    private var searchInputBar: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.secondary)
+
+            TextField("搜索曲名、别名、谱师或 ID", text: $criteria.keyword)
+                .textFieldStyle(.plain)
+                .font(.subheadline)
+                .focused($isSearchFocused)
+                .submitLabel(.search)
+                .onSubmit {
+                    store.addSearchHistory(criteria.keyword)
+                    isSearchFocused = false
+                }
+
+            if !criteria.keyword.isEmpty {
+                Button {
+                    criteria.keyword = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(4)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("清除搜索词")
+            }
+        }
+        .padding(.horizontal, 14)
+        .frame(minHeight: 42)
+        .contentShape(Capsule())
+        .onTapGesture {
+            isSearchFocused = true
+        }
+        .glassEffect(.regular.interactive(), in: Capsule())
+        .padding(.horizontal, AppTheme.pagePadding)
+        .padding(.top, 6)
+        .padding(.bottom, 6)
+    }
+
+    private var searchHistoryCard: some View {
+        AppCard(padding: 12, tint: AppTheme.accent) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("最近搜索")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Button("清空") {
+                        withAnimation(.snappy(duration: 0.22)) {
+                            store.clearSearchHistory()
+                        }
+                    }
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.secondary)
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(store.searchHistory.prefix(12), id: \.self) { term in
+                            FilterCapsuleChip(title: term, isSelected: false) {
+                                criteria.keyword = term
+                                store.addSearchHistory(term)
+                                isSearchFocused = false
+                            }
+                            .accessibilityLabel("搜索历史：\(term)")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var activeFilterSummaryCard: some View {
+        AppCard(padding: 12, tint: AppTheme.accent) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("已筛选 \(displayedSongs.count) 首曲目")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    AppInlineButton(title: "重置", icon: "arrow.counterclockwise") {
+                        let currentKeyword = criteria.keyword
+                        var reset = SongFilterCriteria()
+                        reset.keyword = currentKeyword
+                        criteria = reset
+                    }
+                }
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        if criteria.onlyFavorites {
+                            filterBadge("仅看收藏", tint: AppTheme.favoritePink)
+                        }
+                        if criteria.sortOption != .defaultDesc {
+                            filterBadge(criteria.sortOption.rawValue)
+                        }
+                        if criteria.useExactDS {
+                            filterBadge(String(format: "定数 %.1f", criteria.exactDS))
+                        } else if criteria.selectedLevel != "ALL" {
+                            filterBadge("等级 \(criteria.selectedLevel)")
+                        }
+                        ForEach(Array(criteria.selectedGenres).sorted(), id: \.self) { genre in
+                            filterBadge(genre, tint: MaimaiConstants.genreColors(for: genre).bg)
+                        }
+                        ForEach(Array(criteria.selectedVersions).sorted(), id: \.self) { ver in
+                            filterBadge(ver)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func filterBadge(_ text: String, tint: Color = AppTheme.accent) -> some View {
+        Text(text)
+            .font(.caption2.weight(.semibold))
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(tint.opacity(0.14), in: Capsule())
+            .overlay(Capsule().strokeBorder(tint.opacity(0.28), lineWidth: 0.8))
+            .foregroundStyle(tint)
+    }
+}
+
+private struct SongRowView: View {
+    let song: SongData
+    let isFavorite: Bool
+
+    var body: some View {
+        let colors = MaimaiConstants.genreColors(for: song.basicInfo.genre)
+        AppCard(padding: 12, tint: colors.bg) {
+            HStack(alignment: .center, spacing: 12) {
+                SongCoverBadgeView(
+                    song: song,
+                    size: .list,
+                    borderColor: colors.stroke
+                )
+
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack(alignment: .top, spacing: 6) {
+                        Text(song.title)
+                            .font(AppTheme.Typography.songTitle)
+                            .foregroundStyle(.primary)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+
+                        if isFavorite {
+                            Image(systemName: "heart.fill")
+                                .font(.caption2)
+                                .foregroundStyle(AppTheme.favoritePink)
+                                .padding(.top, 3)
+                        }
+
+                        Spacer(minLength: 4)
+
+                        ChartTypeBadge(isDX: song.isDX)
+                            .padding(.top, 2)
+                    }
+
+                    HStack(spacing: 6) {
+                        GenreCapsuleTag(genre: song.basicInfo.genre)
+
+                        Text("BPM \(song.basicInfo.bpm)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.secondary)
+
+                        Spacer(minLength: 0)
+                    }
+
+                    HStack(spacing: 5) {
+                        ForEach(song.resolvedCharts) { chart in
+                            DifficultyLevelBadge(
+                                difficulty: chart.difficulty,
+                                text: song.isUtage ? chart.level : String(format: "%.1f", chart.ds)
+                            )
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,128 @@
+import Foundation
+
+enum MaimaiAPIError: LocalizedError {
+    case invalidURL
+    case httpError(Int, String?)
+    case missingCookie
+    case unauthorized(String)
+
+    var errorDescription: String? {
+        switch self {
+        case .invalidURL:
+            return "无效的请求地址"
+        case .httpError(let code, let message):
+            return message ?? "网络请求失败 (HTTP \(code))"
+        case .missingCookie:
+            return "登录未返回有效 Cookie"
+        case .unauthorized(let message):
+            return message
+        }
+    }
+    var recoveryMessage: String {
+        switch self {
+        case .invalidURL:
+            return "服务地址无效，请检查应用配置。"
+        case .httpError(let code, let message):
+            if let message, !message.isEmpty { return message }
+            return "登录或同步失败（HTTP \(code)），请检查网络后重试。"
+        case .missingCookie:
+            return "水鱼未返回登录凭证，请稍后重试。"
+        case .unauthorized(let message):
+            return message
+        }
+    }
+}
+
+enum MaimaiAPI {
+    private static let updateInfoURL = URL(string: "https://bucket-1256206908.cos.ap-shanghai.myqcloud.com/update.json")!
+    private static let divingFishBase = "https://www.diving-fish.com"
+    private static let userAgent = "okhttp/4.9.3"
+
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.default
+        config.timeoutIntervalForRequest = 30
+        config.timeoutIntervalForResource = 60
+        config.httpShouldSetCookies = false
+        return URLSession(configuration: config)
+    }()
+
+    static func fetchUpdateInfo() async throws -> AppUpdateInfo {
+        var req = URLRequest(url: updateInfoURL)
+        req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, resp) = try await session.data(for: req)
+        try validateHTTP(resp, data: data)
+        return try JSONDecoder().decode(AppUpdateInfo.self, from: data)
+    }
+
+    static func downloadSongData(from urlString: String) async throws -> Data {
+        guard let url = URL(string: urlString) else { throw MaimaiAPIError.invalidURL }
+        var req = URLRequest(url: url)
+        req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, resp) = try await session.data(for: req)
+        try validateHTTP(resp, data: data)
+        // Verify JSON is decodable before replacing local cache
+        _ = try JSONDecoder().decode([SongData].self, from: data)
+        return data
+    }
+
+    static func fetchChartStats() async throws -> Data {
+        let url = URL(string: "\(divingFishBase)/api/maimaidxprober/chart_stats")!
+        var req = URLRequest(url: url)
+        req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, resp) = try await session.data(for: req)
+        try validateHTTP(resp, data: data)
+        _ = try JSONDecoder().decode(ChartStatsResponse.self, from: data)
+        return data
+    }
+
+    static func login(username: String, password: String) async throws -> String {
+        let url = URL(string: "\(divingFishBase)/api/maimaidxprober/login")!
+        var req = URLRequest(url: url)
+        req.httpMethod = "POST"
+        req.setValue("application/json;charset=UTF-8", forHTTPHeaderField: "Content-Type")
+        req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        req.httpBody = try JSONEncoder().encode(["username": username, "password": password])
+
+        let (data, resp) = try await session.data(for: req)
+        guard let httpResp = resp as? HTTPURLResponse else {
+            throw MaimaiAPIError.httpError(-1, "无效的服务器响应")
+        }
+        if httpResp.statusCode != 200 {
+            let errMsg = extractErrorMessage(from: data) ?? "登录失败 (HTTP \(httpResp.statusCode))"
+            throw MaimaiAPIError.httpError(httpResp.statusCode, errMsg)
+        }
+        let cookieHeader = httpResp.value(forHTTPHeaderField: "Set-Cookie") ?? ""
+        guard !cookieHeader.isEmpty else {
+            throw MaimaiAPIError.missingCookie
+        }
+        return cookieHeader
+    }
+
+    static func fetchPlayerRecords(cookie: String) async throws -> (response: ProberRecordsResponse, rawData: Data) {
+        let url = URL(string: "\(divingFishBase)/api/maimaidxprober/player/records")!
+        var req = URLRequest(url: url)
+        req.setValue(cookie, forHTTPHeaderField: "Cookie")
+        req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
+        let (data, resp) = try await session.data(for: req)
+        try validateHTTP(resp, data: data)
+        let decoded = try JSONDecoder().decode(ProberRecordsResponse.self, from: data)
+        if decoded.status == "error" {
+            throw MaimaiAPIError.unauthorized(decoded.message ?? "登录已过期，请重新登录")
+        }
+        return (decoded, data)
+    }
+
+    private static func validateHTTP(_ resp: URLResponse, data: Data) throws {
+        guard let httpResp = resp as? HTTPURLResponse else {
+            throw MaimaiAPIError.httpError(-1, "无效响应")
+        }
+        guard (200...299).contains(httpResp.statusCode) else {
+            throw MaimaiAPIError.httpError(httpResp.statusCode, extractErrorMessage(from: data))
+        }
+    }
+
+    private static func extractErrorMessage(from data: Data) -> String? {
+        guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        return obj["message"] as? String
+    }
+}
