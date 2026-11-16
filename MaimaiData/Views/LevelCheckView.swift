@@ -51,22 +51,17 @@ struct LevelCheckView: View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppCard(padding: AppTheme.cardPadding, tint: AppTheme.Palette.noteHold) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: AppTheme.Space.m) {
                         HStack {
-                            Button {
+                            AppCircleIconButton(
+                                systemImage: "chevron.left",
+                                accessibilityLabel: "上一个等级",
+                                isDisabled: currentLevelIndex == 0
+                            ) {
                                 if store.lastLevelCheckIndex > 0 {
                                     store.lastLevelCheckIndex -= 1
                                 }
-                            } label: {
-                                Image(systemName: "chevron.left")
-                                    .font(.subheadline.weight(.bold))
-                                    .frame(width: 34, height: 34)
                             }
-                            .buttonStyle(.plain)
-                            .glassEffect(.regular.interactive(), in: Circle())
-                            .disabled(currentLevelIndex == 0)
-                            .opacity(currentLevelIndex == 0 ? 0.4 : 1)
-                            .accessibilityLabel("上一个等级")
 
                             Spacer()
                             VStack(spacing: 2) {
@@ -78,20 +73,15 @@ struct LevelCheckView: View {
                             }
                             Spacer()
 
-                            Button {
+                            AppCircleIconButton(
+                                systemImage: "chevron.right",
+                                accessibilityLabel: "下一个等级",
+                                isDisabled: currentLevelIndex == levels.count - 1
+                            ) {
                                 if store.lastLevelCheckIndex < levels.count - 1 {
                                     store.lastLevelCheckIndex += 1
                                 }
-                            } label: {
-                                Image(systemName: "chevron.right")
-                                    .font(.subheadline.weight(.bold))
-                                    .frame(width: 34, height: 34)
                             }
-                            .buttonStyle(.plain)
-                            .glassEffect(.regular.interactive(), in: Circle())
-                            .disabled(currentLevelIndex == levels.count - 1)
-                            .opacity(currentLevelIndex == levels.count - 1 ? 0.4 : 1)
-                            .accessibilityLabel("下一个等级")
                         }
 
                         Slider(
@@ -111,12 +101,7 @@ struct LevelCheckView: View {
                 ForEach(sortedDSKeys, id: \.self) { dsValue in
                     let items = groupedByDS[dsValue] ?? []
                     AppSectionCard(title: String(format: "定数 %.1f", dsValue)) {
-                        Text("\(items.count) 首")
-                            .font(.caption.weight(.semibold).monospacedDigit())
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(AppTheme.accent.opacity(0.12), in: Capsule())
-                            .foregroundStyle(AppTheme.accent)
+                        AppCapsuleLabel(text: "\(items.count) 首")
                     } content: {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
                             ForEach(items) { item in
@@ -136,7 +121,7 @@ struct LevelCheckView: View {
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
         .navigationTitle("等级进度表")

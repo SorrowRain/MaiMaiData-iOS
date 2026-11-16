@@ -37,7 +37,7 @@ struct CoverZoomView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 220, height: 220)
-                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.chip, style: .continuous))
                             Text("曲绘加载失败，请检查网络连接")
                                 .font(.caption)
                                 .foregroundStyle(.white.opacity(0.75))
@@ -51,10 +51,7 @@ struct CoverZoomView: View {
                         StatusToast(text: message)
                     }
                     .onAppear {
-                        Task {
-                            try? await Task.sleep(for: .seconds(2.5))
-                            saveStatus = nil
-                        }
+                        Task { await dismissToast($saveStatus, after: 2.5) }
                     }
                 }
             }

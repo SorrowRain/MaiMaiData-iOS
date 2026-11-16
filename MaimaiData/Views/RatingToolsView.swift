@@ -30,10 +30,7 @@ struct RatingToolsView: View {
                     }
                     .padding(.horizontal, AppTheme.pagePadding)
                     .padding(.vertical, 12)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        KeyboardDismiss.hide()
-                    }
+                    .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
@@ -46,11 +43,7 @@ struct RatingToolsView: View {
                         .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
-            .alert("同步失败", isPresented: .constant(syncErrorMessage != nil)) {
-                Button("确定") { syncErrorMessage = nil }
-            } message: {
-                Text(syncErrorMessage ?? "")
-            }
+            .errorAlert("同步失败", message: $syncErrorMessage)
             .navigationDestination(for: ToolRoute.self) { route in
                 switch route {
                 case .prober:
@@ -130,10 +123,7 @@ struct RatingToolsView: View {
             withAnimation {
                 syncToast = "成绩已同步"
             }
-            try? await Task.sleep(for: .seconds(2))
-            withAnimation {
-                syncToast = nil
-            }
+            await dismissToast($syncToast, after: 2, animated: true)
         } catch {
             syncErrorMessage = error.localizedDescription
         }
@@ -219,7 +209,7 @@ struct RatingToolsView: View {
                 .font(.subheadline.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
-                .background(color.gradient, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
@@ -227,7 +217,7 @@ struct RatingToolsView: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(subtitle)
-                    .font(AppTheme.Typography.rowSubtitle)
+                    .font(AppTheme.Typography.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -316,7 +306,13 @@ struct RatingToolsView: View {
                         }
                     }
 
-                    Button {
+                    AppPrimaryButton(
+                        title: "推算",
+                        fullWidth: false,
+                        verticalPadding: 0,
+                        minHeight: AppTheme.rowMinHeight,
+                        radius: AppTheme.Radius.input
+                    ) {
                         KeyboardDismiss.hide()
                         let val = Int(targetRatingInput.trimmingCharacters(in: .whitespaces)) ?? 0
                         targetRows = RatingCalculator.reverseCalculate(targetTotalRating: val)
@@ -327,19 +323,7 @@ struct RatingToolsView: View {
                         } else {
                             targetError = nil
                         }
-                    } label: {
-                        Text("推算")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 18)
-                            .frame(minHeight: AppTheme.rowMinHeight)
-                            .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.input, style: .continuous))
                     }
-                    .buttonStyle(.plain)
-                    .glassEffect(
-                        .regular.tint(AppTheme.accent).interactive(),
-                        in: RoundedRectangle(cornerRadius: AppTheme.Radius.input, style: .continuous)
-                    )
                 }
 
                 if let targetError {

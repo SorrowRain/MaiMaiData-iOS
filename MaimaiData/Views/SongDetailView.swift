@@ -131,9 +131,9 @@ struct SongDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .padding(.horizontal, 6)
-        .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+        .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
+            RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.8)
         )
         .accessibilityElement(children: .combine)
@@ -214,7 +214,7 @@ struct SongDetailView: View {
             ForEach(Array(chartsDesc.enumerated()), id: \.element.id) { idx, chart in
                 let isSelected = idx == min(selectedChartIndex, chartsDesc.count - 1)
                 let isRemaster = chart.difficulty == .remaster
-                let shape = RoundedRectangle(cornerRadius: 12, style: .continuous)
+                let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.chip, style: .continuous)
                 Button {
                     selectedChartIndex = idx
                 } label: {
@@ -524,12 +524,7 @@ private struct ChartToleranceCard: View {
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
             if !detail.isEmpty {
-                Text(detail)
-                    .font(.caption2.weight(.bold))
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(color.opacity(0.14), in: Capsule())
-                    .foregroundStyle(color)
+                AppCapsuleLabel(text: detail, tint: color, font: .caption2.weight(.bold), backgroundOpacity: 0.14, horizontalPadding: 6, verticalPadding: 2)
             }
             Spacer(minLength: 0)
             Text(value)

@@ -104,11 +104,7 @@ struct ProberView: View {
         .sheet(item: $b50PreviewItem) { item in
             B50PreviewSheet(image: item.image)
         }
-        .alert("提示", isPresented: .constant(errorMessage != nil)) {
-            Button("确定") { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "")
-        }
+        .errorAlert("提示", message: $errorMessage)
         .task {
             if store.records.isEmpty && !store.currentCookie.isEmpty {
                 await refreshRecords()
@@ -292,10 +288,7 @@ private struct B50PreviewSheet: View {
                 if let message = saveToast {
                     StatusToast(text: message)
                         .onAppear {
-                            Task {
-                                try? await Task.sleep(for: .seconds(2.5))
-                                saveToast = nil
-                            }
+                            Task { await dismissToast($saveToast, after: 2.5) }
                         }
                 }
             }

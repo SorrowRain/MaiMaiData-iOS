@@ -37,7 +37,7 @@ struct AccountManagementView: View {
 
                 if store.savedAccounts.isEmpty {
                     Text("暂无已保存账号，点击下方按钮添加")
-                        .font(AppTheme.Typography.rowSubtitle)
+                        .font(AppTheme.Typography.caption)
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 8)
                 } else {
@@ -51,12 +51,7 @@ struct AccountManagementView: View {
                                     .foregroundStyle(Color(.label))
 
                                 if !store.currentUsername.isEmpty && acct.username == store.currentUsername {
-                                    Text("当前")
-                                        .font(.caption2.weight(.bold))
-                                        .padding(.horizontal, 7)
-                                        .padding(.vertical, 2)
-                                        .background(AppTheme.accent.opacity(0.14), in: Capsule())
-                                        .foregroundStyle(AppTheme.accent)
+                                    AppCapsuleLabel(text: "当前", font: .caption2.weight(.bold), backgroundOpacity: 0.14, horizontalPadding: 7, verticalPadding: 2)
                                 }
 
                                 Spacer()
@@ -126,11 +121,7 @@ struct AccountManagementView: View {
                 Text("确定要删除已保存的账号「\(acct.username)」吗？")
             }
         }
-        .alert("切换账号失败", isPresented: .constant(errorMessage != nil)) {
-            Button("确定") { errorMessage = nil }
-        } message: {
-            Text(errorMessage ?? "")
-        }
+        .errorAlert("切换账号失败", message: $errorMessage)
     }
 
     private func switchToSavedAccount(_ acct: SavedAccount) async {
@@ -199,10 +190,7 @@ struct LoginSheet: View {
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
                 .padding(.vertical, 12)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    KeyboardDismiss.hide()
-                }
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
             .disabled(store.isLoadingLocalData || isSubmitting)
@@ -214,11 +202,7 @@ struct LoginSheet: View {
                     Button("关闭") { dismiss() }
                 }
             }
-            .alert("登录或同步失败", isPresented: .constant(errorMessage != nil)) {
-                Button("确定") { errorMessage = nil }
-            } message: {
-                Text(errorMessage ?? "")
-            }
+            .errorAlert("登录或同步失败", message: $errorMessage)
         }
     }
 

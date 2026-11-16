@@ -136,6 +136,17 @@ enum AppTheme {
         static let button: CGFloat = 14
         static let input: CGFloat = 12
         static let badge: CGFloat = 6
+        static let tile: CGFloat = 10
+        static let chip: CGFloat = 12
+    }
+
+    // Spacing scale
+    enum Space {
+        static let xs: CGFloat = 4
+        static let s: CGFloat = 8
+        static let m: CGFloat = 12
+        static let l: CGFloat = 16
+        static let xl: CGFloat = 24
     }
 
     // Typography Hierarchy (17pt Card Title > 15pt Row Title > 12pt Subtitle / Inline Button)
@@ -143,11 +154,14 @@ enum AppTheme {
         static let cardTitle = Font.headline
         static let rowTitle = Font.subheadline.weight(.medium)
         static let songTitle = Font.subheadline.weight(.semibold)
-        static let rowSubtitle = Font.caption
         static let caption = Font.caption
         static let inlineAction = Font.caption.weight(.semibold)
         static let badge = Font.caption2.weight(.bold).monospacedDigit()
         static let tag = Font.caption.weight(.medium)
+        static let sectionHeader = Font.subheadline.weight(.semibold)
+        static let stat = Font.title3.weight(.semibold).monospacedDigit()
+        static let footnote = Font.footnote
+        static let captionSemibold = Font.caption.weight(.semibold)
     }
 }
 
@@ -316,6 +330,11 @@ struct AppPrimaryButton: View {
     var tint: Color = AppTheme.accent
     var isLoading = false
     var isDisabled = false
+    var fullWidth = true
+    var horizontalPadding: CGFloat = 18
+    var verticalPadding: CGFloat = 12
+    var minHeight: CGFloat = 46
+    var radius: CGFloat = AppTheme.Radius.button
     let action: () -> Void
 
     var body: some View {
@@ -333,15 +352,15 @@ struct AppPrimaryButton: View {
                     .font(.subheadline.weight(.semibold))
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 12)
-            .frame(maxWidth: .infinity, minHeight: 46)
-            .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: minHeight)
+            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         }
         .buttonStyle(.plain)
         .glassEffect(
             .regular.tint(tint).interactive(),
-            in: RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+            in: RoundedRectangle(cornerRadius: radius, style: .continuous)
         )
         .opacity(isLoading || isDisabled ? 0.5 : 1)
         .disabled(isLoading || isDisabled)
@@ -378,6 +397,154 @@ struct AppInlineButton: View {
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
+    }
+}
+
+
+/// Secondary glass button (e.g. "重置选项").
+struct AppSecondaryButton: View {
+    let title: String
+    var tint: Color = AppTheme.accent
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(AppTheme.Typography.songTitle)
+                .foregroundStyle(tint)
+                .frame(maxWidth: .infinity, minHeight: 46)
+                .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .glassEffect(
+            .regular.interactive(),
+            in: RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
+        )
+    }
+}
+
+/// Label for a Menu rendered as a tinted capsule (sort menu, version switcher).
+struct AppMenuCapsule: View {
+    let title: String
+    var tint: Color = AppTheme.accent
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(title)
+                .font(AppTheme.Typography.inlineAction)
+            Image(systemName: "chevron.up.chevron.down")
+                .font(.caption2.weight(.bold))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 11)
+        .padding(.vertical, 6)
+        .background(tint.opacity(0.11), in: Capsule())
+        .overlay(Capsule().strokeBorder(tint.opacity(0.22), lineWidth: 0.8))
+    }
+}
+
+/// Circular glass icon button. An accessibility label is required.
+struct AppCircleIconButton: View {
+    let systemImage: String
+    let accessibilityLabel: String
+    var isDisabled = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.bold))
+                .frame(width: 34, height: 34)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: Circle())
+        .disabled(isDisabled)
+        .opacity(isDisabled ? 0.4 : 1)
+        .accessibilityLabel(accessibilityLabel)
+    }
+}
+
+/// Small tinted capsule used for counts and inline tags.
+struct AppCapsuleLabel: View {
+    let text: String
+    var tint: Color = AppTheme.accent
+    var font: Font = .caption.weight(.semibold).monospacedDigit()
+    var backgroundOpacity: Double = 0.12
+    var horizontalPadding: CGFloat = 8
+    var verticalPadding: CGFloat = 3
+    var foreground: Color? = nil
+
+    var body: some View {
+        Text(text)
+            .font(font)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .background(tint.opacity(backgroundOpacity), in: Capsule())
+            .foregroundStyle(foreground ?? tint)
+    }
+}
+
+/// Statistic tile: caption title above value, tinted background.
+struct AppStatTile: View {
+    let title: String
+    let value: String
+    let tint: Color
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Text(title)
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(tint)
+            Text(value)
+                .font(.caption.monospacedDigit().weight(.semibold))
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, AppTheme.Space.s)
+        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous)
+                .strokeBorder(tint.opacity(0.24), lineWidth: 1)
+        )
+    }
+}
+
+extension View {
+    /// Glass capsule container (search bar).
+    func appGlassCapsule() -> some View {
+        glassEffect(.regular.interactive(), in: Capsule())
+    }
+
+    /// Tap on empty area dismisses the keyboard.
+    func dismissKeyboardOnTap() -> some View {
+        contentShape(Rectangle())
+            .onTapGesture { KeyboardDismiss.hide() }
+    }
+
+    /// Error alert driven by an optional message; clears the message on dismiss.
+    func errorAlert(_ title: String, message: Binding<String?>) -> some View {
+        alert(
+            title,
+            isPresented: Binding(
+                get: { message.wrappedValue != nil },
+                set: { if !$0 { message.wrappedValue = nil } }
+            )
+        ) {
+            Button("确定") { message.wrappedValue = nil }
+        } message: {
+            Text(message.wrappedValue ?? "")
+        }
+    }
+}
+
+/// Clears an optional toast text after a delay.
+@MainActor
+func dismissToast(_ text: Binding<String?>, after seconds: Double, animated: Bool = false) async {
+    try? await Task.sleep(for: .seconds(seconds))
+    if animated {
+        withAnimation { text.wrappedValue = nil }
+    } else {
+        text.wrappedValue = nil
     }
 }
 
@@ -589,9 +756,9 @@ struct SongCoverBadgeView: View {
 
         var cornerRadius: CGFloat {
             switch self {
-            case .compact: return 9
-            case .list: return 11
-            case .hero: return 14
+            case .compact: return AppTheme.Radius.tile
+            case .list: return AppTheme.Radius.inset
+            case .hero: return AppTheme.Radius.button
             }
         }
 
@@ -864,30 +1031,12 @@ struct ChecklistStatsHeader: View {
             }
         } content: {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
-                statPill(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", color: AppTheme.Palette.statSSS)
-                statPill(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", color: AppTheme.Palette.statFC)
-                statPill(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", color: AppTheme.Palette.statAP)
-                statPill(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", color: AppTheme.Palette.statFSD)
+                AppStatTile(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", tint: AppTheme.Palette.statSSS)
+                AppStatTile(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFC)
+                AppStatTile(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", tint: AppTheme.Palette.statAP)
+                AppStatTile(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFSD)
             }
         }
-    }
-
-    private func statPill(title: String, value: String, color: Color) -> some View {
-        VStack(spacing: 3) {
-            Text(title)
-                .font(.caption2.weight(.bold))
-                .foregroundStyle(color)
-            Text(value)
-                .font(.caption.monospacedDigit().weight(.semibold))
-                .foregroundStyle(.primary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(color.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(color.opacity(0.24), lineWidth: 1)
-        )
     }
 }
 
@@ -899,7 +1048,7 @@ struct ChecklistSongTile: View {
     var showTypeBadge: Bool = false
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 10, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous)
         ZStack(alignment: .topTrailing) {
             CoverImageView(song: song)
                 .frame(width: 72, height: 72)

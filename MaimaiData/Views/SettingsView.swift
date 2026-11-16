@@ -26,7 +26,7 @@ struct SettingsView: View {
                                             .foregroundStyle(.primary)
                                         if !store.currentUsername.isEmpty && store.displayPlayerName != store.currentUsername {
                                             Text(store.currentUsername)
-                                                .font(AppTheme.Typography.rowSubtitle)
+                                                .font(AppTheme.Typography.caption)
                                                 .foregroundStyle(.secondary)
                                         }
                                     }
@@ -106,7 +106,7 @@ struct SettingsView: View {
                                         Text("本地曲库")
                                             .font(AppTheme.Typography.rowTitle)
                                         Text("版本 \(store.dataVersion) · 共 \(store.songs.count) 首")
-                                            .font(AppTheme.Typography.rowSubtitle)
+                                            .font(AppTheme.Typography.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                     Spacer(minLength: 8)
@@ -128,7 +128,7 @@ struct SettingsView: View {
                                         Text("水鱼拟合定数")
                                             .font(AppTheme.Typography.rowTitle)
                                         Text(store.lastChartStatsSync?.formatted(date: .abbreviated, time: .shortened) ?? "尚未同步")
-                                            .font(AppTheme.Typography.rowSubtitle)
+                                            .font(AppTheme.Typography.caption)
                                             .foregroundStyle(.secondary)
                                     }
                                     Spacer(minLength: 8)
@@ -156,7 +156,7 @@ struct SettingsView: View {
                                     Text("封面磁盘缓存")
                                         .font(AppTheme.Typography.rowTitle)
                                     Text("当前占用 \(cacheSizeText)")
-                                        .font(AppTheme.Typography.rowSubtitle)
+                                        .font(AppTheme.Typography.caption)
                                         .foregroundStyle(.secondary)
                                         .monospacedDigit()
                                 }
@@ -190,10 +190,7 @@ struct SettingsView: View {
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
                 .padding(.vertical, 12)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    KeyboardDismiss.hide()
-                }
+                .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
             .appPageBackground()

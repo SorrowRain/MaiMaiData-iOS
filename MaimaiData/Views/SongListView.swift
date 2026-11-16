@@ -166,7 +166,7 @@ struct SongListView: View {
         .onTapGesture {
             isSearchFocused = true
         }
-        .glassEffect(.regular.interactive(), in: Capsule())
+        .appGlassCapsule()
         .padding(.horizontal, AppTheme.pagePadding)
         .padding(.top, 6)
         .padding(.bottom, 6)

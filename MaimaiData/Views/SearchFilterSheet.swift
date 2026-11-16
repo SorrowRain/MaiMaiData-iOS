@@ -37,17 +37,7 @@ struct SearchFilterSheet: View {
                                 }
                             }
                         } label: {
-                            HStack(spacing: 4) {
-                                Text(draft.sortOption.rawValue)
-                                    .font(AppTheme.Typography.inlineAction)
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.caption2.weight(.bold))
-                            }
-                            .foregroundStyle(AppTheme.accent)
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 6)
-                            .background(AppTheme.accent.opacity(0.11), in: Capsule())
-                            .overlay(Capsule().strokeBorder(AppTheme.accent.opacity(0.22), lineWidth: 0.8))
+                            AppMenuCapsule(title: draft.sortOption.rawValue)
                         }
                     } content: {
                         AppInsetGroup(padding: 12) {
@@ -162,18 +152,7 @@ struct SearchFilterSheet: View {
             }
             .safeAreaInset(edge: .bottom) {
                 HStack(spacing: 12) {
-                    Button(action: resetDraft) {
-                        Text("重置选项")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(AppTheme.accent)
-                            .frame(maxWidth: .infinity, minHeight: 46)
-                            .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(
-                        .regular.interactive(),
-                        in: RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
-                    )
+                    AppSecondaryButton(title: "重置选项", action: resetDraft)
 
                     AppPrimaryButton(title: "应用筛选", icon: "checkmark") {
                         criteria = draft
@@ -207,7 +186,7 @@ struct SearchFilterSheet: View {
             .frame(width: 44, height: 24)
             .background(
                 isActive ? AppTheme.accent.opacity(0.13) : Color.primary.opacity(0.06),
-                in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                in: RoundedRectangle(cornerRadius: AppTheme.Radius.badge, style: .continuous)
             )
     }
 

@@ -72,20 +72,13 @@ struct FinaleToDxView: View {
             }
             .padding(.horizontal, AppTheme.pagePadding)
             .padding(.vertical, 12)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                KeyboardDismiss.hide()
-            }
+            .dismissKeyboardOnTap()
         }
         .scrollDismissesKeyboard(.interactively)
         .appPageBackground()
         .navigationTitle("旧框分数换算 DX")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("输入错误", isPresented: .constant(errorText != nil)) {
-            Button("确定") { errorText = nil }
-        } message: {
-            Text(errorText ?? "")
-        }
+        .errorAlert("输入错误", message: $errorText)
     }
 
     private func noteGroup(

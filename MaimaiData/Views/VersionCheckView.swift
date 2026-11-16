@@ -30,7 +30,7 @@ struct VersionCheckView: View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppCard(padding: AppTheme.cardPadding, tint: DifficultyType.master.color) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: AppTheme.Space.m) {
                         Image(selectedVersion.asset)
                             .resizable()
                             .scaledToFit()
@@ -53,17 +53,7 @@ struct VersionCheckView: View {
                                 }
                             }
                         } label: {
-                            HStack(spacing: 4) {
-                                Text("切换版本")
-                                    .font(AppTheme.Typography.inlineAction)
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.caption2.weight(.bold))
-                            }
-                            .foregroundStyle(AppTheme.accent)
-                            .padding(.horizontal, 11)
-                            .padding(.vertical, 6)
-                            .background(AppTheme.accent.opacity(0.11), in: Capsule())
-                            .overlay(Capsule().strokeBorder(AppTheme.accent.opacity(0.22), lineWidth: 0.8))
+                            AppMenuCapsule(title: "切换版本")
                         }
                     }
                 }
@@ -72,12 +62,7 @@ struct VersionCheckView: View {
 
                 ForEach(groupedSongs, id: \.level) { group in
                     AppSectionCard(title: "Level \(group.level)") {
-                        Text("\(group.songs.count) 首")
-                            .font(.caption.weight(.semibold).monospacedDigit())
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(DifficultyType.master.color.opacity(0.14), in: Capsule())
-                            .foregroundStyle(DifficultyType.master.color)
+                        AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color, backgroundOpacity: 0.14)
                     } content: {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
                             ForEach(group.songs) { song in
@@ -96,7 +81,7 @@ struct VersionCheckView: View {
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
         .navigationTitle("版本进度表 (MAS)")
