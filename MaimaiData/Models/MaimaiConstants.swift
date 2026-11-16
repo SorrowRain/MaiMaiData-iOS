@@ -1,0 +1,126 @@
+import SwiftUI
+
+enum MaimaiConstants {
+    static let genreUtage = "宴会場"
+    static let chartTypeDX = "DX"
+    static let chartTypeSD = "SD"
+
+    static let allGenres: [String] = [
+        "流行&动漫",
+        "niconico & VOCALOID",
+        "东方Project",
+        "其他游戏",
+        "舞萌",
+        "音击&中二节奏",
+        "宴会場"
+    ]
+
+    static let allLevels: [String] = [
+        "ALL", "1", "2", "3", "4", "5", "6", "7", "7+",
+        "8", "8+", "9", "9+", "10", "10+", "11", "11+",
+        "12", "12+", "13", "13+", "14", "14+", "15"
+    ]
+
+    static let cnVersions: [(name: String, asset: String)] = [
+        ("maimai", "maimai"),
+        ("maimai PLUS", "maimai_plus"),
+        ("maimai GreeN", "maimai_green"),
+        ("maimai GreeN PLUS", "maimai_green_plus"),
+        ("maimai ORANGE", "maimai_orange"),
+        ("maimai ORANGE PLUS", "maimai_orange_plus"),
+        ("maimai PiNK", "maimai_pink"),
+        ("maimai PiNK PLUS", "maimai_pink_plus"),
+        ("maimai MURASAKi", "maimai_murasaki"),
+        ("maimai MURASAKi PLUS", "maimai_murasaki_plus"),
+        ("maimai MiLK", "maimai_milk"),
+        ("maimai MiLK PLUS", "maimai_milk_plus"),
+        ("maimai FiNALE", "maimai_finale"),
+        ("舞萌DX", "maimaidx_cn"),
+        ("舞萌DX 2021", "maimaidx_2021"),
+        ("舞萌DX 2022", "maimaidx_2022"),
+        ("舞萌DX 2023", "maimaidx_2023"),
+        ("舞萌DX 2024", "maimaidx_2024"),
+        ("舞萌DX 2025", "maimaidx_2025"),
+        ("舞萌DX 2026", "maimaidx_2026")
+    ]
+
+    /// Filter chips mirror Android SearchLayout's grouped version chips.
+    static let searchVersions: [String] = [
+        "maimai", "GreeN", "ORANGE", "PiNK", "MURASAKi", "MiLK", "FiNALE",
+        "舞萌DX", "舞萌DX 2021", "舞萌DX 2022", "舞萌DX 2023",
+        "舞萌DX 2024", "舞萌DX 2025", "舞萌DX 2026"
+    ]
+
+    static func expandVersionFilter(_ selected: [String]) -> Set<String> {
+        var result = Set<String>()
+        for item in selected {
+            if item == "maimai" {
+                result.insert("maimai")
+                result.insert("maimai PLUS")
+            } else if item == "FiNALE" {
+                result.insert("maimai FiNALE")
+            } else if !item.hasPrefix("舞萌") && !item.contains("FiNALE") {
+                result.insert("maimai \(item) PLUS")
+                result.insert("maimai \(item)")
+            } else {
+                result.insert(item)
+            }
+        }
+        return result
+    }
+
+    static func genreColors(for genre: String) -> (bg: Color, stroke: Color) {
+        switch genre {
+        case "流行&动漫":
+            return AppTheme.Palette.genrePop
+        case "niconico & VOCALOID":
+            return AppTheme.Palette.genreNico
+        case "东方Project":
+            return AppTheme.Palette.genreTouhou
+        case "其他游戏":
+            return AppTheme.Palette.genreGame
+        case "舞萌":
+            return AppTheme.Palette.genreMaimai
+        case "宴会場":
+            return AppTheme.Palette.genreUtage
+        default:
+            return AppTheme.Palette.genreOther
+        }
+    }
+
+    static func genreTextColor(for genre: String) -> Color {
+        switch genre {
+        case "流行&动漫": return AppTheme.Palette.genrePopText
+        case "niconico & VOCALOID": return AppTheme.Palette.genreNicoText
+        case "东方Project": return AppTheme.Palette.genreTouhouText
+        case "其他游戏": return AppTheme.Palette.genreGameText
+        case "舞萌": return AppTheme.Palette.genreMaimaiText
+        case "宴会場": return AppTheme.Palette.genreUtageText
+        default: return AppTheme.Palette.genreOtherText
+        }
+    }
+
+    static func jpVersionAsset(for versionCode: String) -> String? {
+        let map: [(String, String)] = [
+            ("100", "maimai"), ("110", "maimai_plus"),
+            ("120", "maimai_green"), ("130", "maimai_green_plus"),
+            ("140", "maimai_orange"), ("150", "maimai_orange_plus"),
+            ("160", "maimai_pink"), ("170", "maimai_pink_plus"),
+            ("180", "maimai_murasaki"), ("185", "maimai_murasaki_plus"),
+            ("190", "maimai_milk"), ("195", "maimai_milk_plus"),
+            ("199", "maimai_finale"),
+            ("200", "maimaidx"), ("205", "maimaidx_plus"),
+            ("210", "maimaidx_splash"), ("215", "maimaidx_splash_plus"),
+            ("220", "maimaidx_universe"), ("225", "maimaidx_universe_plus"),
+            ("230", "maimaidx_festival"), ("235", "maimaidx_festival_plus"),
+            ("240", "maimaidx_buddies"), ("245", "maimaidx_buddies_plus"),
+            ("250", "maimaidx_prism"), ("255", "maimaidx_prism_plus"),
+            ("260", "maimaidx_circle")
+        ]
+        return map.first { versionCode.hasPrefix($0.0) }?.1
+    }
+
+    static func cnVersionAsset(for fromName: String) -> String? {
+        cnVersions.first { $0.name == fromName }?.asset
+    }
+}

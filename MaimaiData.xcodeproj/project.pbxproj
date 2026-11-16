@@ -21,7 +21,6 @@
 		A84E0E3FF3A7DB375D78E26A /* SongDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121595B1DF3114C6764E0B90 /* SongDetailView.swift */; };
 		B92C78500EEF586D05DAA5F2 /* ProberView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADF21D74D8B1396E1179DFF6 /* ProberView.swift */; };
 		C5B99FB94B7319FF5AC234EE /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B59D3B984723A819C8BFBD3 /* SettingsView.swift */; };
-		C9F9A8F65F83D05D75098294 /* SongModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97D394BA68D4907DDE3E8A29 /* SongModels.swift */; };
 		D57ABF3CFB8FD0CF746096B8 /* MaimaiDataApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 167173D2473D31999EA6FA56 /* MaimaiDataApp.swift */; };
 		DA1C77CE7FCB73D2AC18F004 /* MaimaiAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6736A5D4376B2ED85A90D27B /* MaimaiAPI.swift */; };
 		E4BA6B78B235B1DF58E8C45D /* SongListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0AB24DE975528707D5A75673 /* SongListView.swift */; };
@@ -37,6 +36,11 @@
 		BB5C98006A9CFF8F1F677911 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF126BE8BE30A2FE4DA189E /* Feedback.swift */; };
 		5B5CD2F31B54E0E9E42C4971 /* Checklist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C512DB93DB17F04597C0E1 /* Checklist.swift */; };
 		18B01AB3D7A7F1640B602DAE /* UIKitBridges.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F1CE1A970BE15C09B6C66C /* UIKitBridges.swift */; };
+		A0E63E92A5973B49B56FC1A5 /* SongData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0BC62991A0BEED50CBA985D /* SongData.swift */; };
+		A62FF944036BB0F9FAD1B3FD /* DifficultyType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F4DC6E4A9496E39955CDE10 /* DifficultyType.swift */; };
+		CA889B567423E4E852AB8709 /* MaimaiConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A997E38677FD8080451FF532 /* MaimaiConstants.swift */; };
+		221B0E45EBF92D870DC16E53 /* RatingCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EA72DF5010855EDA4AB336 /* RatingCalculator.swift */; };
+		129E00E33CF4D99A0B988216 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,7 +58,6 @@
 		6CE1E37C350837527444B41F /* RatingToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingToolsView.swift; sourceTree = "<group>"; };
 		8271F7524C0425C7500C1768 /* FinaleToDxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinaleToDxView.swift; sourceTree = "<group>"; };
 		966EABA0343D835D3B3D6C7F /* MaimaiData.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = MaimaiData.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		97D394BA68D4907DDE3E8A29 /* SongModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongModels.swift; sourceTree = "<group>"; };
 		9ED998B07CF1D367866AFE2E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ADF21D74D8B1396E1179DFF6 /* ProberView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProberView.swift; sourceTree = "<group>"; };
 		C306167D619FC61CCCA481F6 /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
@@ -71,6 +74,11 @@
 		CCF126BE8BE30A2FE4DA189E /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
 		55C512DB93DB17F04597C0E1 /* Checklist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Checklist.swift; sourceTree = "<group>"; };
 		B8F1CE1A970BE15C09B6C66C /* UIKitBridges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitBridges.swift; sourceTree = "<group>"; };
+		F0BC62991A0BEED50CBA985D /* SongData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongData.swift; sourceTree = "<group>"; };
+		6F4DC6E4A9496E39955CDE10 /* DifficultyType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DifficultyType.swift; sourceTree = "<group>"; };
+		A997E38677FD8080451FF532 /* MaimaiConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaimaiConstants.swift; sourceTree = "<group>"; };
+		D3EA72DF5010855EDA4AB336 /* RatingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingCalculator.swift; sourceTree = "<group>"; };
+		407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -94,8 +102,12 @@
 		ACCA8410AF0F4A960437D7D0 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */,
+				D3EA72DF5010855EDA4AB336 /* RatingCalculator.swift */,
+				A997E38677FD8080451FF532 /* MaimaiConstants.swift */,
+				6F4DC6E4A9496E39955CDE10 /* DifficultyType.swift */,
+				F0BC62991A0BEED50CBA985D /* SongData.swift */,
 				2D2AD9585AFC589604E45C71 /* RecordModels.swift */,
-				97D394BA68D4907DDE3E8A29 /* SongModels.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -258,6 +270,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				129E00E33CF4D99A0B988216 /* Extensions.swift in Sources */,
+				221B0E45EBF92D870DC16E53 /* RatingCalculator.swift in Sources */,
+				CA889B567423E4E852AB8709 /* MaimaiConstants.swift in Sources */,
+				A62FF944036BB0F9FAD1B3FD /* DifficultyType.swift in Sources */,
+				A0E63E92A5973B49B56FC1A5 /* SongData.swift in Sources */,
 				18B01AB3D7A7F1640B602DAE /* UIKitBridges.swift in Sources */,
 				5B5CD2F31B54E0E9E42C4971 /* Checklist.swift in Sources */,
 				BB5C98006A9CFF8F1F677911 /* Feedback.swift in Sources */,
@@ -284,7 +301,6 @@
 				C5B99FB94B7319FF5AC234EE /* SettingsView.swift in Sources */,
 				A84E0E3FF3A7DB375D78E26A /* SongDetailView.swift in Sources */,
 				E4BA6B78B235B1DF58E8C45D /* SongListView.swift in Sources */,
-				C9F9A8F65F83D05D75098294 /* SongModels.swift in Sources */,
 				9E6A08344AF53BD596B55C2A /* VersionCheckView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
