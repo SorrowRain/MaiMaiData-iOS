@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		016CAF780C289FA7255656FF /* LevelCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93B227E70AE382A245FE5E6 /* LevelCheckView.swift */; };
-		15B440CF8CFD6C999E2A0189 /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04DA5AEFF97A275575AAB639 /* SharedComponents.swift */; };
 		2D4CAD33027847F8DE021660 /* LoginSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54374623C23A45F46C0AC2C /* LoginSheet.swift */; };
 		33654FD385BC0E95EBDE42F5 /* AccountCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BB2CECB91004C605053CA9C /* AccountCredentialStore.swift */; };
 		5430AF688F3F3B43797C5C76 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F607E11D6A4A9DF629B3351 /* ImageLoader.swift */; };
@@ -30,10 +29,17 @@
 		F821C5307B359A72F67E02CF /* Best50Renderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 635945165E421D06FFE9B0C2 /* Best50Renderer.swift */; };
 		FE41449F1006E1E3B09E7170 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1519A8BABE8FF45D1E1B15E /* MainTabView.swift */; };
 		FFF5446EDB1018B615C5936E /* SearchFilterSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536B797AF09027241D77F099 /* SearchFilterSheet.swift */; };
+		2079888C74B28E61BCC3102C /* AppTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12370754A1F86FAC111EF34 /* AppTheme.swift */; };
+		5B88071E6A4C6A6EE7CEBF77 /* Containers.swift in Sources */ = {isa = PBXBuildFile; fileRef = F26F21C29FA971B883220D75 /* Containers.swift */; };
+		231F6CB77A0EB262B3034009 /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 598EDDB60AE2CEFC53C34CBD /* Buttons.swift */; };
+		80E3DC5610D05E186FDECD5D /* Forms.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD6CA3CD31DB8C727B59B26F /* Forms.swift */; };
+		FCEF3686CAEDF87510C5DA8B /* Badges.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B76F1F0BF1A0F52DC5A81E6 /* Badges.swift */; };
+		BB5C98006A9CFF8F1F677911 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF126BE8BE30A2FE4DA189E /* Feedback.swift */; };
+		5B5CD2F31B54E0E9E42C4971 /* Checklist.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C512DB93DB17F04597C0E1 /* Checklist.swift */; };
+		18B01AB3D7A7F1640B602DAE /* UIKitBridges.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F1CE1A970BE15C09B6C66C /* UIKitBridges.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		04DA5AEFF97A275575AAB639 /* SharedComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
 		0AB24DE975528707D5A75673 /* SongListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongListView.swift; sourceTree = "<group>"; };
 		121595B1DF3114C6764E0B90 /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
 		167173D2473D31999EA6FA56 /* MaimaiDataApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaimaiDataApp.swift; sourceTree = "<group>"; };
@@ -57,6 +63,14 @@
 		E1519A8BABE8FF45D1E1B15E /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		E54374623C23A45F46C0AC2C /* LoginSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSheet.swift; sourceTree = "<group>"; };
 		EFC487253E2E1EFC1633137D /* CoverZoomView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverZoomView.swift; sourceTree = "<group>"; };
+		E12370754A1F86FAC111EF34 /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
+		F26F21C29FA971B883220D75 /* Containers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Containers.swift; sourceTree = "<group>"; };
+		598EDDB60AE2CEFC53C34CBD /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
+		CD6CA3CD31DB8C727B59B26F /* Forms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Forms.swift; sourceTree = "<group>"; };
+		9B76F1F0BF1A0F52DC5A81E6 /* Badges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Badges.swift; sourceTree = "<group>"; };
+		CCF126BE8BE30A2FE4DA189E /* Feedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Feedback.swift; sourceTree = "<group>"; };
+		55C512DB93DB17F04597C0E1 /* Checklist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Checklist.swift; sourceTree = "<group>"; };
+		B8F1CE1A970BE15C09B6C66C /* UIKitBridges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitBridges.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -89,6 +103,9 @@
 		BBCEB52666569E92417EA4F7 /* MaimaiData */ = {
 			isa = PBXGroup;
 			children = (
+				AC508A7ADCF618CF373E6C73 /* Bridges */,
+				6116CAAD43F3F905EA6146A0 /* Components */,
+				BB0DB439FFE5B5B415576A4D /* Theme */,
 				167173D2473D31999EA6FA56 /* MaimaiDataApp.swift */,
 				ACCA8410AF0F4A960437D7D0 /* Models */,
 				05CE23B353D31085E1654D48 /* Resources */,
@@ -110,7 +127,6 @@
 				6CE1E37C350837527444B41F /* RatingToolsView.swift */,
 				536B797AF09027241D77F099 /* SearchFilterSheet.swift */,
 				6B59D3B984723A819C8BFBD3 /* SettingsView.swift */,
-				04DA5AEFF97A275575AAB639 /* SharedComponents.swift */,
 				121595B1DF3114C6764E0B90 /* SongDetailView.swift */,
 				0AB24DE975528707D5A75673 /* SongListView.swift */,
 				D59B9DE91B34FD5A65D4CB48 /* VersionCheckView.swift */,
@@ -140,6 +156,35 @@
 			sourceTree = "<group>";
 			tabWidth = 4;
 			usesTabs = 0;
+		};
+		BB0DB439FFE5B5B415576A4D /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				E12370754A1F86FAC111EF34 /* AppTheme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		6116CAAD43F3F905EA6146A0 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				55C512DB93DB17F04597C0E1 /* Checklist.swift */,
+				CCF126BE8BE30A2FE4DA189E /* Feedback.swift */,
+				9B76F1F0BF1A0F52DC5A81E6 /* Badges.swift */,
+				CD6CA3CD31DB8C727B59B26F /* Forms.swift */,
+				598EDDB60AE2CEFC53C34CBD /* Buttons.swift */,
+				F26F21C29FA971B883220D75 /* Containers.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		AC508A7ADCF618CF373E6C73 /* Bridges */ = {
+			isa = PBXGroup;
+			children = (
+				B8F1CE1A970BE15C09B6C66C /* UIKitBridges.swift */,
+			);
+			path = Bridges;
+			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
@@ -213,6 +258,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				18B01AB3D7A7F1640B602DAE /* UIKitBridges.swift in Sources */,
+				5B5CD2F31B54E0E9E42C4971 /* Checklist.swift in Sources */,
+				BB5C98006A9CFF8F1F677911 /* Feedback.swift in Sources */,
+				FCEF3686CAEDF87510C5DA8B /* Badges.swift in Sources */,
+				80E3DC5610D05E186FDECD5D /* Forms.swift in Sources */,
+				231F6CB77A0EB262B3034009 /* Buttons.swift in Sources */,
+				5B88071E6A4C6A6EE7CEBF77 /* Containers.swift in Sources */,
+				2079888C74B28E61BCC3102C /* AppTheme.swift in Sources */,
 				33654FD385BC0E95EBDE42F5 /* AccountCredentialStore.swift in Sources */,
 				F821C5307B359A72F67E02CF /* Best50Renderer.swift in Sources */,
 				88C2A7BF21BF1E841DF7B3E3 /* CoverZoomView.swift in Sources */,
@@ -229,7 +282,6 @@
 				E7C634316C498F7296224629 /* RecordModels.swift in Sources */,
 				FFF5446EDB1018B615C5936E /* SearchFilterSheet.swift in Sources */,
 				C5B99FB94B7319FF5AC234EE /* SettingsView.swift in Sources */,
-				15B440CF8CFD6C999E2A0189 /* SharedComponents.swift in Sources */,
 				A84E0E3FF3A7DB375D78E26A /* SongDetailView.swift in Sources */,
 				E4BA6B78B235B1DF58E8C45D /* SongListView.swift in Sources */,
 				C9F9A8F65F83D05D75098294 /* SongModels.swift in Sources */,
