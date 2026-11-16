@@ -56,6 +56,24 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
         }
     }
 
+    /// Brightened difficulty color for text on dark tinted backgrounds (dark mode only).
+    var boardMainColor: Color {
+        switch self {
+        case .basic: return Color(hex: 0x6FE163)
+        case .advanced: return Color(hex: 0xF8DF3B)
+        case .expert: return Color(hex: 0xFF818D)
+        case .master: return Color(hex: 0xC27FF4)
+        case .remaster: return Color(hex: 0xE5DDEA)
+        default: return AppTheme.Palette.diffUtage.brightened(toAtLeast: 1.0, maxSaturation: 0.5)
+        }
+    }
+
+    /// Solid fill for a selected tag/badge: very bright Basic/Advanced are softened to 90% in dark mode.
+    func solidFill(isDark: Bool) -> Color {
+        guard isDark, self == .basic || self == .advanced else { return color }
+        return color.opacity(0.9)
+    }
+
     var boardDarkColor: Color {
         switch self {
         case .basic: return AppTheme.Palette.diffBasicDark

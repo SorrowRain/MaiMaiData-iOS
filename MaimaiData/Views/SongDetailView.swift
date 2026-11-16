@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SongDetailView: View {
     @Environment(DataStore.self) private var store
+    @Environment(\.colorScheme) private var colorScheme
     let song: SongData
 
     @State private var selectedChartIndex: Int = 0
@@ -142,7 +143,7 @@ struct SongDetailView: View {
     // MARK: - Alias & Version Cards
 
     private func aliasCard(aliases: [String], genreColors: (bg: Color, stroke: Color)) -> some View {
-        let textColor = MaimaiConstants.genreTextColor(for: song.basicInfo.genre)
+        let genre = song.basicInfo.genre
         return AppSectionCard(title: "歌曲别名") {
             EmptyView()
         } content: {
@@ -152,9 +153,7 @@ struct SongDetailView: View {
                         .font(AppTheme.Typography.tag)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .background(genreColors.bg.opacity(0.13), in: Capsule())
-                        .overlay(Capsule().strokeBorder(genreColors.bg.opacity(0.28), lineWidth: 0.8))
-                        .foregroundStyle(textColor)
+                        .modifier(GenreTagChrome(genre: genre, lightFill: 0.13, lightStroke: 0.28))
                         .onLongPressGesture { copyText(alias, label: "别名") }
                 }
             }
@@ -244,14 +243,19 @@ struct SongDetailView: View {
 
     private func tabBackground(isSelected: Bool, chart: ResolvedChart) -> Color {
         if chart.difficulty == .remaster {
+            if colorScheme == .dark && !isSelected { return chart.difficulty.color.opacity(0.22) }
             return isSelected ? Color.white : Color.white.opacity(0.65)
         }
-        return isSelected ? chart.difficulty.color : chart.difficulty.color.opacity(0.14)
+        if isSelected { return chart.difficulty.solidFill(isDark: colorScheme == .dark) }
+        return chart.difficulty.color.opacity(colorScheme == .dark ? 0.22 : 0.14)
     }
 
     private func tabForeground(isSelected: Bool, chart: ResolvedChart) -> Color {
-        if chart.difficulty == .remaster { return AppTheme.Palette.chartRemaster }
-        return isSelected ? chart.difficulty.readableForeground : .primary
+        if chart.difficulty == .remaster {
+            return colorScheme == .dark && !isSelected ? chart.difficulty.boardMainColor : AppTheme.Palette.chartRemaster
+        }
+        if isSelected { return chart.difficulty.readableForeground }
+        return colorScheme == .dark ? chart.difficulty.boardMainColor : .primary
     }
 
     // MARK: - Chart Details

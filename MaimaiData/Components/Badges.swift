@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Small tinted capsule used for counts and inline tags.
 struct AppCapsuleLabel: View {
+    @Environment(\.colorScheme) private var colorScheme
     let text: String
     var tint: Color = AppTheme.accent
     var font: Font = .caption.weight(.semibold).monospacedDigit()
@@ -15,8 +16,8 @@ struct AppCapsuleLabel: View {
             .font(font)
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
-            .background(tint.opacity(backgroundOpacity), in: Capsule())
-            .foregroundStyle(foreground ?? tint)
+            .background(tint.opacity(colorScheme == .dark ? max(backgroundOpacity, 0.22) : backgroundOpacity), in: Capsule())
+            .foregroundStyle(foreground ?? (colorScheme == .dark ? tint.brightened(toAtLeast: 1.0, maxSaturation: 0.5) : tint))
     }
 }
 
@@ -46,11 +47,13 @@ struct AppStatTile: View {
 }
 
 struct DifficultyLevelBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
     let difficulty: DifficultyType
     let text: String
 
     var body: some View {
         let isRemaster = difficulty == .remaster
+        let isDark = colorScheme == .dark
         let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.badge, style: .continuous)
         Text(text)
             .font(AppTheme.Typography.badge)
@@ -59,7 +62,7 @@ struct DifficultyLevelBadge: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .background(
-                isRemaster ? Color.white : difficulty.color,
+                isRemaster ? Color.white : difficulty.solidFill(isDark: isDark),
                 in: shape
             )
             .overlay(
@@ -71,21 +74,32 @@ struct DifficultyLevelBadge: View {
     }
 }
 
+/// Genre-tinted capsule chrome: light 0.15/0.30, dark 0.22/0.45 (fill/border).
+struct GenreTagChrome: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    let genre: String
+    var lightFill: Double = 0.15
+    var lightStroke: Double = 0.30
+
+    func body(content: Content) -> some View {
+        let bg = MaimaiConstants.genreColors(for: genre).bg
+        let dark = colorScheme == .dark
+        content
+            .background(bg.opacity(dark ? 0.22 : lightFill), in: Capsule())
+            .overlay(Capsule().strokeBorder(bg.opacity(dark ? 0.45 : lightStroke), lineWidth: 0.8))
+            .foregroundStyle(MaimaiConstants.genreTextColor(for: genre))
+    }
+}
+
 struct GenreCapsuleTag: View {
     let genre: String
 
     var body: some View {
-        let colors = MaimaiConstants.genreColors(for: genre)
-        let textColor = MaimaiConstants.genreTextColor(for: genre)
         Text(genre)
             .font(.caption2.weight(.semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
-            .background(colors.bg.opacity(0.15), in: Capsule())
-            .overlay(
-                Capsule().strokeBorder(colors.bg.opacity(0.30), lineWidth: 0.8)
-            )
-            .foregroundStyle(textColor)
+            .modifier(GenreTagChrome(genre: genre))
     }
 }
 

@@ -89,15 +89,18 @@ enum MaimaiConstants {
     }
 
     static func genreTextColor(for genre: String) -> Color {
+        let light: Color
         switch genre {
-        case "流行&动漫": return AppTheme.Palette.genrePopText
-        case "niconico & VOCALOID": return AppTheme.Palette.genreNicoText
-        case "东方Project": return AppTheme.Palette.genreTouhouText
-        case "其他游戏": return AppTheme.Palette.genreGameText
-        case "舞萌": return AppTheme.Palette.genreMaimaiText
-        case "宴会場": return AppTheme.Palette.genreUtageText
-        default: return AppTheme.Palette.genreOtherText
+        case "流行&动漫": light = AppTheme.Palette.genrePopText
+        case "niconico & VOCALOID": light = AppTheme.Palette.genreNicoText
+        case "东方Project": light = AppTheme.Palette.genreTouhouText
+        case "其他游戏": light = AppTheme.Palette.genreGameText
+        case "舞萌": light = AppTheme.Palette.genreMaimaiText
+        case "宴会場": light = AppTheme.Palette.genreUtageText
+        default: light = AppTheme.Palette.genreOtherText
         }
+        // Dark mode: same hue as the genre color, brightness >= 0.85.
+        return .adaptive(light: light, dark: genreColors(for: genre).bg.brightened(toAtLeast: 1.0, maxSaturation: 0.5))
     }
 
     static func jpVersionAsset(for versionCode: String) -> String? {
