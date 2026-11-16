@@ -39,6 +39,16 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "95942D44EAC8EAE0F8E3DAD9"
+               BuildableName = "MaimaiDataTests.xctest"
+               BlueprintName = "MaimaiDataTests"
+               ReferencedContainer = "container:MaimaiData.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

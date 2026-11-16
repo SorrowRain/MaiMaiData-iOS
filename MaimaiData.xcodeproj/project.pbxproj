@@ -43,7 +43,19 @@
 		129E00E33CF4D99A0B988216 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */; };
 		AF03101E2018748AE2F171C5 /* SongFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB602DB6097EB3D4F0961781 /* SongFilter.swift */; };
 		AD0D3608BCCA7C6EA51794C0 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BBF3ACBEF65A68EA4B2D9E /* PreferenceKeys.swift */; };
+		BD1958E335F4C07C8ED9F54E /* RatingCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4637ACBA1637357D83D363A7 /* RatingCalculatorTests.swift */; };
+		26ED921D6FA4B904813E2394 /* SongFilterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18400EE754F3059CB2BA2311 /* SongFilterTests.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		7CEDBD07E0B5C1E70930DDAF /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = DFE63FA24A72D37309B399C0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EE348BAE00676A0176626FA6;
+			remoteInfo = MaimaiData;
+		};
+/* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		0AB24DE975528707D5A75673 /* SongListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongListView.swift; sourceTree = "<group>"; };
@@ -83,6 +95,9 @@
 		407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		DB602DB6097EB3D4F0961781 /* SongFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFilter.swift; sourceTree = "<group>"; };
 		43BBF3ACBEF65A68EA4B2D9E /* PreferenceKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
+		4637ACBA1637357D83D363A7 /* RatingCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingCalculatorTests.swift; sourceTree = "<group>"; };
+		18400EE754F3059CB2BA2311 /* SongFilterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFilterTests.swift; sourceTree = "<group>"; };
+		DCA8457BCDC929FB647EBD41 /* MaimaiDataTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MaimaiDataTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -98,6 +113,7 @@
 		3C9314BB4D506D93EBEA0534 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				DCA8457BCDC929FB647EBD41 /* MaimaiDataTests.xctest */,
 				966EABA0343D835D3B3D6C7F /* MaimaiData.app */,
 			);
 			name = Products;
@@ -167,6 +183,7 @@
 		DF3599A4B97C0498A58F5C61 = {
 			isa = PBXGroup;
 			children = (
+				3D44C371407075D2E91FFA4D /* MaimaiDataTests */,
 				BBCEB52666569E92417EA4F7 /* MaimaiData */,
 				3C9314BB4D506D93EBEA0534 /* Products */,
 			);
@@ -204,6 +221,15 @@
 			path = Bridges;
 			sourceTree = "<group>";
 		};
+		3D44C371407075D2E91FFA4D /* MaimaiDataTests */ = {
+			isa = PBXGroup;
+			children = (
+				4637ACBA1637357D83D363A7 /* RatingCalculatorTests.swift */,
+				18400EE754F3059CB2BA2311 /* SongFilterTests.swift */,
+			);
+			path = MaimaiDataTests;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -225,6 +251,24 @@
 			productReference = 966EABA0343D835D3B3D6C7F /* MaimaiData.app */;
 			productType = "com.apple.product-type.application";
 		};
+		95942D44EAC8EAE0F8E3DAD9 /* MaimaiDataTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A137640EFA9CD296DC826E81 /* Build configuration list for PBXNativeTarget "MaimaiDataTests" */;
+			buildPhases = (
+				5AC1784CD40C6E502E7EB602 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F967D381531E870F9E558195 /* PBXTargetDependency */,
+			);
+			name = MaimaiDataTests;
+			packageProductDependencies = (
+			);
+			productName = MaimaiDataTests;
+			productReference = DCA8457BCDC929FB647EBD41 /* MaimaiDataTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -237,6 +281,11 @@
 					EE348BAE00676A0176626FA6 = {
 						DevelopmentTeam = D5F492VR43;
 						ProvisioningStyle = Automatic;
+					};
+					95942D44EAC8EAE0F8E3DAD9 = {
+						DevelopmentTeam = D5F492VR43;
+						ProvisioningStyle = Automatic;
+						TestTargetID = EE348BAE00676A0176626FA6;
 					};
 				};
 			};
@@ -255,6 +304,7 @@
 			projectRoot = "";
 			targets = (
 				EE348BAE00676A0176626FA6 /* MaimaiData */,
+				95942D44EAC8EAE0F8E3DAD9 /* MaimaiDataTests */,
 			);
 		};
 /* End PBXProject section */
@@ -270,6 +320,14 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F967D381531E870F9E558195 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = EE348BAE00676A0176626FA6 /* MaimaiData */;
+			targetProxy = 7CEDBD07E0B5C1E70930DDAF /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXSourcesBuildPhase section */
 		A6F0A2289997F9B63998FB36 /* Sources */ = {
@@ -310,6 +368,15 @@
 				A84E0E3FF3A7DB375D78E26A /* SongDetailView.swift in Sources */,
 				E4BA6B78B235B1DF58E8C45D /* SongListView.swift in Sources */,
 				9E6A08344AF53BD596B55C2A /* VersionCheckView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5AC1784CD40C6E502E7EB602 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BD1958E335F4C07C8ED9F54E /* RatingCalculatorTests.swift in Sources */,
+				26ED921D6FA4B904813E2394 /* SongFilterTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -489,6 +556,32 @@
 			};
 			name = Release;
 		};
+		53396AF605261750B8DA9DD3 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.0xsr.maimaidata.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaimaiData.app/MaimaiData";
+			};
+			name = Debug;
+		};
+		F39DEBB8D9B4E5843C903E43 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = dev.0xsr.maimaidata.tests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MaimaiData.app/MaimaiData";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -506,6 +599,15 @@
 			buildConfigurations = (
 				262FFC3941968130F15FAB99 /* Debug */,
 				EC53F75915F04D44EDC8F713 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A137640EFA9CD296DC826E81 /* Build configuration list for PBXNativeTarget "MaimaiDataTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				53396AF605261750B8DA9DD3 /* Debug */,
+				F39DEBB8D9B4E5843C903E43 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

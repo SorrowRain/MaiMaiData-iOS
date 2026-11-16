@@ -6,6 +6,10 @@ schemes:
         MaimaiData: all
     run:
       config: Debug
+    test:
+      config: Debug
+      targets:
+        - MaimaiDataTests
 options:
   bundleIdPrefix: dev.0xsr
   deploymentTarget:
@@ -40,3 +44,17 @@ targets:
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: "UIInterfaceOrientationPortrait"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: true
+  MaimaiDataTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: MaimaiDataTests
+    dependencies:
+      - target: MaimaiData
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.0xsr.maimaidata.tests
+        GENERATE_INFOPLIST_FILE: true
+        TARGETED_DEVICE_FAMILY: "1"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/MaimaiData.app/MaimaiData"
+        BUNDLE_LOADER: "$(TEST_HOST)"
