@@ -42,13 +42,13 @@ struct FinaleToDxView: View {
                     }
                 } content: {
                     VStack(spacing: 14) {
-                        noteGroup("Tap", color: Color(hex: 0x12B4FF), p: $tapP, gr: $tapGr, gd: $tapGd, m: $tapM)
+                        noteGroup("Tap", color: AppTheme.Palette.noteTap, p: $tapP, gr: $tapGr, gd: $tapGd, m: $tapM)
                         Divider()
-                        noteGroup("Hold", color: Color(hex: 0xFF9C24), p: $holdP, gr: $holdGr, gd: $holdGd, m: $holdM)
+                        noteGroup("Hold", color: AppTheme.Palette.noteHold, p: $holdP, gr: $holdGr, gd: $holdGd, m: $holdM)
                         Divider()
-                        noteGroup("Slide", color: Color(hex: 0x2FCA4C), p: $slideP, gr: $slideGr, gd: $slideGd, m: $slideM)
+                        noteGroup("Slide", color: AppTheme.Palette.noteSlide, p: $slideP, gr: $slideGr, gd: $slideGd, m: $slideM)
                         Divider()
-                        noteGroup("Break", color: Color(hex: 0xF43F7E), p: $breakP, gr: $breakGr, gd: $breakGd, m: $breakM)
+                        noteGroup("Break", color: AppTheme.Palette.noteBreak, p: $breakP, gr: $breakGr, gd: $breakGd, m: $breakM)
                     }
                 }
 

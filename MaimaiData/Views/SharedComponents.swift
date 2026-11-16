@@ -58,6 +58,70 @@ enum AppTheme {
     static let accentBright = Color(hex: 0x2B88FF)
     static let favoritePink = Color(hex: 0xF43F7E)
 
+    // Semantic Palette (game terms + shared accents; values must not change)
+    enum Palette {
+        // Notes
+        static let noteTap = Color(hex: 0x12B4FF)
+        static let noteHold = Color(hex: 0xFF9C24)
+        static let noteSlide = Color(hex: 0x2FCA4C)
+        static let noteBreak = Color(hex: 0xF43F7E)
+
+        // Chart / delta
+        static let chartRemaster = Color(hex: 0x762D8C)
+        static let deltaUp = Color(hex: 0xE53935)
+        static let deltaDown = Color(hex: 0x1E8E3E)
+
+        // Judgments
+        static let judgePerfect = Color(hex: 0x854400)
+        static let judgeGreat = Color(hex: 0xB72267)
+        static let judgeGood = Color(hex: 0x176523)
+        static let judgeMiss = Color(.secondaryLabel)
+
+        // Rating tool row icons (reuse note values)
+        static let ratingPurple = Color(hex: 0x9F51DC)
+        static let ratingOrange = Color(hex: 0xFF9C24)
+        static let ratingBlue = Color(hex: 0x12B4FF)
+
+        // Difficulty
+        static let diffBasic = Color(hex: 0x6FD43D)
+        static let diffAdvanced = Color(hex: 0xF8B709)
+        static let diffExpert = Color(hex: 0xFF818D)
+        static let diffMaster = Color(hex: 0x9F51DC)
+        static let diffRemaster = Color(hex: 0xCB5EEA)
+        static let diffUtage = Color(hex: 0xB12876)
+        static let diffBasicText = Color(hex: 0x183C12)
+        static let diffAdvancedText = Color(hex: 0x4B3700)
+        static let diffExpertText = Color(hex: 0x681B28)
+        static let diffBasicDark = Color(hex: 0x025235)
+        static let diffAdvancedDark = Color(hex: 0xC7450C)
+        static let diffExpertDark = Color(hex: 0xC02138)
+        static let diffMasterDark = Color(hex: 0x671B8D)
+        static let diffRemasterDark = Color(hex: 0x8C2DD5)
+        static let diffOtherDark = Color(hex: 0x053264)
+
+        // Genres: (fill, stroke) and text
+        static let genrePop: (bg: Color, stroke: Color) = (bg: Color(hex: 0xFF9C24), stroke: Color(hex: 0xFFD21F))
+        static let genreNico: (bg: Color, stroke: Color) = (bg: Color(hex: 0x12B4FF), stroke: Color(hex: 0x7ED6FF))
+        static let genreTouhou: (bg: Color, stroke: Color) = (bg: Color(hex: 0xCA6FEB), stroke: Color(hex: 0xE8A7FF))
+        static let genreGame: (bg: Color, stroke: Color) = (bg: Color(hex: 0x287516), stroke: Color(hex: 0xBAFBA3))
+        static let genreMaimai: (bg: Color, stroke: Color) = (bg: Color(hex: 0xFF4646), stroke: Color(hex: 0xFFA7A7))
+        static let genreUtage: (bg: Color, stroke: Color) = (bg: Color(hex: 0xDC39B8), stroke: Color(hex: 0xB12876))
+        static let genreOther: (bg: Color, stroke: Color) = (bg: Color(hex: 0x319DF8), stroke: Color(hex: 0x99D1FF))
+        static let genrePopText = Color(hex: 0x8A4800)
+        static let genreNicoText = Color(hex: 0x055C84)
+        static let genreTouhouText = Color(hex: 0x762D8C)
+        static let genreGameText = Color(hex: 0x1C560C)
+        static let genreMaimaiText = Color(hex: 0x9A1B1B)
+        static let genreUtageText = Color(hex: 0x8F1863)
+        static let genreOtherText = Color(hex: 0x125BB8)
+
+        // Checklist stat pills
+        static let statSSS = Color(hex: 0xB46900)
+        static let statFC = Color(hex: 0x237818)
+        static let statAP = Color(hex: 0xC85A00)
+        static let statFSD = Color(hex: 0x0A6BA1)
+    }
+
     // Spacing & Sizing
     static let pagePadding: CGFloat = 16
     static let cardPadding: CGFloat = 16
@@ -461,7 +525,7 @@ struct DifficultyLevelBadge: View {
         let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.badge, style: .continuous)
         Text(text)
             .font(AppTheme.Typography.badge)
-            .foregroundStyle(isRemaster ? Color(hex: 0x762D8C) : difficulty.readableForeground)
+            .foregroundStyle(isRemaster ? AppTheme.Palette.chartRemaster : difficulty.readableForeground)
             .frame(minWidth: 36, minHeight: 22)
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
@@ -800,10 +864,10 @@ struct ChecklistStatsHeader: View {
             }
         } content: {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
-                statPill(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", color: Color(hex: 0xB46900))
-                statPill(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", color: Color(hex: 0x237818))
-                statPill(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", color: Color(hex: 0xC85A00))
-                statPill(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", color: Color(hex: 0x0A6BA1))
+                statPill(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", color: AppTheme.Palette.statSSS)
+                statPill(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", color: AppTheme.Palette.statFC)
+                statPill(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", color: AppTheme.Palette.statAP)
+                statPill(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", color: AppTheme.Palette.statFSD)
             }
         }
     }

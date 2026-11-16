@@ -50,7 +50,7 @@ struct LevelCheckView: View {
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppCard(padding: AppTheme.cardPadding, tint: Color(hex: 0xFF9C24)) {
+                AppCard(padding: AppTheme.cardPadding, tint: AppTheme.Palette.noteHold) {
                     VStack(spacing: 12) {
                         HStack {
                             Button {

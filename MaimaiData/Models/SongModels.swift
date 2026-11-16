@@ -171,12 +171,12 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
 
     var color: Color {
         switch self {
-        case .basic: return Color(hex: 0x6FD43D)
-        case .advanced: return Color(hex: 0xF8B709)
-        case .expert: return Color(hex: 0xFF818D)
-        case .master: return Color(hex: 0x9F51DC)
-        case .remaster: return Color(hex: 0xCB5EEA)
-        case .utage, .utagePlayer2: return Color(hex: 0xB12876)
+        case .basic: return AppTheme.Palette.diffBasic
+        case .advanced: return AppTheme.Palette.diffAdvanced
+        case .expert: return AppTheme.Palette.diffExpert
+        case .master: return AppTheme.Palette.diffMaster
+        case .remaster: return AppTheme.Palette.diffRemaster
+        case .utage, .utagePlayer2: return AppTheme.Palette.diffUtage
         case .unknown: return .gray
         }
     }
@@ -184,9 +184,9 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
     /// 难度色保留 Android 配色；浅色底上的文字使用高对比深色。
     var readableForeground: Color {
         switch self {
-        case .basic: return Color(hex: 0x183C12)
-        case .advanced: return Color(hex: 0x4B3700)
-        case .expert: return Color(hex: 0x681B28)
+        case .basic: return AppTheme.Palette.diffBasicText
+        case .advanced: return AppTheme.Palette.diffAdvancedText
+        case .expert: return AppTheme.Palette.diffExpertText
         default: return .white
         }
     }
@@ -204,12 +204,12 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
 
     var boardDarkColor: Color {
         switch self {
-        case .basic: return Color(hex: 0x025235)
-        case .advanced: return Color(hex: 0xC7450C)
-        case .expert: return Color(hex: 0xC02138)
-        case .master: return Color(hex: 0x671B8D)
-        case .remaster: return Color(hex: 0x8C2DD5)
-        default: return Color(hex: 0x053264)
+        case .basic: return AppTheme.Palette.diffBasicDark
+        case .advanced: return AppTheme.Palette.diffAdvancedDark
+        case .expert: return AppTheme.Palette.diffExpertDark
+        case .master: return AppTheme.Palette.diffMasterDark
+        case .remaster: return AppTheme.Palette.diffRemasterDark
+        default: return AppTheme.Palette.diffOtherDark
         }
     }
 }
@@ -286,31 +286,31 @@ enum MaimaiConstants {
     static func genreColors(for genre: String) -> (bg: Color, stroke: Color) {
         switch genre {
         case "流行&动漫":
-            return (Color(hex: 0xFF9C24), Color(hex: 0xFFD21F))
+            return AppTheme.Palette.genrePop
         case "niconico & VOCALOID":
-            return (Color(hex: 0x12B4FF), Color(hex: 0x7ED6FF))
+            return AppTheme.Palette.genreNico
         case "东方Project":
-            return (Color(hex: 0xCA6FEB), Color(hex: 0xE8A7FF))
+            return AppTheme.Palette.genreTouhou
         case "其他游戏":
-            return (Color(hex: 0x287516), Color(hex: 0xBAFBA3))
+            return AppTheme.Palette.genreGame
         case "舞萌":
-            return (Color(hex: 0xFF4646), Color(hex: 0xFFA7A7))
+            return AppTheme.Palette.genreMaimai
         case "宴会場":
-            return (Color(hex: 0xDC39B8), Color(hex: 0xB12876))
+            return AppTheme.Palette.genreUtage
         default:
-            return (Color(hex: 0x319DF8), Color(hex: 0x99D1FF))
+            return AppTheme.Palette.genreOther
         }
     }
 
     static func genreTextColor(for genre: String) -> Color {
         switch genre {
-        case "流行&动漫": return Color(hex: 0x8A4800)
-        case "niconico & VOCALOID": return Color(hex: 0x055C84)
-        case "东方Project": return Color(hex: 0x762D8C)
-        case "其他游戏": return Color(hex: 0x1C560C)
-        case "舞萌": return Color(hex: 0x9A1B1B)
-        case "宴会場": return Color(hex: 0x8F1863)
-        default: return Color(hex: 0x125BB8)
+        case "流行&动漫": return AppTheme.Palette.genrePopText
+        case "niconico & VOCALOID": return AppTheme.Palette.genreNicoText
+        case "东方Project": return AppTheme.Palette.genreTouhouText
+        case "其他游戏": return AppTheme.Palette.genreGameText
+        case "舞萌": return AppTheme.Palette.genreMaimaiText
+        case "宴会場": return AppTheme.Palette.genreUtageText
+        default: return AppTheme.Palette.genreOtherText
         }
     }
 

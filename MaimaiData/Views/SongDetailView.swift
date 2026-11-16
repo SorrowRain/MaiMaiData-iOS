@@ -250,7 +250,7 @@ struct SongDetailView: View {
     }
 
     private func tabForeground(isSelected: Bool, chart: ResolvedChart) -> Color {
-        if chart.difficulty == .remaster { return Color(hex: 0x762D8C) }
+        if chart.difficulty == .remaster { return AppTheme.Palette.chartRemaster }
         return isSelected ? chart.difficulty.readableForeground : .primary
     }
 
@@ -359,7 +359,7 @@ struct SongDetailView: View {
     @ViewBuilder
     private func dsText(chart: ResolvedChart) -> some View {
         if let old = chart.oldDs, old > 0 {
-            let deltaColor: Color = old < chart.ds ? Color(hex: 0xE53935) : (old > chart.ds ? Color(hex: 0x1E8E3E) : .primary)
+            let deltaColor: Color = old < chart.ds ? AppTheme.Palette.deltaUp : (old > chart.ds ? AppTheme.Palette.deltaDown : .primary)
             let arrow = old < chart.ds ? "↑" : (old > chart.ds ? "↓" : "")
             HStack(spacing: 4) {
                 Text(String(format: "%.1f%@", chart.ds, arrow))
@@ -478,19 +478,19 @@ private struct ChartToleranceCard: View {
 
                     AppInsetGroup {
                         VStack(spacing: 0) {
-                            breakToleranceRow("Great", detail: "4x", value: pct(5.0 / total * 0.2 + (0.01 / brk) * 0.6), color: Color(hex: 0xB72267))
+                            breakToleranceRow("Great", detail: "4x", value: pct(5.0 / total * 0.2 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
                             Divider()
-                            breakToleranceRow("Great", detail: "3x", value: pct(5.0 / total * 0.4 + (0.01 / brk) * 0.6), color: Color(hex: 0xB72267))
+                            breakToleranceRow("Great", detail: "3x", value: pct(5.0 / total * 0.4 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
                             Divider()
-                            breakToleranceRow("Great", detail: "2.5x", value: pct(5.0 / total * 0.5 + (0.01 / brk) * 0.6), color: Color(hex: 0xB72267))
+                            breakToleranceRow("Great", detail: "2.5x", value: pct(5.0 / total * 0.5 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
                             Divider()
-                            breakToleranceRow("Good", value: pct(5.0 / total * 0.6 + (0.01 / brk) * 0.7), color: Color(hex: 0x176523))
+                            breakToleranceRow("Good", value: pct(5.0 / total * 0.6 + (0.01 / brk) * 0.7), color: AppTheme.Palette.judgeGood)
                             Divider()
-                            breakToleranceRow("Miss", value: pct(5.0 / total + 0.01 / brk), color: Color(.secondaryLabel))
+                            breakToleranceRow("Miss", value: pct(5.0 / total + 0.01 / brk), color: AppTheme.Palette.judgeMiss)
                             Divider()
-                            breakToleranceRow("小P", detail: "-50", value: pct(0.01 / brk * 0.25), color: Color(hex: 0x854400))
+                            breakToleranceRow("小P", detail: "-50", value: pct(0.01 / brk * 0.25), color: AppTheme.Palette.judgePerfect)
                             Divider()
-                            breakToleranceRow("大P", detail: "-100", value: pct(0.01 / brk * 0.5), color: Color(hex: 0x854400))
+                            breakToleranceRow("大P", detail: "-100", value: pct(0.01 / brk * 0.5), color: AppTheme.Palette.judgePerfect)
                         }
                     }
                 }

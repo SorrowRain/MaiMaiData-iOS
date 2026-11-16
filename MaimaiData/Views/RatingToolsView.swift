@@ -178,7 +178,7 @@ struct RatingToolsView: View {
                     NavigationLink(value: ToolRoute.versionCheck) {
                         toolRow(
                             icon: "square.grid.3x3.fill",
-                            color: Color(hex: 0x9F51DC),
+                            color: AppTheme.Palette.ratingPurple,
                             title: "版本进度表 / 牌子查询",
                             subtitle: "按国服版本查看 Master 谱面完成度"
                         )
@@ -190,7 +190,7 @@ struct RatingToolsView: View {
                     NavigationLink(value: ToolRoute.levelCheck) {
                         toolRow(
                             icon: "slider.horizontal.3",
-                            color: Color(hex: 0xFF9C24),
+                            color: AppTheme.Palette.ratingOrange,
                             title: "等级进度表",
                             subtitle: "按 1~15 级定数分组查看完成情况"
                         )
@@ -202,7 +202,7 @@ struct RatingToolsView: View {
                     NavigationLink(value: ToolRoute.finaleToDx) {
                         toolRow(
                             icon: "arrow.left.arrow.right",
-                            color: Color(hex: 0x12B4FF),
+                            color: AppTheme.Palette.ratingBlue,
                             title: "旧框 (FiNALE) 分数换算 DX",
                             subtitle: "由 Tap / Hold / Slide / Break 判定换算"
                         )
