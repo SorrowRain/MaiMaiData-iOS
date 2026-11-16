@@ -38,9 +38,7 @@ final class DataStore {
     }
     var savedAccounts: [SavedAccount] {
         didSet {
-            if let data = try? JSONEncoder().encode(savedAccounts) {
-                AccountCredentialStore.saveAccounts(data)
-            }
+            AccountCredentialStore.saveAccounts(savedAccounts)
         }
     }
 
@@ -306,13 +304,13 @@ final class DataStore {
                 cookie = try await MaimaiAPI.login(username: username, password: password)
             }
             do {
-                let (r, _) = try await MaimaiAPI.fetchPlayerRecords(cookie: cookie)
+                let r = try await MaimaiAPI.fetchPlayerRecords(cookie: cookie)
                 return (r, cookie)
             } catch {
                 // 若 Cookie 过期且本地有保存的账号密码，自动重新登录并重试一次。
                 if !username.isEmpty, !password.isEmpty {
                     let newCookie = try await MaimaiAPI.login(username: username, password: password)
-                    let (r, _) = try await MaimaiAPI.fetchPlayerRecords(cookie: newCookie)
+                    let r = try await MaimaiAPI.fetchPlayerRecords(cookie: newCookie)
                     return (r, newCookie)
                 }
                 throw error

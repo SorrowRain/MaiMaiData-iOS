@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 enum RatingCalculator {
     /// Exact match of ConvertUtils.achievementToRating(levelInt, achiInt)

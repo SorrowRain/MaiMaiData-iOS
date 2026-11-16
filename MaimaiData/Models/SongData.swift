@@ -1,4 +1,4 @@
-import SwiftUI
+import Foundation
 
 struct SongData: Codable, Identifiable, Hashable {
     let basicInfo: BasicInfo
@@ -8,7 +8,6 @@ struct SongData: Codable, Identifiable, Hashable {
     let id: String
     let level: [String]
     let title: String
-    let titleKana: String?
     let type: String
     let alias: [String]?
 
@@ -20,7 +19,6 @@ struct SongData: Codable, Identifiable, Hashable {
         case id
         case level
         case title
-        case titleKana = "title_kana"
         case type
         case alias
     }
@@ -87,21 +85,15 @@ struct SongData: Codable, Identifiable, Hashable {
         let bpm: Int
         let from: String
         let genre: String
-        let catcode: String?
         let isNew: Bool
         let title: String
-        let imageUrl: String
         let version: String
-        let kanji: String?
-        let comment: String?
-        let buddy: String?
 
         enum CodingKeys: String, CodingKey {
-            case artist, bpm, from, genre, catcode
+            case artist, bpm, from, genre
             case isNew = "is_new"
             case title
-            case imageUrl = "image_url"
-            case version, kanji, comment, buddy
+            case version
         }
     }
 

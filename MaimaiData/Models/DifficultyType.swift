@@ -56,17 +56,6 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
         }
     }
 
-    var boardMainColor: Color {
-        switch self {
-        case .basic: return Color(hex: 0x6FE163)
-        case .advanced: return Color(hex: 0xF8DF3B)
-        case .expert: return Color(hex: 0xFF818D)
-        case .master: return Color(hex: 0xC27FF4)
-        case .remaster: return Color(hex: 0xE5DDEA)
-        default: return Color(hex: 0xB12876)
-        }
-    }
-
     var boardDarkColor: Color {
         switch self {
         case .basic: return AppTheme.Palette.diffBasicDark

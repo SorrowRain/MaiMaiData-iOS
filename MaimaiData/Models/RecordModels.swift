@@ -1,14 +1,12 @@
 import Foundation
 
 struct AppUpdateInfo: Codable {
-    let apkVersion: String?
     let dataVersion4: String?
     let dataUrl4: String?
     let dataVersion5: String?
     let dataUrl5: String?
 
     enum CodingKeys: String, CodingKey {
-        case apkVersion = "apk_version"
         case dataVersion4 = "data_version_4"
         case dataUrl4 = "data_url_4"
         case dataVersion5 = "data_version_5"
@@ -34,19 +32,10 @@ struct ChartStatsResponse: Codable {
 }
 
 struct ChartStatEntry: Codable {
-    let cnt: Double?
-    let diff: String?
     let fitDiff: Double?
-    let avg: Double?
-    let avgDx: Double?
-    let stdDev: Double?
 
     enum CodingKeys: String, CodingKey {
-        case cnt, diff
         case fitDiff = "fit_diff"
-        case avg
-        case avgDx = "avg_dx"
-        case stdDev = "std_dev"
     }
 }
 
@@ -93,10 +82,6 @@ struct ProberRecord: Codable, Identifiable, Hashable {
 
     var computedRating: Int {
         RatingCalculator.singleSongRating(ds: ds, achievement: achievements)
-    }
-
-    var maxPossibleRating: Int {
-        Int(ds * 22.512)
     }
 
     var rankAssetName: String {

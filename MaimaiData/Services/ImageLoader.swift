@@ -93,7 +93,6 @@ final class CoverImageCache: @unchecked Sendable {
 
 struct CoverImageView: View {
     let song: SongData?
-    var contentMode: ContentMode = .fill
 
     @State private var image: UIImage?
 
@@ -103,11 +102,11 @@ struct CoverImageView: View {
             if let displayed {
                 Image(uiImage: displayed)
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .aspectRatio(contentMode: .fill)
             } else {
                 Image("mmd_song_jacket_placeholder")
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .aspectRatio(contentMode: .fill)
             }
         }
         .task(id: song?.id) {

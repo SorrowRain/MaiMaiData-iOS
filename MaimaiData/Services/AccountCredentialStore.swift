@@ -43,10 +43,6 @@ enum AccountCredentialStore {
 
     static func saveAccounts(_ accounts: [SavedAccount]) {
         guard let data = try? JSONEncoder().encode(accounts) else { return }
-        saveAccounts(data)
-    }
-
-    static func saveAccounts(_ data: Data) {
         let query = baseQuery(accountsKey)
         let attributes = [kSecValueData as String: data]
         let status = SecItemUpdate(query as CFDictionary, attributes as CFDictionary)

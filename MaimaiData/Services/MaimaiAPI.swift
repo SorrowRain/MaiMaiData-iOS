@@ -98,7 +98,7 @@ enum MaimaiAPI {
         return cookieHeader
     }
 
-    static func fetchPlayerRecords(cookie: String) async throws -> (response: ProberRecordsResponse, rawData: Data) {
+    static func fetchPlayerRecords(cookie: String) async throws -> ProberRecordsResponse {
         let url = URL(string: "\(divingFishBase)/api/maimaidxprober/player/records")!
         var req = URLRequest(url: url)
         req.setValue(cookie, forHTTPHeaderField: "Cookie")
@@ -109,7 +109,7 @@ enum MaimaiAPI {
         if decoded.status == "error" {
             throw MaimaiAPIError.unauthorized(decoded.message ?? "登录已过期，请重新登录")
         }
-        return (decoded, data)
+        return decoded
     }
 
     private static func validateHTTP(_ resp: URLResponse, data: Data) throws {

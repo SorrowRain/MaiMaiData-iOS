@@ -23,7 +23,7 @@ struct SongDetailView: View {
                     aliasCard(aliases: aliases, genreColors: genreColors)
                 }
 
-                versionCard(genreColors: genreColors)
+                versionCard()
 
                 if !chartsDesc.isEmpty {
                     difficultyPicker
@@ -161,7 +161,7 @@ struct SongDetailView: View {
         }
     }
 
-    private func versionCard(genreColors: (bg: Color, stroke: Color)) -> some View {
+    private func versionCard() -> some View {
         AppSectionCard(title: "收录版本") {
             EmptyView()
         } content: {
