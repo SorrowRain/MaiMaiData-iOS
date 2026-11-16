@@ -41,6 +41,8 @@
 		CA889B567423E4E852AB8709 /* MaimaiConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = A997E38677FD8080451FF532 /* MaimaiConstants.swift */; };
 		221B0E45EBF92D870DC16E53 /* RatingCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3EA72DF5010855EDA4AB336 /* RatingCalculator.swift */; };
 		129E00E33CF4D99A0B988216 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */; };
+		AF03101E2018748AE2F171C5 /* SongFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB602DB6097EB3D4F0961781 /* SongFilter.swift */; };
+		AD0D3608BCCA7C6EA51794C0 /* PreferenceKeys.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43BBF3ACBEF65A68EA4B2D9E /* PreferenceKeys.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -79,6 +81,8 @@
 		A997E38677FD8080451FF532 /* MaimaiConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaimaiConstants.swift; sourceTree = "<group>"; };
 		D3EA72DF5010855EDA4AB336 /* RatingCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RatingCalculator.swift; sourceTree = "<group>"; };
 		407B3FF37E3F1F2BF4ADE1A7 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
+		DB602DB6097EB3D4F0961781 /* SongFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFilter.swift; sourceTree = "<group>"; };
+		43BBF3ACBEF65A68EA4B2D9E /* PreferenceKeys.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreferenceKeys.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
@@ -149,6 +153,8 @@
 		D07874C4C31D29714F5BCCC6 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				43BBF3ACBEF65A68EA4B2D9E /* PreferenceKeys.swift */,
+				DB602DB6097EB3D4F0961781 /* SongFilter.swift */,
 				3BB2CECB91004C605053CA9C /* AccountCredentialStore.swift */,
 				635945165E421D06FFE9B0C2 /* Best50Renderer.swift */,
 				C306167D619FC61CCCA481F6 /* DataStore.swift */,
@@ -270,6 +276,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD0D3608BCCA7C6EA51794C0 /* PreferenceKeys.swift in Sources */,
+				AF03101E2018748AE2F171C5 /* SongFilter.swift in Sources */,
 				129E00E33CF4D99A0B988216 /* Extensions.swift in Sources */,
 				221B0E45EBF92D870DC16E53 /* RatingCalculator.swift in Sources */,
 				CA889B567423E4E852AB8709 /* MaimaiConstants.swift in Sources */,
