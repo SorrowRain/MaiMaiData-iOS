@@ -35,10 +35,7 @@ struct AppPrimaryButton: View {
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            .regular.tint(tint).interactive(),
-            in: RoundedRectangle(cornerRadius: radius, style: .continuous)
-        )
+        .appGlass(in: RoundedRectangle(cornerRadius: radius, style: .continuous), tint: tint)
         .opacity(isLoading || isDisabled ? 0.5 : 1)
         .disabled(isLoading || isDisabled)
     }
@@ -92,10 +89,7 @@ struct AppSecondaryButton: View {
                 .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
         }
         .buttonStyle(.plain)
-        .glassEffect(
-            .regular.interactive(),
-            in: RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous)
-        )
+        .appGlass(in: RoundedRectangle(cornerRadius: AppTheme.Radius.button, style: .continuous))
     }
 }
 
@@ -133,7 +127,7 @@ struct AppCircleIconButton: View {
                 .frame(width: 34, height: 34)
         }
         .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: Circle())
+        .appGlass(in: Circle())
         .disabled(isDisabled)
         .opacity(isDisabled ? 0.4 : 1)
         .accessibilityLabel(accessibilityLabel)

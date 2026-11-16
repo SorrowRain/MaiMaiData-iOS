@@ -11,7 +11,7 @@
 
 ## 构建环境
 
-- iOS 26.0+
+- iOS 17.0+（iOS 26+ 使用 Liquid Glass，更低版本回退为 Material）
 - Xcode 26 / 27+（Swift 5.10+）
 
 ## 致谢与参考

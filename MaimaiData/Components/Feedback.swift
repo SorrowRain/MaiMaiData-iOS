@@ -1,9 +1,24 @@
 import SwiftUI
 
 extension View {
+    /// The single adaptive glass helper: Liquid Glass on iOS 26+, material (plus tint) before that.
+    /// This is the only place in the app that calls `glassEffect`.
+    @ViewBuilder
+    func appGlass<S: Shape>(in shape: S, tint: Color? = nil, interactive: Bool = true) -> some View {
+        if #available(iOS 26.0, *) {
+            let base: Glass = interactive ? .regular.interactive() : .regular
+            glassEffect(tint.map { interactive ? Glass.regular.tint($0).interactive() : Glass.regular.tint($0) } ?? base, in: shape)
+        } else {
+            background(.ultraThinMaterial, in: shape)
+                .background {
+                    if let tint { shape.fill(tint.opacity(0.85)) }
+                }
+        }
+    }
+
     /// Glass capsule container (search bar).
     func appGlassCapsule() -> some View {
-        glassEffect(.regular.interactive(), in: Capsule())
+        appGlass(in: Capsule())
     }
 
     /// Tap on empty area dismisses the keyboard.
@@ -52,7 +67,7 @@ struct StatusToast: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .glassEffect(.regular, in: Capsule())
+        .appGlass(in: Capsule(), interactive: false)
         .padding(.bottom, 24)
         .accessibilityAddTraits(.isStaticText)
     }

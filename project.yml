@@ -13,7 +13,7 @@ schemes:
 options:
   bundleIdPrefix: dev.0xsr
   deploymentTarget:
-    iOS: "26.0"
+    iOS: "17.0"
   developmentLanguage: zh-Hans
   usesTabs: false
   indentWidth: 4
