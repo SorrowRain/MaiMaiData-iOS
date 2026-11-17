@@ -91,8 +91,8 @@ enum Best50Renderer {
                 drawRecordCard(record, cover: covers[record.songId], at: CGPoint(x: x, y: y))
             }
 
-            let oldRating = b35.reduce(0) { $0 + $1.ra }
-            let newRating = b15.reduce(0) { $0 + $1.ra }
+            let oldRating = b35.reduce(0) { $0 + $1.computedRating }
+            let newRating = b15.reduce(0) { $0 + $1.computedRating }
             let totalRating = oldRating + newRating
 
             // Rating Plate

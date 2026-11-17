@@ -51,12 +51,7 @@ struct SongDetailView: View {
                 .accessibilityLabel(store.isFavorite(song) ? "取消收藏" : "收藏歌曲")
             }
         }
-        .overlay(alignment: .bottom) {
-            if let copiedToast {
-                StatusToast(text: copiedToast)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-        }
+        .statusToast(copiedToast)
         .fullScreenCover(isPresented: $showCoverZoom) {
             CoverZoomView(song: song)
         }
@@ -148,11 +143,7 @@ struct SongDetailView: View {
         return AppSectionCard(title: "歌曲别名") {
             FlowLayout(spacing: 6, lineSpacing: 6) {
                 ForEach(aliases, id: \.self) { alias in
-                    Text(alias)
-                        .font(AppTheme.Typography.tag)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .modifier(GenreTagChrome(genre: genre))
+                    GenreCapsuleTag(genre: genre, text: alias, style: .regular)
                         .onLongPressGesture { copyText(alias, label: "别名") }
                 }
             }
@@ -161,11 +152,11 @@ struct SongDetailView: View {
 
     private func versionCard() -> some View {
         AppSectionCard(title: "收录版本") {
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: AppTheme.itemSpacing) {
                 versionBox(
                     title: "日服收录",
                     asset: MaimaiConstants.jpVersionAsset(for: song.basicInfo.version),
-                    fallback: "暂无数据"
+                    fallback: MaimaiConstants.jpVersionFallbackTitle(for: song.basicInfo.version)
                 )
                 versionBox(
                     title: "国服收录",
@@ -264,12 +255,12 @@ struct SongDetailView: View {
 
         VStack(spacing: AppTheme.cardSpacing) {
             AppSectionCard(title: "谱面信息") {
-                VStack(spacing: 10) {
-                    HStack(spacing: 10) {
-                        metricBox(title: "谱面定数") {
+                VStack(spacing: AppTheme.itemSpacing) {
+                    HStack(spacing: AppTheme.itemSpacing) {
+                        AppMetricTile(title: "谱面定数") {
                             dsText(chart: chart)
                         }
-                        metricBox(title: "水鱼拟合定数") {
+                        AppMetricTile(title: "水鱼拟合定数") {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
                                 .font(AppTheme.Typography.statValue)
                                 .foregroundStyle(.primary)
@@ -301,18 +292,7 @@ struct SongDetailView: View {
             ChartNotesBarCard(chart: chart, maxStats: store.maxNotesStats, barColor: chart.difficulty.color)
 
             if chart.totalWeightedScore > 0 {
-                ChartToleranceCard(chart: chart, tintColor: genreColors.bg)
-            }
-        }
-    }
-
-    private func metricBox<Content: View>(title: String, @ViewBuilder content: @escaping () -> Content) -> some View {
-        AppInsetGroup(padding: 10) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(title)
-                    .font(AppTheme.Typography.caption2Semibold)
-                    .foregroundStyle(.secondary)
-                content()
+                ChartToleranceCard(chart: chart, isDX: song.isDX, tintColor: genreColors.bg)
             }
         }
     }
@@ -334,19 +314,7 @@ struct SongDetailView: View {
             HStack(spacing: AppTheme.Space.s) {
                 Text(String(format: "%.4f%%", record.achievements))
                     .font(AppTheme.Typography.rowMetric)
-                Image(record.rankAssetName)
-                    .resizable().scaledToFit().frame(height: 20)
-                    .accessibilityLabel("评级 \(record.rate)")
-                if let fc = record.fcAssetName {
-                    Image(fc)
-                        .resizable().scaledToFit().frame(height: 22)
-                        .accessibilityLabel("连击状态 \(record.fc)")
-                }
-                if let fs = record.fsAssetName {
-                    Image(fs)
-                        .resizable().scaledToFit().frame(height: 22)
-                        .accessibilityLabel("同步状态 \(record.fs)")
-                }
+                RecordStatusBadges(record: record, size: .regular)
             }
         } else {
             Text("暂无成绩")
@@ -439,6 +407,7 @@ private struct ChartNotesBarCard: View {
 
 private struct ChartToleranceCard: View {
     let chart: ResolvedChart
+    let isDX: Bool
     let tintColor: Color
 
     var body: some View {
@@ -487,7 +456,7 @@ private struct ChartToleranceCard: View {
                     }
                 }
 
-                if !songIsDX {
+                if !isDX && chart.difficulty != .utage && chart.difficulty != .utagePlayer2 {
                     let num = Double(chart.tap * 500 + chart.hold * 1000 + chart.slide * 1500 + chart.breakCount * 2600)
                     let den = Double(chart.tap * 500 + chart.hold * 1000 + chart.slide * 1500 + chart.breakCount * 2500)
                     if den > 0 {
@@ -513,17 +482,16 @@ private struct ChartToleranceCard: View {
     ) -> some View {
         HStack(spacing: AppTheme.Space.s) {
             Text(label)
-                .fontWeight(.medium)
+                .font(AppTheme.Typography.tag)
                 .foregroundStyle(.primary)
             if !detail.isEmpty {
                 AppCapsuleLabel(text: detail, tint: color, style: .compact)
             }
             Spacer(minLength: 0)
             Text(value)
+                .font(AppTheme.Typography.captionMono)
                 .foregroundStyle(.primary)
-                .monospacedDigit()
         }
-        .font(AppTheme.Typography.caption)
         .padding(.horizontal, AppTheme.Space.m)
         .padding(.vertical, 9)
         .accessibilityElement(children: .combine)
@@ -534,7 +502,7 @@ private struct ChartToleranceCard: View {
         values: [String],
         isHeader: Bool = false
     ) -> some View {
-        HStack(spacing: 10) {
+        HStack(spacing: AppTheme.itemSpacing) {
             Text(label)
                 .foregroundStyle(isHeader ? .secondary : .primary)
                 .frame(width: 48, alignment: .leading)
@@ -549,10 +517,6 @@ private struct ChartToleranceCard: View {
         .padding(.horizontal, AppTheme.Space.m)
         .padding(.vertical, 9)
         .accessibilityElement(children: .combine)
-    }
-
-    private var songIsDX: Bool {
-        chart.touch > 0 || chart.difficulty == .utage || chart.difficulty == .utagePlayer2
     }
 
     private func pct(_ ratio: Double) -> String {

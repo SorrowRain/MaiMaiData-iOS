@@ -40,16 +40,19 @@
       </MacroExpansion>
       <Testables>
          <TestableReference
-            skipped = "NO">
+            skipped = "NO"
+            parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "95942D44EAC8EAE0F8E3DAD9"
+               BlueprintIdentifier = "687E7CE1F5DD82D091D348DC"
                BuildableName = "MaimaiDataTests.xctest"
                BlueprintName = "MaimaiDataTests"
                ReferencedContainer = "container:MaimaiData.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

@@ -1,109 +1,225 @@
 # MaimaiData-iOS 架构与开发规范 (Agent & Developer Guide)
 
-本文档定义了 `MaimaiData-iOS` 的目录职责、设计令牌、标准组件库及核心业务/并发不变量。任何开发者或自动化工具在进行合规改造、UI 调整或功能迭代时，**必须遵守以下规范**，严禁破坏既有分层或引入游离组件。
+本文档定义了 `MaimaiData-iOS` 的分层职责、设计令牌（Design Tokens）、标准组件库选型及核心业务/并发不变量。任何开发者或 AI Agent 在调整 UI、修复问题或新增功能时，**必须严格遵守以下规范**，严禁破坏分层边界、硬编码样式字面量或手写野生替代组件。
 
 ---
 
-## 1. 目录结构与职责边界
+## 1. 目录结构与分层边界
 
 ```text
 MaimaiData/
-├── MaimaiDataApp.swift              # App 入口（注入全局 DataStore，隔离单元测试宿主启动）
+├── MaimaiDataApp.swift              # App 入口（注入全局 DataStore，跳过单元测试宿主启动网络请求）
 ├── Theme/
-│   └── AppTheme.swift               # 全局设计令牌（品牌色、游戏语义调色板、圆角、间距、语义字阶、页面背景）
+│   └── AppTheme.swift               # 全局设计令牌（品牌色、游戏语义调色板、圆角、间距阶梯、语义字阶、页面背景）
 ├── Components/                      # 跨页面复用的标准 UI 组件（严禁在 Views/ 下定义通用组件）
-│   ├── Badges.swift                 # 胶囊标签、统计砖块、难度定数徽章、分类标签、封面框、筛选 Chip
-│   ├── Buttons.swift                # 主按钮、行内胶囊按钮、次级玻璃按钮、菜单胶囊、圆形图标按钮
+│   ├── Badges.swift                 # 胶囊标签、统计砖块、难度定数徽章、分类胶囊、谱面类型角标、封面框、筛选 Chip
+│   ├── Buttons.swift                # 主按钮、次级玻璃按钮、行内胶囊按钮、菜单触发胶囊、圆形玻璃图标按钮
 │   ├── Checklist.swift              # 进度表顶部完成度统计卡片与歌曲网格封面格
-│   ├── Containers.swift             # 流式布局 FlowLayout、标准卡片 AppCard / AppSectionCard、内嵌分组、全屏图片预览脚手架 PhotoPreviewScaffold
-│   ├── Feedback.swift               # iOS 26+ 液态玻璃 / iOS 17+ 毛玻璃自适应封装 appGlass、Toast、错误弹窗、同步横幅
+│   ├── Containers.swift             # 流式布局 FlowLayout、标准卡片 AppCard / AppSectionCard、分组头、内嵌分组、图片预览脚手架
+│   ├── Feedback.swift               # 自适应玻璃封装 appGlass、底部状态 Toast、同步状态横幅、错误弹窗与键盘收起修饰符
 │   └── Forms.swift                  # 标准单行输入框 AppTextField、密码框 AppSecureField、键盘收起工具 KeyboardDismiss
 ├── Bridges/
-│   └── UIKitBridges.swift           # UIKit 桥接能力（相册保存 PhotoLibrarySaver、系统分享面板 ShareSheet、可双指/双击缩放图片容器 ZoomableImageScrollView）
+│   └── UIKitBridges.swift           # UIKit 桥接封装（相册保存 PhotoLibrarySaver、系统分享 ShareSheet、可缩放图片容器 ZoomableImageScrollView）
 ├── Models/
-│   ├── SongData.swift               # 曲目与谱面模型、国内 CDN 封面候选地址生成
+│   ├── SongData.swift               # 曲目与谱面模型、物量解析 ResolvedChart、国内 CDN 曲绘候选地址生成
 │   ├── DifficultyType.swift         # 谱面难度枚举及浅色/深色模式对比度适配色彩
-│   ├── MaimaiConstants.swift        # 分类、等级、国服/日服版本常量与配色映射
-│   ├── RatingCalculator.swift       # 单曲 Rating 换算、目标 Rating 二分反推、全曲库最大物量统计
-│   ├── RecordModels.swift           # 水鱼查分器响应模型、成绩模型、进度表统计、筛选条件模型
-│   └── Extensions.swift             # Color(hex:) / 自适应色彩扩展、安全下标 Collection[safe:]、版本号按段数值比较 VersionString
+│   ├── MaimaiConstants.swift        # 分类、等级、国服/日服版本常量与配色/贴图映射
+│   ├── RatingCalculator.swift       # 单曲 Rating 换算、目标总 Rating 二分反推、全曲库最大物量统计
+│   ├── RecordModels.swift           # 水鱼查分器响应模型、成绩模型、已存账号、进度表统计、筛选条件模型
+│   └── Extensions.swift             # Color(hex:) / 自适应与提亮扩展、安全下标 Collection[safe:]、版本号按段数值比较 VersionString
 ├── Services/
-│   ├── DataStore.swift              # @Observable 全局状态中心（本地缓存、曲库/拟合定数同步、登录与成绩拉取、B50 拆表）
-│   ├── MaimaiAPI.swift              # 网络层（曲库更新、水鱼拟合定数、登录与玩家成绩接口）
-│   ├── AccountCredentialStore.swift # Keychain 凭据存储（水鱼账号列表、密码、Cookie）与缓存文件名哈希
-│   ├── ImageLoader.swift            # 内存 + 磁盘双层曲绘缓存 CoverImageCache 与异步曲绘组件 CoverImageView
-│   ├── Best50Renderer.swift         # Best 50 成绩图离屏并发渲染引擎
-│   ├── SongFilter.swift             # 纯函数曲库多维筛选与排序（供 DataStore 与单元测试共用）
-│   └── PreferenceKeys.swift         # UserDefaults / Keychain 键名与默认偏好注册
-└── Views/                           # 业务页面视图（仅包含页面级组装与页面私有子视图）
-    ├── MainTabView.swift            # 底部三栏 Tab 导航
-    ├── SongListView.swift           # 曲目列表、搜索栏、搜索历史与已筛选摘要
-    ├── SearchFilterSheet.swift      # 等级/定数双滑块、分类、版本与排序筛选弹窗
-    ├── SongDetailView.swift         # 曲目详情、难度切换、物量分布与容错扣分计算
-    ├── CoverZoomView.swift          # 曲目高清封面全屏预览页
-    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、工具入口、单曲计算、目标反推）
-    ├── ProberView.swift             # B35 / B15 成绩列表与 Best 50 导出预览
-    ├── VersionCheckView.swift       # 按国服版本分组的 Master 完成度进度表
-    ├── LevelCheckView.swift         # 按定数等级分组的全难度完成度进度表
-    ├── FinaleToDxView.swift         # 旧框 (FiNALE) 判定换算 DX 达成率工具
+│   ├── DataStore.swift              # @MainActor @Observable 全局状态中心（本地缓存、曲库/拟合定数同步、登录与成绩拉取、B50 拆表）
+│   ├── MaimaiAPI.swift              # 无状态网络层（曲库更新检查、曲库下载、水鱼拟合定数、登录与玩家成绩拉取）
+│   ├── AccountCredentialStore.swift # Keychain 凭据存储（水鱼账号列表、密码、Cookie）与缓存文件名 SHA-256 脱敏
+│   ├── ImageLoader.swift            # 内存 + 磁盘双层曲绘缓存 CoverImageCache 与异步曲绘视图 CoverImageView
+│   ├── Best50Renderer.swift         # Best 50 成绩图离屏并发预取与 UIGraphicsImageRenderer 渲染引擎
+│   ├── SongFilter.swift             # 纯函数曲库多维筛选与排序（无状态，供 DataStore 与单元测试共用）
+│   └── PreferenceKeys.swift         # UserDefaults / Keychain 键名常量与默认布尔偏好注册
+└── Views/                           # 业务页面视图（仅包含页面级布局组装与页面内私有子视图）
+    ├── MainTabView.swift            # 底部三栏 Tab 导航（曲库 / Rating与查分 / 设置与数据）
+    ├── SongListView.swift           # 曲目列表、液态玻璃搜索栏、搜索历史卡片与已筛选条件摘要
+    ├── SearchFilterSheet.swift      # 等级/定数双滑块、分类、收录版本与难度排序筛选弹窗
+    ├── SongDetailView.swift         # 曲目详情、难度切换、拟合定数、物量分布条与容错扣分参考
+    ├── CoverZoomView.swift          # 曲目高清封面全屏缩放预览页
+    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、实用工具入口、单曲计算、目标反推）
+    ├── ProberView.swift             # B35 / B15 成绩列表与 Best 50 成绩图生成预览
+    ├── VersionCheckView.swift       # 按国服版本分组的 Master 完成度进度表（牌子查询）
+    ├── LevelCheckView.swift         # 按 1～15 级定数分组的全难度完成度进度表
+    ├── FinaleToDxView.swift         # 旧框 (FiNALE) 音符判定换算 DX 达成率工具
     ├── SettingsView.swift           # 设置与数据同步页
-    └── LoginSheet.swift             # 账号管理二级页 AccountManagementView 与添加账号弹窗 LoginSheet
+    ├── AccountManagementView.swift  # 水鱼查分器已存账号管理与切换二级页
+    └── LoginSheet.swift             # 添加水鱼查分器账号弹窗 LoginSheet
 ```
 
+### 分层依赖规则
+1. **单向依赖**：`Views/` 可依赖 `Components/`、`Theme/`、`Models/`、`Services/`；`Components/` 仅可依赖 `Theme/`、`Models/`、`Bridges/` 及 `CoverImageView`（除 `SyncStatusBanner` 外严禁耦合具体页面状态）。
+2. **禁止野生通用组件**：凡在 **2 个及以上业务页面**复用的视觉结构，必须下沉至 `Components/` 对应分类文件，严禁在 `Views/` 中复制粘贴相似的 `private func` / `private struct`。
+3. **纯逻辑可测化**：新增复杂计算、排序、换算或文本解析逻辑时，应优先抽离至 `Models/` 或 `Services/` 的无状态纯函数，并在 `MaimaiDataTests/` 补充单元测试，禁止将核心算法深埋在 `View` 私有方法中。
+
 ---
 
-## 2. 设计系统与组件使用规范
+## 2. 设计系统令牌规范 (`AppTheme`)
 
-### 2.1 令牌规范 (`AppTheme`)
-- **颜色 (`AppTheme` / `AppTheme.Palette`)**：
-  - 主题强调色统一使用 `AppTheme.accent` (`#1668DC`)，收藏红心使用 `AppTheme.favoritePink`。
-  - 游戏领域色彩（5 种难度色、7 种歌曲分类色、4 种音符色、判定扣分色、完成度统计色）集中在 `AppTheme.Palette` 中，**数值与 maimai DX 街机视觉严格对齐，禁止随意篡改色值**。
-- **字阶 (`AppTheme.Typography`)**：
-  - 按视觉层级与语义角色定义（20pt Hero -> 17pt Section/Card Title -> 15pt Row/Input -> 12pt Caption/InlineAction -> 11pt Badge）。
-  - **禁止**为了消除单个视图里的字面量而在 `Typography` 中堆砌只用一次的机械拼写命名（如 `subheadlineSemiboldMeta` 等），应优先归入既有语义字阶。
-- **玻璃质感 (`View.appGlass`)**：
-  - 全项目唯一调用 `.glassEffect` 的入口位于 `Components/Feedback.swift` 的 `View.appGlass(in:tint:interactive:)`（iOS 26+ 使用原生液态玻璃，iOS 17/18 自动回退为 `.ultraThinMaterial` + 品牌色着色）。
-  - **禁止**在业务视图中散落编写 `#available(iOS 26.0, *)` 的 `glassEffect` 分支，也**禁止**在滚动列表的普通卡片（`AppCard`）上挂载实时材质模糊，以保证列表 120fps 流畅滚动。
+所有颜色、圆角、间距、字号字重必须取自 `MaimaiData/Theme/AppTheme.swift`。
 
-### 2.2 标准组件清单 (`Components/`)
-修改或新增 UI 时必须复用以下标准组件，**禁止在业务 View 中手写野生替代品，也禁止向标准组件塞入零散的 padding/opacity/font 透传参数**：
+### 2.1 颜色令牌 (`AppTheme` & `AppTheme.Palette`)
+- **全局强调与状态色**：主色调 `AppTheme.accent` (`#1668DC`)、亮色强调 `AppTheme.accentBright` (`#2B88FF`)、深浅色自适应蓝色文字前景 `AppTheme.accentText`（深色卡片上蓝色文字一律使用 `accentText` 保证 >= 4.5:1 对比度）、收藏红心 `AppTheme.favoritePink`、危险红 `AppTheme.destructive`、警告橙 `AppTheme.warning`。
+- **游戏领域锁定色 (`AppTheme.Palette`)**：
+  - 包含 4 种音符色（`noteTap` / `noteHold` / `noteSlide` / `noteBreak`）、6 种谱面难度底色/文字色/深色版面色（`diff*` / `boardMain*`）、7 种歌曲分类色与文字色（`genre*`）、判定扣分色（`judge*`）及完成度统计色（`stat*`）。
+  - **锁定红线**：`Palette` 中的街机领域色值经过浅色/深色对比度校准，**严禁随意改动十六进制色值**，也严禁在业务视图中散落编写 `Color(hex:)`。
+- **前景与状态色**：常规正文与次要信息统一使用 SwiftUI `.primary` / `.secondary` / `.tertiary`；深色卡片或内嵌容器上的彩色小字需确保足够对比度（优先通过标准组件内置提亮承载）。
 
-| 组件名 | 所在文件 | 用途与规范 |
+### 2.2 布局间距与尺寸令牌 (`AppTheme` & `AppTheme.Space`)
+- **页面与容器宏观常量**：
+  - `AppTheme.pagePadding` (`16pt`)：页面水平外边距
+  - `AppTheme.cardPadding` (`16pt`)：标准卡片内边距
+  - `AppTheme.compactCardPadding` (`12pt`)：紧凑列表卡片、状态横幅内边距
+  - `AppTheme.cardSpacing` (`12pt`)：页面内卡片纵向间距
+  - `AppTheme.itemSpacing` (`10pt`)：长列表（如曲目列表、成绩列表）卡片间距
+  - `AppTheme.rowMinHeight` (`50pt`)：标准表单输入框与设置行最小触控高度
+- **通用间距阶梯 (`AppTheme.Space`)**：
+  - `xs = 4` · `s = 8` · `m = 12` · `l = 16` · `xl = 24`
+  - 编写新视图时应优先选用上述阶梯令牌，避免随意引入 `5 / 7 / 9 / 11 / 14` 等非标魔数。
+
+### 2.3 圆角令牌 (`AppTheme.Radius`)
+所有 `RoundedRectangle` **必须统一指定 `style: .continuous`**，并使用以下语义圆角：
+
+| 令牌 | 数值 | 适用场景 |
 | :--- | :--- | :--- |
-| `AppCard` / `AppSectionCard` | `Containers.swift` | 页面标准卡片与带蓝色竖条标题栏的分组卡片（支持右侧紧凑操作区 `trailing`） |
-| `AppInsetGroup` | `Containers.swift` | 卡片内部浅底分组容器（用于表单行、统计格、表格） |
-| `PhotoPreviewScaffold` | `Containers.swift` | 全屏黑底图片缩放预览、分享与保存相册通用脚手架 |
-| `AppPrimaryButton` / `AppSecondaryButton` | `Buttons.swift` | 底部主操作玻璃按钮与次级操作按钮 |
-| `AppInlineButton` / `AppMenuCapsule` | `Buttons.swift` | 卡片标题栏或行内的 12pt 紧凑胶囊按钮与菜单触发器（共享深浅色自适应描边） |
-| `AppCircleIconButton` | `Buttons.swift` | 圆形玻璃图标按钮（必须提供 `accessibilityLabel`） |
-| `AppTextField` / `AppSecureField` | `Forms.swift` | 标准输入框（内置 50pt 最小高度、整框点击热区 `.contentShape` 与聚焦高亮边框） |
-| `AppCapsuleLabel` | `Badges.swift` | 胶囊标签，通过 `Style`（`.count` / `.filter` / `.compact` / `.metric`）区分语义，禁止外传零散内边距 |
-| `DifficultyLevelBadge` | `Badges.swift` | 难度定数徽章（自动处理 Re:MASTER 白底紫框与深浅色文字对比度） |
-| `GenreCapsuleTag` / `GenreTagChrome` | `Badges.swift` | 歌曲分类与详情页别名胶囊样式 |
-| `SongCoverBadgeView` | `Badges.swift` | 统一曲绘封面框（`.compact` 56pt / `.list` 64pt / `.hero` 100pt） |
-| `FilterCapsuleChip` | `Badges.swift` | 筛选弹窗与搜索历史中的可点击胶囊 Chip |
+| `Radius.card` | `16pt` | 页面级卡片（`AppCard` / `AppSectionCard` / 详情页头卡） |
+| `Radius.button` | `14pt` | 底部主/次操作大按钮、详情页 100pt 封面框 |
+| `Radius.inset` | `12pt` | 卡片内嵌浅底分组（`AppInsetGroup`）、列表 64pt 封面框 |
+| `Radius.input` | `12pt` | 输入框（`AppTextField` / `AppSecureField`）及配套并排按钮 |
+| `Radius.chip` | `12pt` | 难度切换块、全屏占位图圆角 |
+| `Radius.tile` | `10pt` | 统计砖块（`AppStatTile`）、进度表 72pt 封面格、紧凑 56pt 封面框、工具行图标底块 |
+| `Radius.badge` | `6pt` | 难度定数小徽章（`DifficultyLevelBadge`） |
+
+### 2.4 语义字阶 (`AppTheme.Typography`)
+视觉层级严格遵循 **`20pt Hero > 17pt Card Title > 15pt Row / Input > 12pt Caption / Inline Action > 11pt Badge`**：
+
+| 层级 | 令牌名 | 底层定义 | 标准用途 |
+| :--- | :--- | :--- | :--- |
+| **L1 标题与核心指标** | `heroTitle` | `title3.bold.monospacedDigit` (20pt) | 详情页曲名、核心换算结果、`.metric` 大胶囊数值 |
+| | `sectionMetric` | `headline.bold.monospacedDigit` (17pt) | 总览卡片大号数字指标、等级进度表标题 |
+| | `cardTitle` | `headline` (17pt) | `AppSectionHeader` 卡片标题、玩家总览标题 |
+| | `statValue` | `callout.bold.monospacedDigit` (16pt) | 详情页定数与拟合定数指标值 |
+| **L2 行内容与表单** | `songTitle` | `subheadline.semibold` (15pt) | 列表歌曲名、主/次大按钮文案 |
+| | `subheadlineBold` | `subheadline.bold` (15pt) | 圆形图标按钮、工具行图标、小节粗体小标题 |
+| | `rowTitle` | `subheadline.medium` (15pt) | 设置行/工具行标题、详情键值对正文 |
+| | `input` | `subheadline.medium.monospacedDigit` (15pt) | `AppTextField` / `AppSecureField` 输入文本 |
+| | `rowMetric` | `subheadline.bold.monospacedDigit` (15pt) | 行内达成率等醒目数字指标 |
+| | `body` | `subheadline` (15pt) | 常规正文、搜索框输入、设置项副文本 |
+| **L3 辅助说明与行内操作** | `inlineAction` | `caption.semibold` (12pt) | `AppInlineButton` / `AppMenuCapsule` / `StatusToast` 文案、表格左侧字段名 |
+| | `captionBold` | `caption.bold` (12pt) | 难度切换简称、表格表头、右侧导航箭头 |
+| | `tag` | `caption.medium` (12pt) | `FilterCapsuleChip`、输入框上方标签、同步状态提示 |
+| | `caption` | `caption` (12pt) | 卡片与行副标题、辅助说明、错误提示 |
+| | `captionMono` | `caption.monospacedDigit` (12pt) | BPM、旧定数、数据表格等宽数值行 |
+| | `captionMeta` | `caption.semibold.monospacedDigit` (12pt) | `.count` 数量胶囊、`AppStatTile` 数值、物量条计数 |
+| | `captionMetaBold` | `caption.bold.monospacedDigit` (12pt) | 成绩行达成率与单曲 `Ra` 值 |
+| **L4 紧凑徽章与微标签** | `badge` | `caption2.bold.monospacedDigit` (11pt) | `DifficultyLevelBadge` 定数/等级文字 |
+| | `caption2Bold` | `caption2.bold` (11pt) | `.compact` 胶囊、`AppStatTile` 标题、行内按钮小图标 |
+| | `caption2Semibold` | `caption2.semibold` (11pt) | `GenreCapsuleTag`、`.filter` 胶囊、指标块小标题 |
+| | `caption2` | `caption2` (11pt) | 收藏小心形角标、头卡微标签 |
+
+> **字阶铁律**：
+> 1. 严禁在业务视图中直接写 `.font(.system(...))` 或 `.font(.caption)` 等原生字面量（`Best50Renderer` 固定像素离屏画布除外）。
+> 2. 严禁在已绑定 `AppTheme.Typography` 令牌的 `Text` 上再额外叠加 `.fontWeight(...)` 或 `.monospacedDigit()`，应直接选用匹配的语义令牌（如需要 12pt 半粗等宽数字时直接用 `Typography.captionMeta`，而非 `captionMono` + `.fontWeight(.semibold)`）。
+> 3. 严禁为了单个视图微调而在 `Typography` 中堆砌一次性机械命名。
+
+### 2.5 页面背景与自适应液态玻璃
+- **页面背景**：所有业务页面根容器统一挂载 `.appPageBackground(tint:)`（默认 `AppTheme.accent`，歌曲详情页可传入分类色）。
+- **玻璃质感 (`View.appGlass`)**：
+  - 全项目唯一调用 `.glassEffect` 的入口为 `Components/Feedback.swift` 中的 `View.appGlass(in:tint:interactive:)`（iOS 26+ 使用原生 Liquid Glass，iOS 17/18 自动回退为 `.ultraThinMaterial` + 品牌色着色）。
+  - **禁止**在业务视图中散落编写 `#available(iOS 26.0, *)` 分支。
+  - **禁止**在长滚动列表的普通卡片（`AppCard`）上挂载实时模糊材质，确保 ProMotion 120fps 滚动帧率。
 
 ---
 
-## 3. 核心业务、并发与平台规范（防回归必读）
+## 3. 标准组件库全量选型清单 (`Components/` & `Bridges/`)
+
+开发新功能或修改界面时，**必须按以下清单优先复用标准组件**，禁止手写替代品，也禁止向标准组件塞入零散的 `padding` / `opacity` / `font` 透传参数（确需新增变体时，应在组件内部增加语义化 `Style` 枚举）：
+
+### 3.1 容器与布局 (`Containers.swift` / `Checklist.swift`)
+| 组件名 | 所在文件 | 职责与选型要求 |
+| :--- | :--- | :--- |
+| `AppCard` | `Containers.swift` | 页面基础圆角卡片（支持浅色白底/深色 `surfaceDark`、可选左上淡渐变 `tint` 与细描边） |
+| `AppSectionHeader` | `Containers.swift` | 带左侧蓝色渐变竖条的标准分组标题栏（含可选 `subtitle` 与右侧 `trailing` 槽位） |
+| `AppSectionCard` | `Containers.swift` | 组合 `AppCard` + `AppSectionHeader` 的页面主力业务卡片，凡带标题的卡片一律使用它 |
+| `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器，用于承载设置开关组、工具入口列表、数据表格或指标块 |
+| `AppInsetRow` | `Containers.swift` | `AppInsetGroup` 内的标准行（支持左侧图标块、主副标题、右侧控件与导航箭头，禁止在业务页手写重复行） |
+| `FlowLayout` | `Containers.swift` | 自适应折行流式布局，用于筛选条件 Chip、歌曲别名胶囊等多标签排布 |
+| `PhotoPreviewScaffold` | `Containers.swift` | 全屏纯黑底图片缩放预览、系统分享与保存相册通用脚手架（`CoverZoomView` 与 `B50PreviewSheet` 共用） |
+| `ChecklistStatsHeader` | `Checklist.swift` | 进度表顶部「完成度统计」（SSS / FC / AP / FSD 四宫格 + 角标模式切换按钮） |
+| `ChecklistSongGrid` / `ChecklistSongTile` | `Checklist.swift` | 进度表标准自适应网格与 72×72 曲绘网格单元（内置评级/连击/同步无障碍标签与难度边框） |
+
+### 3.2 按钮与菜单触发器 (`Buttons.swift`)
+| 组件名 | 所在文件 | 职责与选型要求 |
+| :--- | :--- | :--- |
+| `AppPrimaryButton` | `Buttons.swift` | 主操作玻璃按钮：`.standard` 用于页面/表单底部通栏主按钮（46pt）；`.inputCompanion` 用于与 `AppTextField` 并排的操作按钮（50pt） |
+| `AppSecondaryButton` | `Buttons.swift` | 次级无底色玻璃按钮（46pt，如筛选弹窗底部的「重置选项」） |
+| `AppInlineButton` | `Buttons.swift` | 卡片标题栏右侧或行内的 12pt 紧凑胶囊操作按钮（支持图标、`isLoading` 与深色对比度提亮；凡卡片内「清空 / 重置 / 刷新 / 同步」一律使用它，禁止手写裸文字 `Button`） |
+| `AppMenuCapsule` | `Buttons.swift` | `Menu` 专用紧凑胶囊触发器（带上下箭头，与 `AppInlineButton` 共享描边与着色视觉） |
+| `AppCircleIconButton` | `Buttons.swift` | 34×34 圆形玻璃图标按钮（如左右切换等级，**强制传入 `accessibilityLabel`**） |
+
+### 3.3 徽章、标签与曲绘 (`Badges.swift` / `ImageLoader.swift`)
+| 组件名 | 所在文件 | 职责与选型要求 |
+| :--- | :--- | :--- |
+| `AppCapsuleLabel` | `Badges.swift` | 标准着色胶囊标签：`.count`（分组计数如 `"24 首"`）、`.filter`（带描边的已筛选条件摘要）、`.compact`（行内状态/排名如 `"#1"` / `"当前"` / `"4x"`）、`.metric(prefix:)`（醒目指标如 `"Ra 333"`） |
+| `AppMetricTile` | `Badges.swift` | 内嵌浅底指标块（上小标题 + 下数值或自定义定数视图，用于详情页与 Rating 总览） |
+| `AppValueBadge` | `Badges.swift` | 滑块配套定宽数值徽章（内置深浅色对比度适配） |
+| `AppStatTile` | `Badges.swift` | 居中上标题下数值的着色统计砖块（用于完成度四宫格统计） |
+| `DifficultyLevelBadge` | `Badges.swift` | 难度定数/等级徽章（自动处理 Re:MASTER 白底紫框及浅/深色文字对比度） |
+| `GenreCapsuleTag` | `Badges.swift` | 歌曲分类与详情页别名胶囊标签（`.compact` 11pt 分类 / `.regular` 12pt 别名） |
+| `RecordStatusBadges` | `Badges.swift` | 成绩评级 + FC/FS 贴图组合横条（`.compact` / `.regular`，内置完整无障碍标签） |
+| `ChartTypeBadge` | `Badges.swift` | 标准 / DX 谱面贴图角标（内置无障碍标签） |
+| `SongCoverBadgeView` | `Badges.swift` | 标准圆角带描边曲绘框（`.compact` 56pt / `.list` 64pt / `.hero` 100pt，可选右下角谱面类型角标） |
+| `CoverImageView` | `ImageLoader.swift` | 底层异步曲绘视图（接入内存+磁盘双层缓存与国内 CDN 兜底；**严禁使用系统 `AsyncImage` 加载曲绘**） |
+| `FilterCapsuleChip` | `Badges.swift` | 筛选弹窗与最近搜索中的可点击选中态胶囊 Chip（内置无障碍选中态声明） |
+
+### 3.4 表单、反馈与桥接 (`Forms.swift` / `Feedback.swift` / `UIKitBridges.swift`)
+| 组件名 / 修饰符 | 所在文件 | 职责与选型要求 |
+| :--- | :--- | :--- |
+| `AppTextField` / `AppSecureField` | `Forms.swift` | 标准单行输入框与带显隐切换的密码框（内置 50pt 最小高度、整框点击热区与聚焦高亮边框；除顶部胶囊搜索栏外，表单与工具页严禁直接使用裸 `TextField`） |
+| `KeyboardDismiss.hide()` / `.dismissKeyboardOnTap()` | `Forms.swift` / `Feedback.swift` | 收起第一响应者键盘及点击空白区域收起键盘修饰符 |
+| `StatusToast` / `.statusToast(_:)` / `dismissToast(...)` | `Feedback.swift` | 底部液态玻璃轻提示胶囊、标准底部过渡挂载修饰符与防覆盖延时自动消失工具函数 |
+| `SyncStatusBanner` | `Feedback.swift` | 曲库读取/同步进度及失败精准重试横幅 |
+| `.errorAlert(_:message:)` | `Feedback.swift` | 绑定 `String?` 错误消息的标准系统弹窗修饰符（关闭自动置 `nil`） |
+| `PhotoLibrarySaver` / `ShareSheet` / `ZoomableImageScrollView` | `UIKitBridges.swift` | 系统相册只写权限保存、`UIActivityViewController` 分享桥接、6 约束双指/双击缩放视图 |
+
+---
+
+## 4. 核心业务、并发与平台规范（防回归必读）
 
 1. **曲绘封面源与缓存 (`SongData.coverCandidateURLs` & `CoverImageCache`)**：
    - 官方源 `maimaidx.jp` 的 TLS 证书链不完整，在 iOS `URLSession` 下会因 SSL 验证失败直接报错。
-   - 必须保持使用国内高可用 CDN 源：`https://assets2.lxns.net/maimai/jacket/{baseJacketId}.png` 优先，水鱼 5 位补零地址 `https://www.diving-fish.com/covers/{paddedId}.png` 兜底，缓存 Key 统一按 `jacket_{baseJacketId}` 归并。
+   - 必须保持国内高可用 CDN 顺序：`https://assets2.lxns.net/maimai/jacket/{baseJacketId}.png` 优先，水鱼 5 位补零地址 `https://www.diving-fish.com/covers/{paddedId}.png` 兜底；内存与磁盘缓存 Key 统一按 `jacket_{baseJacketId}` 归并。
 2. **搜索框中文输入法防闪屏 (`SongFilterCriteria.isActive` & `SongListView`)**：
-   - `SongFilterCriteria.isActive` **绝对不能包含 `!keyword.isEmpty`**。中文输入法选词上屏瞬间会先清空拼音再填入汉字，若 `keyword` 计入 `isActive` 会导致“已筛选”卡片在选词瞬间反复挂载/卸载引起列表跳动。
-   - 搜索历史卡片的展开/收起统一由 `.onChange(of: isSearchFocused)` 驱动平滑过渡，并在 `onDisappear` 中无动画重置焦点，避免键盘弹起时直接点进详情页再返回出现布局跳动。
+   - `SongFilterCriteria.isActive` **绝对不能包含 `!keyword.isEmpty`**。中文输入法选词上屏瞬间会先清空拼音再填入汉字，若 `keyword` 计入 `isActive` 会导致「已筛选」摘要卡片在选词瞬间反复挂载/卸载引起列表剧烈跳动。
+   - 搜索历史卡片统一由 `.onChange(of: isSearchFocused)` 驱动展开收起，并在 `onDisappear` 中关闭动画重置焦点，防止键盘弹起时点进详情页再返回出现布局跳动。
 3. **水鱼凭据安全与登录态一致性 (`AccountCredentialStore` & `DataStore`)**：
    - 水鱼密码、Cookie 与已保存账号列表**只能存入 Keychain**（`AccountCredentialStore`），本地成绩缓存文件名使用 `records_\(username.sha256Hex).json`。
-   - `DataStore.loginAndSyncRecords` 必须区分**登录请求本身失败**与**登录成功后拉取成绩失败**（`MaimaiAPIError.recordSyncFailedAfterLogin`），严禁在断网未登录成功时向用户误报“登录已成功”。
-   - 同步成绩返回时应始终更新 `divingFishNickname`，由 `displayPlayerName` 根据 `useDivingFishNickname` 开关决定最终展示的昵称。
+   - `DataStore.loginAndSyncRecords` 必须严格区分**登录请求本身失败**与**登录成功后拉取成绩失败**（`MaimaiAPIError.recordSyncFailedAfterLogin`），严禁在未拿到有效 Cookie 时向用户误报登录成功，也严禁在 `isSyncingRecords` 期间静默吞掉登录操作。
+   - 同步成绩返回时应始终缓存 `divingFishNickname`，最终展示名称统一由 `DataStore.displayPlayerName` 根据 `useDivingFishNickname` 开关裁决。
 4. **下拉刷新防取消与缓存竞态防护 (`DataStore`)**：
-   - `DataStore.performFetchRecordsWithCurrentCookie()` 内部使用非结构化 `Task` 承载网络请求，防止 SwiftUI `.refreshable` 在视图状态刷新瞬间取消底层 `URLSession` 任务（报 `NSURLErrorCancelled`）。
-   - 切换账号异步回填本地缓存（`restoreCachedRecords`）受单调递增令牌 `recordsEpoch` 保护，绝不能覆盖网络刚拉回的新数据。
-5. **导航栈与图片缩放 (`RatingToolsView` & `ZoomableImageScrollView`)**：
-   - “Rating 与查分”页的二级工具页（`ProberView`、`VersionCheckView`、`LevelCheckView`）内点击歌曲跳转详情页，统一复用根视图 `RatingToolsView` 的 `.navigationDestination(for: SongData.self)`，禁止在子页面内重复注册同类型 `navigationDestination`。
-   - `ZoomableImageScrollView` 的 `UIImageView` 必须同时绑定 `contentLayoutGuide`（四边）与 `frameLayoutGuide`（宽高）共 6 条约束，确保初始自适应居中且支持 1.0x–4.5x 双指/双击缩放。
-6. **工程配置同步 (`project.yml` & `MaimaiData.xcodeproj`)**：
-   - 修改构建配置、Target 属性或增删文件时，必须同时保持 `project.yml` 与 `MaimaiData.xcodeproj/project.pbxproj` 一致。
-   - 当前工程固定为 **iPhone 竖屏应用**（`TARGETED_DEVICE_FAMILY = 1`），最低系统版本 `iOS 17.0`。
-   - `MaimaiDataApp` 启动时通过 `XCTestConfigurationFilePath` 环境变量跳过 `store.bootstrap()`，确保单元测试宿主环境纯净、不触发真实网络请求。
+   - `DataStore.performFetchRecordsWithCurrentCookie()` 内部使用非结构化 `Task` 承载网络请求，防止 SwiftUI `.refreshable` 在状态更新重绘瞬间取消底层 `URLSession` 请求（`NSURLErrorCancelled`）。
+   - 切换账号异步回填本地成绩缓存（`restoreCachedRecords`）受单调递增令牌 `recordsEpoch` 保护，绝不能覆盖网络刚拉回的新鲜成绩。
+5. **导航栈复用与图片缩放约束 (`RatingToolsView` & `ZoomableImageScrollView`)**：
+   - 「Rating 与查分」Tab 下的二级工具页（`ProberView`、`VersionCheckView`、`LevelCheckView`）点击曲目进入详情页时，统一复用根视图 `RatingToolsView` 注册的 `.navigationDestination(for: SongData.self)`，**严禁在子页面重复注册同类型 `navigationDestination`**。
+   - `ZoomableImageScrollView` 内的 `UIImageView` 必须同时绑定 `contentLayoutGuide`（四边）与 `frameLayoutGuide`（宽高）共 6 条约束，确保初始自适应居中且支持 `1.0x–4.5x` 双指与双击缩放。
+6. **工程配置同步与测试宿主隔离 (`project.yml` & `MaimaiData.xcodeproj` & `MaimaiDataApp`)**：
+   - 增删源码/资源文件或修改构建配置时，必须同步维护 `project.yml` 与 `MaimaiData.xcodeproj/project.pbxproj`。
+   - 当前工程固定为 **iPhone 竖屏应用**（`TARGETED_DEVICE_FAMILY = 1`），最低部署目标 `iOS 17.0`。
+   - `MaimaiDataApp` 启动时通过 `XCTestConfigurationFilePath` 环境变量跳过 `store.bootstrap()`，确保单元测试宿主纯净、不发起真实网络请求。
+
+---
+
+## 5. 新功能开发准入自检清单 (Definition of Done)
+
+每次提交新功能或重构代码前，请逐项核对：
+
+- [ ] **组件零手写重复**：是否复用了第 3 节的标准组件？若有跨页复用的新视觉单元，是否已提炼至 `Components/` 而非散落在 `Views/`？
+- [ ] **令牌零字面量逃逸**：圆角是否全部走 `AppTheme.Radius`（且带 `.continuous`）？字号字重是否全部走 `AppTheme.Typography`（且未额外叠加 `.fontWeight` / `.monospacedDigit`）？颜色是否全部走 `AppTheme` 或语义系统色？
+- [ ] **深浅色与对比度**：在 Light Mode 与 Dark Mode 下检查新增视图，彩色文字与胶囊在深色背景（`#172135`）上是否清晰易读？
+- [ ] **液态玻璃合规**：是否仅通过 `.appGlass(...)` 使用玻璃材质，且未在长滚动列表行卡片上滥用实时模糊？
+- [ ] **无障碍支持**：所有纯图标按钮（如 `AppCircleIconButton`、Toolbar 图标）与状态贴图是否均提供了准确的中文 `accessibilityLabel`？
+- [ ] **工程与测试**：新增文件是否同时加入 `project.yml` 与 `MaimaiData.xcodeproj`？核心计算/筛选逻辑是否补充了 `MaimaiDataTests` 单元测试且 `xcodebuild build-for-testing` 零警告通过？

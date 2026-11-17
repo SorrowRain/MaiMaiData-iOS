@@ -3,29 +3,34 @@ import SwiftUI
 struct VersionCheckView: View {
     @Environment(DataStore.self) private var store
     @State private var displayMode: CheckDisplayMode = .rank
+    @State private var groupedSongs: [LevelGroup] = []
+
+    private struct LevelGroup: Identifiable {
+        var id: String { level }
+        let level: String
+        let songs: [SongData]
+    }
 
     private var selectedVersion: (name: String, asset: String) {
         let idx = min(max(0, store.lastVersionCheckIndex), MaimaiConstants.cnVersions.count - 1)
         return MaimaiConstants.cnVersions[idx]
     }
 
-    private var groupedSongs: [(level: String, songs: [SongData])] {
+    private func rebuildGroups() {
         let verName = selectedVersion.name
         let filtered = store.songs.filter { $0.basicInfo.from == verName && !$0.isUtage && $0.charts.count > 3 }
         let sorted = filtered.sorted { ($0.ds[safe: 3] ?? 0) > ($1.ds[safe: 3] ?? 0) }
         let dict = Dictionary(grouping: sorted) { $0.level[safe: 3] ?? "?" }
-        return dict.keys.sorted { levelOrder($0) > levelOrder($1) }
-            .map { (level: $0, songs: dict[$0] ?? []) }
+        groupedSongs = dict.keys.sorted { levelOrder($0) > levelOrder($1) }
+            .map { LevelGroup(level: $0, songs: dict[$0] ?? []) }
     }
 
     var body: some View {
         @Bindable var storeBindable = store
 
         let allSongs = groupedSongs.flatMap(\.songs)
-        let songIds = Set(allSongs.map(\.numericId))
-        let masterRecords = store.records.filter { $0.levelIndex == 3 && songIds.contains($0.songId) }
-        let recordsById = Dictionary(grouping: masterRecords, by: \.songId).compactMapValues(\.first)
-        let stats = ChecklistStats(records: masterRecords, totalCount: allSongs.count)
+        let matchedRecords = allSongs.compactMap { store.record(forSongId: $0.numericId, difficultyIndex: 3) }
+        let stats = ChecklistStats(records: matchedRecords, totalCount: allSongs.count)
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
@@ -60,16 +65,16 @@ struct VersionCheckView: View {
 
                 ChecklistStatsHeader(stats: stats, displayMode: $displayMode)
 
-                ForEach(groupedSongs, id: \.level) { group in
+                ForEach(groupedSongs) { group in
                     AppSectionCard(title: "Level \(group.level)") {
                         AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color)
                     } content: {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
+                        ChecklistSongGrid {
                             ForEach(group.songs) { song in
                                 NavigationLink(value: song) {
                                     ChecklistSongTile(
                                         song: song,
-                                        record: recordsById[song.numericId],
+                                        record: store.record(forSongId: song.numericId, difficultyIndex: 3),
                                         borderColor: DifficultyType.master.color,
                                         displayMode: displayMode
                                     )
@@ -86,6 +91,13 @@ struct VersionCheckView: View {
         .appPageBackground()
         .navigationTitle("版本进度表 (MAS)")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if groupedSongs.isEmpty && !store.songs.isEmpty {
+                rebuildGroups()
+            }
+        }
+        .onChange(of: store.lastVersionCheckIndex) { _, _ in rebuildGroups() }
+        .onChange(of: store.songs.count) { _, _ in rebuildGroups() }
     }
 
     private func levelOrder(_ level: String) -> Double {

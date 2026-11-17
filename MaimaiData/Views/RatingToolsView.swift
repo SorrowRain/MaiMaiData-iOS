@@ -37,12 +37,7 @@ struct RatingToolsView: View {
             .appPageBackground()
             .navigationTitle("Rating 与查分")
             .navigationBarTitleDisplayMode(.inline)
-            .overlay(alignment: .bottom) {
-                if let syncToast {
-                    StatusToast(text: syncToast)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
+            .statusToast(syncToast)
             .errorAlert("同步失败", message: $syncErrorMessage)
             .navigationDestination(for: ToolRoute.self) { route in
                 switch route {
@@ -65,10 +60,7 @@ struct RatingToolsView: View {
     // MARK: - 1. Player & Rating Summary Card
 
     private var ratingSummaryCard: some View {
-        let split = store.best35AndBest15()
-        let b35Sum = split.b35.reduce(0) { $0 + $1.computedRating }
-        let b15Sum = split.b15.reduce(0) { $0 + $1.computedRating }
-        let totalRa = b35Sum + b15Sum
+        let summary = store.best35AndBest15()
 
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
@@ -97,20 +89,18 @@ struct RatingToolsView: View {
                 }
 
                 HStack(spacing: AppTheme.Space.s) {
-                    ratingMetricBox(
-                        label: "总 Rating",
-                        value: "\(totalRa)",
+                    AppMetricTile(
+                        title: "总 Rating",
+                        value: "\(summary.totalRating)",
                         highlight: true
                     )
-                    ratingMetricBox(
-                        label: "旧版本 B35",
-                        value: "\(b35Sum)",
-                        highlight: false
+                    AppMetricTile(
+                        title: "旧版本 B35",
+                        value: "\(summary.b35Rating)"
                     )
-                    ratingMetricBox(
-                        label: "现行版本 B15",
-                        value: "\(b15Sum)",
-                        highlight: false
+                    AppMetricTile(
+                        title: "现行版本 B15",
+                        value: "\(summary.b15Rating)"
                     )
                 }
             }
@@ -129,22 +119,6 @@ struct RatingToolsView: View {
         }
     }
 
-    private func ratingMetricBox(label: String, value: String, highlight: Bool) -> some View {
-        AppInsetGroup(padding: 10) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
-                Text(label)
-                    .font(AppTheme.Typography.caption2Semibold)
-                    .foregroundStyle(highlight ? AppTheme.accent : .secondary)
-                    .lineLimit(1)
-                Text(value)
-                    .font(AppTheme.Typography.sectionMetric)
-                    .foregroundStyle(highlight ? AppTheme.accent : .primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.8)
-            }
-        }
-    }
-
     // MARK: - 2. Tools Grid Card
 
     private var toolsGridCard: some View {
@@ -152,45 +126,45 @@ struct RatingToolsView: View {
             AppInsetGroup {
                 VStack(spacing: 0) {
                     NavigationLink(value: ToolRoute.prober) {
-                        toolRow(
+                        AppInsetRow(
                             icon: "trophy.fill",
-                            color: AppTheme.accent,
+                            iconColor: AppTheme.accent,
                             title: "Best 50",
                             subtitle: "查看 B50 成绩列表并导出图片"
                         )
                     }
                     .buttonStyle(.plain)
 
-                    Divider().padding(.leading, 56)
+                    Divider().padding(.leading, 58)
 
                     NavigationLink(value: ToolRoute.versionCheck) {
-                        toolRow(
+                        AppInsetRow(
                             icon: "square.grid.3x3.fill",
-                            color: AppTheme.Palette.ratingPurple,
+                            iconColor: AppTheme.Palette.ratingPurple,
                             title: "版本进度表 / 牌子查询",
                             subtitle: "按国服版本查看 Master 谱面完成度"
                         )
                     }
                     .buttonStyle(.plain)
 
-                    Divider().padding(.leading, 56)
+                    Divider().padding(.leading, 58)
 
                     NavigationLink(value: ToolRoute.levelCheck) {
-                        toolRow(
+                        AppInsetRow(
                             icon: "slider.horizontal.3",
-                            color: AppTheme.Palette.ratingOrange,
+                            iconColor: AppTheme.Palette.ratingOrange,
                             title: "等级进度表",
                             subtitle: "按 1~15 级定数分组查看完成情况"
                         )
                     }
                     .buttonStyle(.plain)
 
-                    Divider().padding(.leading, 56)
+                    Divider().padding(.leading, 58)
 
                     NavigationLink(value: ToolRoute.finaleToDx) {
-                        toolRow(
+                        AppInsetRow(
                             icon: "arrow.left.arrow.right",
-                            color: AppTheme.Palette.ratingBlue,
+                            iconColor: AppTheme.Palette.ratingBlue,
                             title: "旧框 (FiNALE) 分数换算 DX",
                             subtitle: "由 Tap / Hold / Slide / Break 判定换算"
                         )
@@ -199,34 +173,6 @@ struct RatingToolsView: View {
                 }
             }
         }
-    }
-
-    private func toolRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        HStack(spacing: AppTheme.Space.m) {
-            Image(systemName: icon)
-                .font(AppTheme.Typography.subheadlineBold)
-                .foregroundStyle(.white)
-                .frame(width: 34, height: 34)
-                .background(color.gradient, in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(AppTheme.Typography.rowTitle)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(subtitle)
-                    .font(AppTheme.Typography.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 4)
-            Image(systemName: "chevron.right")
-                .font(AppTheme.Typography.captionBold)
-                .foregroundStyle(.tertiary)
-        }
-        .padding(.horizontal, AppTheme.Space.m)
-        .padding(.vertical, 11)
-        .contentShape(Rectangle())
     }
 
     // MARK: - 3. Single Song Rating Calculator
@@ -241,7 +187,7 @@ struct RatingToolsView: View {
                 style: .metric(prefix: "Ra")
             )
         } content: {
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: AppTheme.itemSpacing) {
                 HStack(spacing: AppTheme.Space.m) {
                     AppTextField(
                         title: "谱面定数",
@@ -269,7 +215,7 @@ struct RatingToolsView: View {
                 if let singleInputError {
                     Label(singleInputError, systemImage: "exclamationmark.circle.fill")
                         .font(AppTheme.Typography.caption)
-                        .foregroundStyle(Color(.systemRed))
+                        .foregroundStyle(AppTheme.destructive)
                 }
             }
         }
@@ -283,7 +229,7 @@ struct RatingToolsView: View {
             subtitle: "按 50 首均分推算所需最低定数与达成率"
         ) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-                HStack(alignment: .bottom, spacing: 10) {
+                HStack(alignment: .bottom, spacing: AppTheme.itemSpacing) {
                     AppTextField(
                         title: "目标总 Rating",
                         placeholder: "如 15000",
@@ -315,7 +261,7 @@ struct RatingToolsView: View {
                 if let targetError {
                     Label(targetError, systemImage: "exclamationmark.circle.fill")
                         .font(AppTheme.Typography.caption)
-                        .foregroundStyle(Color(.systemRed))
+                        .foregroundStyle(AppTheme.destructive)
                 }
 
                 if !targetRows.isEmpty {
@@ -340,19 +286,20 @@ struct RatingToolsView: View {
                                 Divider()
                                 HStack {
                                     Text(String(format: "%.1f", row.level))
-                                        .fontWeight(.semibold)
+                                        .font(AppTheme.Typography.captionMeta)
                                         .frame(width: 48, alignment: .leading)
                                     Text(row.achievementText)
+                                        .font(AppTheme.Typography.captionMono)
                                         .frame(maxWidth: .infinity, alignment: .leading)
                                     Text("\(row.singleRating)")
-                                        .foregroundStyle(AppTheme.accent)
-                                        .fontWeight(.semibold)
+                                        .font(AppTheme.Typography.captionMeta)
+                                        .foregroundStyle(AppTheme.accentText)
                                         .frame(width: 64, alignment: .trailing)
                                     Text("\(row.totalRating)")
+                                        .font(AppTheme.Typography.captionMono)
                                         .foregroundStyle(.secondary)
                                         .frame(width: 72, alignment: .trailing)
                                 }
-                                .font(AppTheme.Typography.captionMono)
                                 .padding(.horizontal, AppTheme.Space.m)
                                 .padding(.vertical, AppTheme.Space.s)
                             }

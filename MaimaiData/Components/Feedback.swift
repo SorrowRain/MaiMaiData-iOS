@@ -49,6 +49,16 @@ extension View {
             Text(message.wrappedValue ?? "")
         }
     }
+
+    /// Bottom glass toast overlay with slide+fade transition.
+    func statusToast(_ message: String?) -> some View {
+        overlay(alignment: .bottom) {
+            if let message {
+                StatusToast(text: message)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
 }
 
 /// Clears an optional toast text after a delay.
@@ -93,9 +103,9 @@ struct SyncStatusBanner: View {
 
     var body: some View {
         if store.isLoadingLocalData || store.isSyncingSongs || store.syncNotice != nil {
-            AppCard(padding: 12, tint: AppTheme.accent) {
+            AppCard(padding: AppTheme.compactCardPadding, tint: AppTheme.accent) {
                 VStack(alignment: .leading, spacing: AppTheme.Space.s) {
-                    HStack(alignment: .center, spacing: 10) {
+                    HStack(alignment: .center, spacing: AppTheme.itemSpacing) {
                         if store.isLoadingLocalData || store.isSyncingSongs {
                             ProgressView().controlSize(.small)
                             Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在检查曲库更新…")
@@ -103,7 +113,7 @@ struct SyncStatusBanner: View {
                                 .foregroundStyle(.secondary)
                         } else if let notice = store.syncNotice {
                             Image(systemName: "wifi.exclamationmark")
-                                .foregroundStyle(.orange)
+                                .foregroundStyle(AppTheme.warning)
                                 .accessibilityHidden(true)
                             Text(notice.message)
                                 .font(AppTheme.Typography.caption)

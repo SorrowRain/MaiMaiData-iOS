@@ -51,25 +51,36 @@ enum MaimaiAPI {
         return try JSONDecoder().decode(AppUpdateInfo.self, from: data)
     }
 
-    static func downloadSongData(from urlString: String) async throws -> Data {
+    static func downloadSongData(from urlString: String) async throws -> (raw: Data, songs: [SongData]) {
         guard let url = URL(string: urlString) else { throw MaimaiAPIError.invalidURL }
         var req = URLRequest(url: url)
         req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         let (data, resp) = try await session.data(for: req)
         try validateHTTP(resp, data: data)
-        // Verify JSON is decodable before replacing local cache
-        _ = try JSONDecoder().decode([SongData].self, from: data)
-        return data
+        // Decode once off the MainActor before replacing local cache.
+        let decoded = try JSONDecoder().decode([SongData].self, from: data)
+        return (data, decoded)
     }
 
-    static func fetchChartStats() async throws -> Data {
+    static func fetchChartStats() async throws -> (raw: Data, stats: ChartStatsResponse) {
         let url = URL(string: "\(divingFishBase)/api/maimaidxprober/chart_stats")!
         var req = URLRequest(url: url)
         req.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         let (data, resp) = try await session.data(for: req)
         try validateHTTP(resp, data: data)
-        _ = try JSONDecoder().decode(ChartStatsResponse.self, from: data)
-        return data
+        let decoded = try JSONDecoder().decode(ChartStatsResponse.self, from: data)
+        return (data, decoded)
+    }
+
+    static func shouldRetryLogin(after error: Error) -> Bool {
+        switch error {
+        case MaimaiAPIError.unauthorized:
+            return true
+        case let MaimaiAPIError.httpError(code, _):
+            return code == 400 || code == 401 || code == 403
+        default:
+            return false
+        }
     }
 
     static func login(username: String, password: String) async throws -> String {

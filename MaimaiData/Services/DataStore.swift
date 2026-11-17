@@ -229,8 +229,7 @@ final class DataStore {
             let info = try await MaimaiAPI.fetchUpdateInfo()
             guard let (remoteVer, remoteURL) = info.bestDataVersionAndURL else { return }
             if force || VersionString.isNewer(remoteVer, than: dataVersion) || songs.isEmpty {
-                let raw = try await MaimaiAPI.downloadSongData(from: remoteURL)
-                let decoded = try JSONDecoder().decode([SongData].self, from: raw)
+                let (raw, decoded) = try await MaimaiAPI.downloadSongData(from: remoteURL)
                 try raw.write(to: cachedSongsURL, options: .atomic)
                 dataVersion = remoteVer
                 await applySongs(decoded)
@@ -258,8 +257,7 @@ final class DataStore {
         isSyncingStats = true
         defer { isSyncingStats = false }
         do {
-            let raw = try await MaimaiAPI.fetchChartStats()
-            let decoded = try JSONDecoder().decode(ChartStatsResponse.self, from: raw)
+            let (raw, decoded) = try await MaimaiAPI.fetchChartStats()
             try raw.write(to: cachedStatsURL, options: .atomic)
             lastChartStatsSync = Date()
             applyChartStats(decoded)
@@ -320,8 +318,8 @@ final class DataStore {
             do {
                 let r = try await MaimaiAPI.fetchPlayerRecords(cookie: cookie)
                 return (r, cookie)
-            } catch {
-                // 若 Cookie 过期且本地有保存的账号密码，自动重新登录并重试一次。
+            } catch where MaimaiAPI.shouldRetryLogin(after: error) {
+                // 仅当 Cookie 过期或鉴权失效且本地有保存的凭据时，自动重新登录并重试一次。
                 if !username.isEmpty, !password.isEmpty {
                     let newCookie = try await MaimaiAPI.login(username: username, password: password)
                     let r = try await MaimaiAPI.fetchPlayerRecords(cookie: newCookie)
@@ -452,10 +450,10 @@ final class DataStore {
         records.filter { rec in
             guard let song = songsById[rec.songId] else { return false }
             return song.basicInfo.isNew == isNewVersion
-        }.sorted { $0.ra > $1.ra }
+        }.sorted(by: Self.recordOrder)
     }
 
-    func best35AndBest15() -> (b35: [ProberRecord], b15: [ProberRecord], isMatching: Bool) {
+    func best35AndBest15() -> Best50Summary {
         var matching = true
         var oldList: [ProberRecord] = []
         var newList: [ProberRecord] = []
@@ -470,9 +468,21 @@ final class DataStore {
                 oldList.append(rec)
             }
         }
-        oldList.sort { $0.ra > $1.ra }
-        newList.sort { $0.ra > $1.ra }
-        return (Array(oldList.prefix(35)), Array(newList.prefix(15)), matching)
+        oldList.sort(by: Self.recordOrder)
+        newList.sort(by: Self.recordOrder)
+        let b35 = Array(oldList.prefix(35))
+        let b15 = Array(newList.prefix(15))
+        return Best50Summary(b35: b35, b15: b15, isMatching: matching)
+    }
+
+    private static func recordOrder(_ lhs: ProberRecord, _ rhs: ProberRecord) -> Bool {
+        if lhs.computedRating != rhs.computedRating {
+            return lhs.computedRating > rhs.computedRating
+        }
+        if lhs.achievements != rhs.achievements {
+            return lhs.achievements > rhs.achievements
+        }
+        return lhs.ds > rhs.ds
     }
 
     var displayPlayerName: String {
@@ -500,6 +510,24 @@ private struct SongSnapshot {
     let songs: [SongData]
     let songsById: [Int: SongData]
     let maxNotes: MaxNotesStats
+}
+
+struct Best50Summary {
+    let b35: [ProberRecord]
+    let b15: [ProberRecord]
+    let isMatching: Bool
+    let b35Rating: Int
+    let b15Rating: Int
+
+    var totalRating: Int { b35Rating + b15Rating }
+
+    init(b35: [ProberRecord], b15: [ProberRecord], isMatching: Bool) {
+        self.b35 = b35
+        self.b15 = b15
+        self.isMatching = isMatching
+        self.b35Rating = b35.reduce(0) { $0 + $1.computedRating }
+        self.b15Rating = b15.reduce(0) { $0 + $1.computedRating }
+    }
 }
 
 struct DataSyncNotice: Identifiable, Equatable {

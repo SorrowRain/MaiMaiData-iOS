@@ -121,7 +121,7 @@ struct AppSectionHeader<Trailing: View>: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(AppTheme.Typography.cardTitle)
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(.primary)
                 if let subtitle {
                     Text(subtitle)
                         .font(AppTheme.Typography.caption)
@@ -205,6 +205,108 @@ struct AppInsetGroup<Content: View>: View {
     }
 }
 
+/// Standard row inside `AppInsetGroup` (leading optional icon + title/subtitle + trailing control/chevron).
+struct AppInsetRow<Leading: View, Trailing: View>: View {
+    let title: String
+    var subtitle: String? = nil
+    var monospacedSubtitle: Bool = false
+    var showsChevron: Bool = false
+    @ViewBuilder let leading: () -> Leading
+    @ViewBuilder let trailing: () -> Trailing
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        monospacedSubtitle: Bool = false,
+        showsChevron: Bool = false,
+        @ViewBuilder leading: @escaping () -> Leading,
+        @ViewBuilder trailing: @escaping () -> Trailing
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.monospacedSubtitle = monospacedSubtitle
+        self.showsChevron = showsChevron
+        self.leading = leading
+        self.trailing = trailing
+    }
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        monospacedSubtitle: Bool = false,
+        showsChevron: Bool = false,
+        @ViewBuilder trailing: @escaping () -> Trailing = { EmptyView() }
+    ) where Leading == EmptyView {
+        self.init(
+            title: title,
+            subtitle: subtitle,
+            monospacedSubtitle: monospacedSubtitle,
+            showsChevron: showsChevron,
+            leading: { EmptyView() },
+            trailing: trailing
+        )
+    }
+
+    init(
+        icon: String,
+        iconColor: Color,
+        title: String,
+        subtitle: String? = nil,
+        showsChevron: Bool = true
+    ) where Leading == AnyView, Trailing == EmptyView {
+        self.init(
+            title: title,
+            subtitle: subtitle,
+            showsChevron: showsChevron,
+            leading: {
+                AnyView(
+                    Image(systemName: icon)
+                        .font(AppTheme.Typography.subheadlineBold)
+                        .foregroundStyle(.white)
+                        .frame(width: 34, height: 34)
+                        .background(
+                            iconColor.gradient,
+                            in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous)
+                        )
+                )
+            },
+            trailing: { EmptyView() }
+        )
+    }
+
+    var body: some View {
+        HStack(spacing: AppTheme.Space.m) {
+            leading()
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTheme.Typography.rowTitle)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(monospacedSubtitle ? AppTheme.Typography.captionMono : AppTheme.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+
+            Spacer(minLength: 8)
+            trailing()
+
+            if showsChevron {
+                Image(systemName: "chevron.right")
+                    .font(AppTheme.Typography.captionBold)
+                    .foregroundStyle(.tertiary)
+            }
+        }
+        .padding(.horizontal, AppTheme.Space.m)
+        .padding(.vertical, 10)
+        .frame(minHeight: AppTheme.rowMinHeight)
+        .contentShape(Rectangle())
+    }
+}
+
 /// Shared full-screen photo preview scaffold used by `CoverZoomView` and `B50PreviewSheet`.
 /// Owns the black backdrop, dark navigation bar, pinch-to-zoom scroll view, share sheet, and save toast.
 struct PhotoPreviewScaffold<Placeholder: View>: View {
@@ -280,12 +382,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
                     }
                 }
             }
-            .overlay(alignment: .bottom) {
-                if let saveStatus {
-                    StatusToast(text: saveStatus)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
+            .statusToast(saveStatus)
             .sheet(isPresented: $showShare) {
                 if let image {
                     ShareSheet(items: [image])

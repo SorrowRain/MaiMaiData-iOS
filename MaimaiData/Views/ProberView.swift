@@ -15,15 +15,17 @@ struct ProberView: View {
     @State private var b50PreviewItem: B50PreviewItem?
 
     var body: some View {
-        let split = store.best35AndBest15()
-        let b35Sum = split.b35.reduce(0) { $0 + $1.computedRating }
-        let b15Sum = split.b15.reduce(0) { $0 + $1.computedRating }
+        let summary = store.best35AndBest15()
         let targetList = store.sortedRecords(isNewVersion: selectedTab == 1)
         let cutoff = selectedTab == 0 ? 35 : 15
 
         ScrollView {
             LazyVStack(spacing: AppTheme.itemSpacing) {
-                headerPickerCard(b35Sum: b35Sum, b15Sum: b15Sum, isMatching: split.isMatching)
+                headerPickerCard(
+                    b35Sum: summary.b35Rating,
+                    b15Sum: summary.b15Rating,
+                    isMatching: summary.isMatching
+                )
 
                 if targetList.isEmpty {
                     if store.currentCookie.isEmpty && store.currentUsername.isEmpty {
@@ -77,12 +79,12 @@ struct ProberView: View {
             await refreshRecords()
         }
         .appPageBackground()
-        .navigationTitle("总 Rating \(b35Sum + b15Sum)")
+        .navigationTitle("总 Rating \(summary.totalRating)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItemGroup(placement: .topBarTrailing) {
                 Button {
-                    Task { await generateBest50Image(b35: split.b35, b15: split.b15) }
+                    Task { await generateBest50Image(b35: summary.b35, b15: summary.b15) }
                 } label: {
                     if isRenderingB50 {
                         HStack(spacing: 6) {
@@ -95,7 +97,7 @@ struct ProberView: View {
                         Label("生成 B50", systemImage: "photo.on.rectangle.angled")
                     }
                 }
-                .disabled(isRenderingB50 || (split.b35.isEmpty && split.b15.isEmpty))
+                .disabled(isRenderingB50 || (summary.b35.isEmpty && summary.b15.isEmpty))
             }
         }
         .sheet(isPresented: $showLoginSheet) {
@@ -113,8 +115,8 @@ struct ProberView: View {
     }
 
     private func headerPickerCard(b35Sum: Int, b15Sum: Int, isMatching: Bool) -> some View {
-        AppCard(padding: 12, tint: AppTheme.accent) {
-            VStack(alignment: .leading, spacing: 10) {
+        AppCard(padding: AppTheme.compactCardPadding, tint: AppTheme.accent) {
+            VStack(alignment: .leading, spacing: AppTheme.itemSpacing) {
                 Picker("版本分区", selection: $selectedTab) {
                     Text("旧版本 B35 (\(b35Sum))").tag(0)
                     Text("现行版本 B15 (\(b15Sum))").tag(1)
@@ -124,7 +126,7 @@ struct ProberView: View {
                 if !isMatching && !store.records.isEmpty {
                     Label("部分成绩未匹配到当前曲库，建议在「设置与数据」中更新曲库", systemImage: "exclamationmark.triangle.fill")
                         .font(AppTheme.Typography.caption)
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(AppTheme.warning)
                 }
             }
         }
@@ -170,7 +172,7 @@ private struct ProberRecordRow: View {
 
     var body: some View {
         let diff = record.difficulty
-        AppCard(padding: 12, tint: diff.color) {
+        AppCard(padding: AppTheme.compactCardPadding, tint: diff.color) {
             HStack(spacing: AppTheme.Space.m) {
                 SongCoverBadgeView(
                     song: song,
@@ -206,29 +208,13 @@ private struct ProberRecordRow: View {
                             .font(AppTheme.Typography.captionMetaBold)
                             .foregroundStyle(.primary)
 
-                        Image(record.rankAssetName)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(height: 16)
-
-                        if let fc = record.fcAssetName {
-                            Image(fc)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 18)
-                        }
-                        if let fs = record.fsAssetName {
-                            Image(fs)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 18)
-                        }
+                        RecordStatusBadges(record: record, size: .compact)
 
                         Spacer(minLength: 0)
 
                         Text("Ra \(record.computedRating)")
                             .font(AppTheme.Typography.captionMetaBold)
-                            .foregroundStyle(AppTheme.accent)
+                            .foregroundStyle(AppTheme.accentText)
                     }
                 }
             }

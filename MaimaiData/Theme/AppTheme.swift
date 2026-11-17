@@ -11,7 +11,11 @@ enum AppTheme {
     // MARK: - Brand & Accent Colors
     static let accent = Color(hex: 0x1668DC)
     static let accentBright = Color(hex: 0x2B88FF)
+    /// High-contrast brand blue for foreground text (dark mode automatically uses `accentBright`).
+    static let accentText = Color.adaptive(light: accent, dark: accentBright)
     static let favoritePink = Palette.noteBreak
+    static let destructive = Color(.systemRed)
+    static let warning = Color(.systemOrange)
 
     // MARK: - Semantic Palette (game terms + shared surfaces; values are locked)
     enum Palette {
@@ -86,15 +90,18 @@ enum AppTheme {
         // Level progress header tint
         static let progressAccent = noteHold
 
-        // Shared surfaces & hairlines
+        // Shared surfaces, page gradients & hairlines
         static let surfaceDark = Color(hex: 0x172135)
         static let hairline = Color(hex: 0x0F2952)
         static let genreGameCardFill = Color(hex: 0x398428)
+        static let pageDarkGradient = [Color(hex: 0x0B1120), Color(hex: 0x0F172A), Color(hex: 0x111827)]
+        static let pageLightGradient = [Color(hex: 0xE8F0FC), Color(hex: 0xF1F5FB), Color(hex: 0xEDF2FA)]
     }
 
     // MARK: - Spacing & Sizing
     static let pagePadding: CGFloat = 16
     static let cardPadding: CGFloat = 16
+    static let compactCardPadding: CGFloat = 12
     static let cardSpacing: CGFloat = 12
     static let itemSpacing: CGFloat = 10
     static let rowMinHeight: CGFloat = 50
@@ -160,8 +167,8 @@ struct AppPageBackground: View {
     var body: some View {
         LinearGradient(
             colors: colorScheme == .dark
-                ? [Color(hex: 0x0B1120), Color(hex: 0x0F172A), Color(hex: 0x111827)]
-                : [Color(hex: 0xE8F0FC), Color(hex: 0xF1F5FB), Color(hex: 0xEDF2FA)],
+                ? AppTheme.Palette.pageDarkGradient
+                : AppTheme.Palette.pageLightGradient,
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )

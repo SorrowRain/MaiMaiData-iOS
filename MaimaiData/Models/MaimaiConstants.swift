@@ -129,6 +129,15 @@ enum MaimaiConstants {
         return map.first { versionCode.hasPrefix($0.0) }?.1
     }
 
+    static func jpVersionFallbackTitle(for versionCode: String) -> String {
+        let trimmed = versionCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "暂无数据" }
+        if trimmed.hasPrefix("265") {
+            return "maimai でらっくす CiRCLE PLUS"
+        }
+        return "Ver. \(trimmed)"
+    }
+
     static func cnVersionAsset(for fromName: String) -> String? {
         cnVersions.first { $0.name == fromName }?.asset
     }

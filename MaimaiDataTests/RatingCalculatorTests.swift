@@ -39,4 +39,36 @@ final class RatingCalculatorTests: XCTestCase {
             XCTAssertEqual(row.totalRating, row.singleRating * 50)
         }
     }
+
+    func testFinaleToDxConversion() throws {
+        // Missing break notes must throw
+        XCTAssertThrowsError(
+            try RatingCalculator.convertFinaleToDx(.init(tapPerfect: 100))
+        )
+        // All Perfect without breakScore returns 100.5000% ~ 101.0000%
+        let rangeText = try RatingCalculator.convertFinaleToDx(
+            .init(tapPerfect: 100, breakPerfect: 10)
+        )
+        XCTAssertEqual(rangeText, "100.5000% ~ 101.0000%")
+
+        // All 2600 Critical Break Perfect returns exact 101.0000%
+        let exactMax = try RatingCalculator.convertFinaleToDx(
+            .init(tapPerfect: 100, breakPerfect: 10, breakScore: 26_000)
+        )
+        XCTAssertEqual(exactMax, "101.0000%")
+
+        // Invalid breakScore (< 2500 per break) throws
+        XCTAssertThrowsError(
+            try RatingCalculator.convertFinaleToDx(
+                .init(tapPerfect: 100, breakPerfect: 10, breakScore: 24_900)
+            )
+        )
+    }
+
+    func testVersionStringNumericComparison() {
+        XCTAssertTrue(VersionString.isNewer("20261113", than: "2026113"))
+        XCTAssertFalse(VersionString.isNewer("2026113", than: "20261113"))
+        XCTAssertTrue(VersionString.isNewer("1.10.0", than: "1.9.9"))
+        XCTAssertFalse(VersionString.isNewer("1.0.0", than: "1.0.0"))
+    }
 }

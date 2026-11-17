@@ -105,6 +105,21 @@ struct ProberRecord: Codable, Identifiable, Hashable {
         }
     }
 
+    var rankAccessibilityLabel: String {
+        let display = rate.uppercased().replacingOccurrences(of: "P", with: "+")
+        return "评级 \(display)"
+    }
+
+    var fcAccessibilityLabel: String {
+        let display = fc.uppercased().replacingOccurrences(of: "P", with: "+")
+        return "连击状态 \(display)"
+    }
+
+    var fsAccessibilityLabel: String {
+        let display = fs.uppercased().replacingOccurrences(of: "P", with: "+")
+        return "同步状态 \(display)"
+    }
+
     var typeAssetName: String {
         type == MaimaiConstants.chartTypeDX ? "mmd_player_rtsong_icon_dx" : "mmd_player_rtsong_icon_standard"
     }

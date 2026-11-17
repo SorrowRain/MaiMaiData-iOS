@@ -7,6 +7,7 @@ final class CoverImageCache: @unchecked Sendable {
     private let memory = NSCache<NSString, UIImage>()
     private let diskDir: URL
     private let session: URLSession
+    private let coordinator = InFlightCoordinator()
 
     private init() {
         memory.countLimit = 400
@@ -53,28 +54,41 @@ final class CoverImageCache: @unchecked Sendable {
             return cached
         }
 
+        let urls = song.coverCandidateURLs
         let diskFile = diskDir.appendingPathComponent("\(keyString).png")
-        if let data = try? Data(contentsOf: diskFile),
-           let rawImg = UIImage(data: data) {
-            let prepared = await rawImg.byPreparingForDisplay() ?? rawImg
-            memory.setObject(prepared, forKey: key)
-            return prepared
+        let loaded = await coordinator.coalesce(key: keyString) { [session] in
+            await Self.fetchFromDiskOrNetwork(diskFile: diskFile, urls: urls, session: session)
+        }
+        if let loaded {
+            memory.setObject(loaded, forKey: key)
+        }
+        return loaded
+    }
+
+    private static func fetchFromDiskOrNetwork(
+        diskFile: URL,
+        urls: [URL],
+        session: URLSession
+    ) async -> UIImage? {
+        if let diskImage = await Task.detached(priority: .utility, operation: { () -> UIImage? in
+            guard let data = try? Data(contentsOf: diskFile) else { return nil }
+            return UIImage(data: data)
+        }).value {
+            return await diskImage.byPreparingForDisplay() ?? diskImage
         }
 
-        for url in song.coverCandidateURLs {
+        for url in urls {
             if Task.isCancelled { return nil }
-            if let data = await downloadImageData(url: url),
+            if let data = await downloadImageData(url: url, session: session),
                let rawImg = UIImage(data: data) {
                 try? data.write(to: diskFile, options: .atomic)
-                let prepared = await rawImg.byPreparingForDisplay() ?? rawImg
-                memory.setObject(prepared, forKey: key)
-                return prepared
+                return await rawImg.byPreparingForDisplay() ?? rawImg
             }
         }
         return nil
     }
 
-    private func downloadImageData(url: URL) async -> Data? {
+    private static func downloadImageData(url: URL, session: URLSession) async -> Data? {
         do {
             var req = URLRequest(url: url)
             req.setValue("MaimaiData-iOS/1.0", forHTTPHeaderField: "User-Agent")
@@ -88,6 +102,23 @@ final class CoverImageCache: @unchecked Sendable {
         } catch {
             return nil
         }
+    }
+}
+
+private actor InFlightCoordinator {
+    private var tasks: [String: Task<UIImage?, Never>] = [:]
+
+    func coalesce(key: String, operation: @escaping @Sendable () async -> UIImage?) async -> UIImage? {
+        if let existing = tasks[key] {
+            return await existing.value
+        }
+        let task = Task {
+            await operation()
+        }
+        tasks[key] = task
+        let result = await task.value
+        tasks[key] = nil
+        return result
     }
 }
 

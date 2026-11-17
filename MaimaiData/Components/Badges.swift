@@ -76,6 +76,68 @@ struct AppCapsuleLabel: View {
     }
 }
 
+/// Inset metric box: caption label above a metric value or custom content.
+struct AppMetricTile<Content: View>: View {
+    let title: String
+    var highlight: Bool = false
+    @ViewBuilder let content: () -> Content
+
+    init(
+        title: String,
+        highlight: Bool = false,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.highlight = highlight
+        self.content = content
+    }
+
+    init(title: String, value: String, highlight: Bool = false) where Content == AnyView {
+        self.init(title: title, highlight: highlight) {
+            AnyView(
+                Text(value)
+                    .font(AppTheme.Typography.sectionMetric)
+                    .foregroundStyle(highlight ? AppTheme.accentText : .primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            )
+        }
+    }
+
+    var body: some View {
+        AppInsetGroup(padding: AppTheme.itemSpacing) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                Text(title)
+                    .font(AppTheme.Typography.caption2Semibold)
+                    .foregroundStyle(highlight ? AppTheme.accentText : .secondary)
+                    .lineLimit(1)
+                content()
+            }
+        }
+    }
+}
+
+/// Fixed-width value badge paired with sliders (e.g. "ALL", "13+", ".8").
+struct AppValueBadge: View {
+    @Environment(\.colorScheme) private var colorScheme
+    let text: String
+    let isActive: Bool
+
+    var body: some View {
+        let isDark = colorScheme == .dark
+        Text(text)
+            .font(AppTheme.Typography.captionMetaBold)
+            .foregroundStyle(isActive ? AppTheme.accentText : .secondary)
+            .frame(width: 44, height: 24)
+            .background(
+                isActive
+                    ? AppTheme.accent.opacity(isDark ? 0.22 : 0.13)
+                    : Color.primary.opacity(isDark ? 0.10 : 0.06),
+                in: RoundedRectangle(cornerRadius: AppTheme.Radius.badge, style: .continuous)
+            )
+    }
+}
+
 /// Statistic tile: caption title above value, tinted background.
 struct AppStatTile: View {
     let title: String
@@ -130,7 +192,7 @@ struct DifficultyLevelBadge: View {
 }
 
 /// Unified genre-tinted capsule chrome (light 15% fill / 30% border, dark 22% fill / 45% border).
-struct GenreTagChrome: ViewModifier {
+private struct GenreTagChrome: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     let genre: String
 
@@ -145,14 +207,62 @@ struct GenreTagChrome: ViewModifier {
 }
 
 struct GenreCapsuleTag: View {
+    enum Style {
+        /// Compact song-row genre label (11pt).
+        case compact
+        /// Regular detail-page alias capsule (12pt).
+        case regular
+    }
+
     let genre: String
+    var text: String? = nil
+    var style: Style = .compact
 
     var body: some View {
-        Text(genre)
-            .font(AppTheme.Typography.caption2Semibold)
-            .padding(.horizontal, AppTheme.Space.s)
-            .padding(.vertical, 3)
+        let isRegular = style == .regular
+        Text(text ?? genre)
+            .font(isRegular ? AppTheme.Typography.tag : AppTheme.Typography.caption2Semibold)
+            .padding(.horizontal, isRegular ? AppTheme.itemSpacing : AppTheme.Space.s)
+            .padding(.vertical, isRegular ? 5 : 3)
             .modifier(GenreTagChrome(genre: genre))
+    }
+}
+
+/// Rank + optional FC / FS asset badges with accessible VoiceOver labels.
+struct RecordStatusBadges: View {
+    enum Size {
+        case compact
+        case regular
+    }
+
+    let record: ProberRecord
+    var size: Size = .compact
+
+    var body: some View {
+        let rankHeight: CGFloat = size == .regular ? 20 : 16
+        let markHeight: CGFloat = size == .regular ? 22 : 18
+
+        Image(record.rankAssetName)
+            .resizable()
+            .scaledToFit()
+            .frame(height: rankHeight)
+            .accessibilityLabel(record.rankAccessibilityLabel)
+
+        if let fc = record.fcAssetName {
+            Image(fc)
+                .resizable()
+                .scaledToFit()
+                .frame(height: markHeight)
+                .accessibilityLabel(record.fcAccessibilityLabel)
+        }
+
+        if let fs = record.fsAssetName {
+            Image(fs)
+                .resizable()
+                .scaledToFit()
+                .frame(height: markHeight)
+                .accessibilityLabel(record.fsAccessibilityLabel)
+        }
     }
 }
 

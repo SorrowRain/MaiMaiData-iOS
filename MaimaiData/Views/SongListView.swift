@@ -82,7 +82,7 @@ struct SongListView: View {
                                 ? "line.3.horizontal.decrease.circle.fill"
                                 : "line.3.horizontal.decrease.circle"
                         )
-                        .foregroundStyle(criteria.isActive ? AppTheme.accent : .primary)
+                        .foregroundStyle(criteria.isActive ? AppTheme.accentText : .primary)
                     }
                     .accessibilityLabel("筛选")
                 }
@@ -173,20 +173,18 @@ struct SongListView: View {
     }
 
     private var searchHistoryCard: some View {
-        AppCard(padding: 12, tint: AppTheme.accent) {
+        AppCard(padding: AppTheme.compactCardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("最近搜索")
                         .font(AppTheme.Typography.inlineAction)
                         .foregroundStyle(.secondary)
                     Spacer()
-                    Button("清空") {
+                    AppInlineButton(title: "清空", tint: .secondary) {
                         withAnimation(.snappy(duration: 0.22)) {
                             store.clearSearchHistory()
                         }
                     }
-                    .font(AppTheme.Typography.tag)
-                    .foregroundStyle(.secondary)
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -206,7 +204,7 @@ struct SongListView: View {
     }
 
     private var activeFilterSummaryCard: some View {
-        AppCard(padding: 12, tint: AppTheme.accent) {
+        AppCard(padding: AppTheme.compactCardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("已筛选 \(displayedSongs.count) 首曲目")
@@ -257,7 +255,7 @@ private struct SongRowView: View {
 
     var body: some View {
         let colors = MaimaiConstants.genreColors(for: song.basicInfo.genre)
-        AppCard(padding: 12, tint: colors.bg) {
+        AppCard(padding: AppTheme.compactCardPadding, tint: colors.bg) {
             HStack(alignment: .center, spacing: AppTheme.Space.m) {
                 SongCoverBadgeView(
                     song: song,

@@ -18,6 +18,8 @@ enum CheckDisplayMode: Int, CaseIterable {
     }
 }
 
+private let checklistGridColumns = [GridItem(.adaptive(minimum: 72), spacing: AppTheme.itemSpacing)]
+
 struct ChecklistStatsHeader: View {
     let stats: ChecklistStats
     @Binding var displayMode: CheckDisplayMode
@@ -31,12 +33,22 @@ struct ChecklistStatsHeader: View {
                 displayMode = displayMode.next()
             }
         } content: {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
+            LazyVGrid(columns: checklistGridColumns, spacing: AppTheme.itemSpacing) {
                 AppStatTile(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", tint: AppTheme.Palette.statSSS)
                 AppStatTile(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFC)
                 AppStatTile(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", tint: AppTheme.Palette.statAP)
                 AppStatTile(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFSD)
             }
+        }
+    }
+}
+
+struct ChecklistSongGrid<Content: View>: View {
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        LazyVGrid(columns: checklistGridColumns, spacing: AppTheme.itemSpacing) {
+            content()
         }
     }
 }
@@ -84,12 +96,14 @@ struct ChecklistSongTile: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 52, height: 24)
+                .accessibilityLabel(record.rankAccessibilityLabel)
         case .fc:
             if let fc = record.fcAssetName {
                 Image(fc)
                     .resizable()
                     .scaledToFit()
                     .frame(width: 32, height: 32)
+                    .accessibilityLabel(record.fcAccessibilityLabel)
             }
         case .fs:
             if let fs = record.fsAssetName {
@@ -97,6 +111,7 @@ struct ChecklistSongTile: View {
                     .resizable()
                     .scaledToFit()
                     .frame(width: 32, height: 32)
+                    .accessibilityLabel(record.fsAccessibilityLabel)
             }
         }
     }

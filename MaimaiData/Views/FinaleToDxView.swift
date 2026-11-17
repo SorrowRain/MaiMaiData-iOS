@@ -25,7 +25,7 @@ struct FinaleToDxView: View {
                             Spacer()
                             Text(resultText)
                                 .font(AppTheme.Typography.heroTitle)
-                                .foregroundStyle(AppTheme.accent)
+                                .foregroundStyle(AppTheme.accentText)
                         }
                     }
                 }
@@ -118,51 +118,17 @@ struct FinaleToDxView: View {
     }
 
     private func calculate() {
-        let tp = val(tapP), tgr = val(tapGr), tgd = val(tapGd), tm = val(tapM)
-        let hp = val(holdP), hgr = val(holdGr), hgd = val(holdGd), hm = val(holdM)
-        let sp = val(slideP), sgr = val(slideGr), sgd = val(slideGd), sm = val(slideM)
-        let bp = val(breakP), bgr = val(breakGr), bgd = val(breakGd), bm = val(breakM)
-        let bs = val(breakScore)
-
-        let tapCount = tp + tgr + tgd + tm
-        let holdCount = hp + hgr + hgd + hm
-        let slideCount = sp + sgr + sgd + sm
-        let breakCount = bp + bgr + bgd + bm
-
-        let dxTotal = tapCount * 10 + holdCount * 20 + slideCount * 30 + breakCount * 50
-        guard dxTotal > 0, breakCount > 0 else {
-            errorText = "请填写有效物量（至少需要包含 Break 数量）"
-            return
-        }
-
-        let dxPlayMax = tp * 10 + tgr * 8 + tgd * 5 +
-            hp * 20 + hgr * 16 + hgd * 10 +
-            sp * 30 + sgr * 24 + sgd * 15 +
-            bp * 50 + bgr * 40 + bgd * 20
-
-        let dxPlayMin = tp * 10 + tgr * 8 + tgd * 5 +
-            hp * 20 + hgr * 16 + hgd * 10 +
-            sp * 30 + sgr * 24 + sgd * 15 +
-            bp * 50 + bgr * 25 + bgd * 20
-
-        if bs == 0 {
-            let maxScore = Double(dxPlayMax) / Double(dxTotal) * 100.0
-                + Double(bp) / Double(breakCount) * 1.0
-                + Double(bgr) / Double(breakCount) * 0.4
-                + Double(bgd) / Double(breakCount) * 0.3
-            let minScore = Double(dxPlayMin) / Double(dxTotal) * 100.0
-                + Double(bp) / Double(breakCount) * 0.5
-                + Double(bgr) / Double(breakCount) * 0.4
-                + Double(bgd) / Double(breakCount) * 0.3
-            resultText = String(format: "%.4f%% ~ %.4f%%", minScore, maxScore)
-        } else {
-            if bgr > 0 || bgd > 0 || bm > 0 || bp * 2600 < bs || bp * 2500 > bs {
-                errorText = "绝赞数据错误，请重新填写"
-                return
-            }
-            let dxBreak = 1.0 - 0.25 * Double(breakCount * 2600 - bs) / 50.0 / Double(breakCount)
-            let dxCurrent = Double(dxPlayMax) / Double(dxTotal) * 100.0 + dxBreak
-            resultText = String(format: "%.4f%%", dxCurrent)
+        let counts = RatingCalculator.FinaleNoteCounts(
+            tapPerfect: val(tapP), tapGreat: val(tapGr), tapGood: val(tapGd), tapMiss: val(tapM),
+            holdPerfect: val(holdP), holdGreat: val(holdGr), holdGood: val(holdGd), holdMiss: val(holdM),
+            slidePerfect: val(slideP), slideGreat: val(slideGr), slideGood: val(slideGd), slideMiss: val(slideM),
+            breakPerfect: val(breakP), breakGreat: val(breakGr), breakGood: val(breakGd), breakMiss: val(breakM),
+            breakScore: val(breakScore)
+        )
+        do {
+            resultText = try RatingCalculator.convertFinaleToDx(counts)
+        } catch {
+            errorText = error.localizedDescription
         }
     }
 }

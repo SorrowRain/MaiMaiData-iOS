@@ -49,7 +49,7 @@ struct SearchFilterSheet: View {
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 
-                                    sliderValueBadge(
+                                    AppValueBadge(
                                         text: firstSliderLabelText,
                                         isActive: currentLevelIndex > 0
                                     )
@@ -72,7 +72,7 @@ struct SearchFilterSheet: View {
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 
-                                    sliderValueBadge(
+                                    AppValueBadge(
                                         text: secondSliderLabelText,
                                         isActive: currentDecIndex > 0
                                     )
@@ -177,17 +177,6 @@ struct SearchFilterSheet: View {
                 }
             }
         }
-    }
-
-    private func sliderValueBadge(text: String, isActive: Bool) -> some View {
-        Text(text)
-            .font(AppTheme.Typography.captionMetaBold)
-            .foregroundStyle(isActive ? AppTheme.accent : .secondary)
-            .frame(width: 44, height: 24)
-            .background(
-                isActive ? AppTheme.accent.opacity(0.13) : Color.primary.opacity(0.06),
-                in: RoundedRectangle(cornerRadius: AppTheme.Radius.badge, style: .continuous)
-            )
     }
 
     private var firstSliderLabelText: String {

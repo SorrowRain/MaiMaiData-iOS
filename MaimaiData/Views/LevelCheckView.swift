@@ -3,6 +3,8 @@ import SwiftUI
 struct LevelCheckView: View {
     @Environment(DataStore.self) private var store
     @State private var displayMode: CheckDisplayMode = .rank
+    @State private var dsGroups: [DSGroup] = []
+    @State private var totalChartCount: Int = 0
 
     private var levels: [String] {
         Array(MaimaiConstants.allLevels.dropFirst()) // Drop "ALL"
@@ -22,31 +24,35 @@ struct LevelCheckView: View {
         let chart: ResolvedChart
     }
 
-    private func makeChartItems() -> [ChartItem] {
-        store.songs
+    private struct DSGroup: Identifiable {
+        var id: Double { ds }
+        let ds: Double
+        let items: [ChartItem]
+    }
+
+    private func rebuildGroups() {
+        let level = selectedLevel
+        let items = store.songs
             .filter { !$0.isUtage }
             .flatMap { song in
                 song.resolvedCharts
-                    .filter { $0.level == selectedLevel }
+                    .filter { $0.level == level }
                     .map { ChartItem(song: song, chart: $0) }
             }
             .sorted { $0.chart.ds > $1.chart.ds }
+
+        let grouped = Dictionary(grouping: items) { $0.chart.ds }
+        dsGroups = grouped.keys.sorted(by: >).map { DSGroup(ds: $0, items: grouped[$0] ?? []) }
+        totalChartCount = items.count
     }
 
     var body: some View {
         @Bindable var storeBindable = store
 
-        let chartItems = makeChartItems()
-        let groupedByDS = Dictionary(grouping: chartItems) { $0.chart.ds }
-        let sortedDSKeys = groupedByDS.keys.sorted(by: >)
-
-        let songIds = Set(chartItems.map { $0.song.numericId })
-        let levelRecords = store.records.filter { $0.level == selectedLevel && songIds.contains($0.songId) }
-        let recordMap = Dictionary(
-            levelRecords.map { ("\($0.songId)_\($0.levelIndex)", $0) },
-            uniquingKeysWith: { first, _ in first }
-        )
-        let stats = ChecklistStats(records: levelRecords, totalCount: chartItems.count)
+        let matchedRecords = dsGroups.flatMap(\.items).compactMap {
+            store.record(forSongId: $0.song.numericId, difficultyIndex: $0.chart.index)
+        }
+        let stats = ChecklistStats(records: matchedRecords, totalCount: totalChartCount)
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
@@ -67,7 +73,7 @@ struct LevelCheckView: View {
                             VStack(spacing: 2) {
                                 Text("LEVEL \(selectedLevel)")
                                     .font(AppTheme.Typography.sectionMetric)
-                                Text("共 \(chartItems.count) 张谱面")
+                                Text("共 \(totalChartCount) 张谱面")
                                     .font(AppTheme.Typography.caption)
                                     .foregroundStyle(.secondary)
                             }
@@ -98,17 +104,16 @@ struct LevelCheckView: View {
 
                 ChecklistStatsHeader(stats: stats, displayMode: $displayMode)
 
-                ForEach(sortedDSKeys, id: \.self) { dsValue in
-                    let items = groupedByDS[dsValue] ?? []
-                    AppSectionCard(title: String(format: "定数 %.1f", dsValue)) {
-                        AppCapsuleLabel(text: "\(items.count) 首")
+                ForEach(dsGroups) { group in
+                    AppSectionCard(title: String(format: "定数 %.1f", group.ds)) {
+                        AppCapsuleLabel(text: "\(group.items.count) 首")
                     } content: {
-                        LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
-                            ForEach(items) { item in
+                        ChecklistSongGrid {
+                            ForEach(group.items) { item in
                                 NavigationLink(value: item.song) {
                                     ChecklistSongTile(
                                         song: item.song,
-                                        record: recordMap["\(item.song.numericId)_\(item.chart.index)"],
+                                        record: store.record(forSongId: item.song.numericId, difficultyIndex: item.chart.index),
                                         borderColor: item.chart.difficulty.color,
                                         displayMode: displayMode,
                                         showTypeBadge: true
@@ -126,5 +131,12 @@ struct LevelCheckView: View {
         .appPageBackground()
         .navigationTitle("等级进度表")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if dsGroups.isEmpty && !store.songs.isEmpty {
+                rebuildGroups()
+            }
+        }
+        .onChange(of: store.lastLevelCheckIndex) { _, _ in rebuildGroups() }
+        .onChange(of: store.songs.count) { _, _ in rebuildGroups() }
     }
 }

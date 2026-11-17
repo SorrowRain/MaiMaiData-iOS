@@ -96,6 +96,72 @@ enum RatingCalculator {
         }
         return maxAchi
     }
+
+    // MARK: - FiNALE (Old Cabinet) -> DX Achievement Conversion
+
+    struct FinaleNoteCounts: Equatable {
+        var tapPerfect = 0, tapGreat = 0, tapGood = 0, tapMiss = 0
+        var holdPerfect = 0, holdGreat = 0, holdGood = 0, holdMiss = 0
+        var slidePerfect = 0, slideGreat = 0, slideGood = 0, slideMiss = 0
+        var breakPerfect = 0, breakGreat = 0, breakGood = 0, breakMiss = 0
+        var breakScore = 0
+    }
+
+    enum FinaleConversionError: LocalizedError, Equatable {
+        case missingNotesOrBreak
+        case invalidBreakScore
+
+        var errorDescription: String? {
+            switch self {
+            case .missingNotesOrBreak:
+                return "请填写有效物量（至少需要包含 Break 数量）"
+            case .invalidBreakScore:
+                return "绝赞数据错误，请重新填写"
+            }
+        }
+    }
+
+    static func convertFinaleToDx(_ c: FinaleNoteCounts) throws -> String {
+        let tapCount = c.tapPerfect + c.tapGreat + c.tapGood + c.tapMiss
+        let holdCount = c.holdPerfect + c.holdGreat + c.holdGood + c.holdMiss
+        let slideCount = c.slidePerfect + c.slideGreat + c.slideGood + c.slideMiss
+        let breakCount = c.breakPerfect + c.breakGreat + c.breakGood + c.breakMiss
+
+        let dxTotal = tapCount * 10 + holdCount * 20 + slideCount * 30 + breakCount * 50
+        guard dxTotal > 0, breakCount > 0 else {
+            throw FinaleConversionError.missingNotesOrBreak
+        }
+
+        let dxPlayMax = c.tapPerfect * 10 + c.tapGreat * 8 + c.tapGood * 5 +
+            c.holdPerfect * 20 + c.holdGreat * 16 + c.holdGood * 10 +
+            c.slidePerfect * 30 + c.slideGreat * 24 + c.slideGood * 15 +
+            c.breakPerfect * 50 + c.breakGreat * 40 + c.breakGood * 20
+
+        let dxPlayMin = c.tapPerfect * 10 + c.tapGreat * 8 + c.tapGood * 5 +
+            c.holdPerfect * 20 + c.holdGreat * 16 + c.holdGood * 10 +
+            c.slidePerfect * 30 + c.slideGreat * 24 + c.slideGood * 15 +
+            c.breakPerfect * 50 + c.breakGreat * 25 + c.breakGood * 20
+
+        if c.breakScore == 0 {
+            let maxScore = Double(dxPlayMax) / Double(dxTotal) * 100.0
+                + Double(c.breakPerfect) / Double(breakCount) * 1.0
+                + Double(c.breakGreat) / Double(breakCount) * 0.4
+                + Double(c.breakGood) / Double(breakCount) * 0.3
+            let minScore = Double(dxPlayMin) / Double(dxTotal) * 100.0
+                + Double(c.breakPerfect) / Double(breakCount) * 0.5
+                + Double(c.breakGreat) / Double(breakCount) * 0.4
+                + Double(c.breakGood) / Double(breakCount) * 0.3
+            return String(format: "%.4f%% ~ %.4f%%", minScore, maxScore)
+        } else {
+            if c.breakGreat > 0 || c.breakGood > 0 || c.breakMiss > 0 ||
+                c.breakPerfect * 2600 < c.breakScore || c.breakPerfect * 2500 > c.breakScore {
+                throw FinaleConversionError.invalidBreakScore
+            }
+            let dxBreak = 1.0 - 0.25 * Double(breakCount * 2600 - c.breakScore) / 50.0 / Double(breakCount)
+            let dxCurrent = Double(dxPlayMax) / Double(dxTotal) * 100.0 + dxBreak
+            return String(format: "%.4f%%", dxCurrent)
+        }
+    }
 }
 
 struct MaxNotesStats {
