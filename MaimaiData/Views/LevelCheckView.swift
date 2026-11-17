@@ -2,7 +2,8 @@ import SwiftUI
 
 struct LevelCheckView: View {
     @Environment(DataStore.self) private var store
-    @State private var displayMode: CheckDisplayMode = .rank
+    @State private var displayMode: CheckDisplayMode = .sss
+    @State private var onlyUnfinished: Bool = false
     @State private var dsGroups: [DSGroup] = []
     @State private var totalChartCount: Int = 0
 
@@ -54,6 +55,17 @@ struct LevelCheckView: View {
         }
         let stats = ChecklistStats(records: matchedRecords, totalCount: totalChartCount)
 
+        let visibleGroups: [DSGroup] = onlyUnfinished
+            ? dsGroups.compactMap { group in
+                let remaining = group.items.filter { item in
+                    !displayMode.isCompleted(
+                        store.record(forSongId: item.song.numericId, difficultyIndex: item.chart.index)
+                    )
+                }
+                return remaining.isEmpty ? nil : DSGroup(ds: group.ds, items: remaining)
+            }
+            : dsGroups
+
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppCard(padding: AppTheme.cardPadding, tint: AppTheme.Palette.progressAccent) {
@@ -73,9 +85,11 @@ struct LevelCheckView: View {
                             VStack(spacing: 2) {
                                 Text("LEVEL \(selectedLevel)")
                                     .font(AppTheme.Typography.sectionMetric)
+                                    .contentTransition(.numericText())
                                 Text("共 \(totalChartCount) 张谱面")
                                     .font(AppTheme.Typography.caption)
                                     .foregroundStyle(.secondary)
+                                    .contentTransition(.numericText())
                             }
                             Spacer()
 
@@ -102,24 +116,39 @@ struct LevelCheckView: View {
                     }
                 }
 
-                ChecklistStatsHeader(stats: stats, displayMode: $displayMode)
+                ChecklistStatsHeader(
+                    stats: stats,
+                    displayMode: $displayMode,
+                    onlyUnfinished: $onlyUnfinished
+                )
 
-                ForEach(dsGroups) { group in
-                    AppSectionCard(title: String(format: "定数 %.1f", group.ds)) {
-                        AppCapsuleLabel(text: "\(group.items.count) 首")
-                    } content: {
-                        ChecklistSongGrid {
-                            ForEach(group.items) { item in
-                                NavigationLink(value: item.song) {
-                                    ChecklistSongTile(
-                                        song: item.song,
-                                        record: store.record(forSongId: item.song.numericId, difficultyIndex: item.chart.index),
-                                        borderColor: item.chart.difficulty.color,
-                                        displayMode: displayMode,
-                                        showTypeBadge: true
-                                    )
+                if visibleGroups.isEmpty && totalChartCount > 0 {
+                    ContentUnavailableView(
+                        "已全部达成 \(displayMode.title)",
+                        systemImage: "checkmark.seal.fill",
+                        description: Text("本等级全部谱面均已达成该目标")
+                    )
+                    .padding(.top, AppTheme.Space.xl)
+                } else {
+                    ForEach(visibleGroups) { group in
+                        AppSectionCard(title: String(format: "定数 %.1f", group.ds)) {
+                            AppCapsuleLabel(text: "\(group.items.count) 首")
+                        } content: {
+                            ChecklistSongGrid {
+                                ForEach(group.items) { item in
+                                    NavigationLink(
+                                        value: SongDetailRoute(song: item.song, initialDifficulty: item.chart.difficulty)
+                                    ) {
+                                        ChecklistSongTile(
+                                            song: item.song,
+                                            record: store.record(forSongId: item.song.numericId, difficultyIndex: item.chart.index),
+                                            borderColor: item.chart.difficulty.color,
+                                            displayMode: displayMode,
+                                            showTypeBadge: true
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -129,6 +158,7 @@ struct LevelCheckView: View {
             .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
+        .sensoryFeedback(.selection, trigger: currentLevelIndex)
         .navigationTitle("等级进度表")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

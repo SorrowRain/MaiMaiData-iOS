@@ -122,3 +122,9 @@ struct ResolvedChart: Identifiable, Hashable {
         (tap + touch) + hold * 2 + slide * 3 + breakCount * 5
     }
 }
+
+/// Navigation route carrying an optional target difficulty when jumping from B50 or checklists.
+struct SongDetailRoute: Hashable {
+    let song: SongData
+    var initialDifficulty: DifficultyType? = nil
+}

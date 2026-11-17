@@ -62,7 +62,7 @@ struct ProberView: View {
 
                         let song = store.songsById[record.songId]
                         if let song {
-                            NavigationLink(value: song) {
+                            NavigationLink(value: SongDetailRoute(song: song, initialDifficulty: record.difficulty)) {
                                 ProberRecordRow(rank: idx + 1, record: record, song: song)
                             }
                             .buttonStyle(.plain)
@@ -79,6 +79,7 @@ struct ProberView: View {
             await refreshRecords()
         }
         .appPageBackground()
+        .sensoryFeedback(.selection, trigger: selectedTab)
         .navigationTitle("总 Rating \(summary.totalRating)")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -117,7 +118,7 @@ struct ProberView: View {
     private func headerPickerCard(b35Sum: Int, b15Sum: Int, isMatching: Bool) -> some View {
         AppCard(padding: AppTheme.compactCardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.itemSpacing) {
-                Picker("版本分区", selection: $selectedTab) {
+                Picker("版本分区", selection: $selectedTab.animation(.snappy(duration: 0.22))) {
                     Text("旧版本 B35 (\(b35Sum))").tag(0)
                     Text("现行版本 B15 (\(b15Sum))").tag(1)
                 }

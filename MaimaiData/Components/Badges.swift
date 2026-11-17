@@ -20,19 +20,38 @@ struct AppCapsuleLabel: View {
     let text: String
     var tint: Color = AppTheme.accent
     var style: Style = .count
+    var onRemove: (() -> Void)? = nil
 
     var body: some View {
+        if let onRemove {
+            Button(action: onRemove) {
+                capsuleBody
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("移除筛选：\(text)")
+        } else {
+            capsuleBody
+        }
+    }
+
+    private var capsuleBody: some View {
         let isDark = colorScheme == .dark
         let spec = resolvedSpec
         let isNeutral = tint == .secondary
 
-        HStack(spacing: AppTheme.Space.xs) {
+        return HStack(spacing: AppTheme.Space.xs) {
             if let prefix = spec.prefix {
                 Text(prefix)
                     .font(AppTheme.Typography.captionBold)
             }
             Text(text)
                 .font(spec.font)
+                .contentTransition(.numericText())
+            if onRemove != nil {
+                Image(systemName: "xmark")
+                    .font(AppTheme.Typography.caption2Bold)
+                    .opacity(0.75)
+            }
         }
         .padding(.horizontal, spec.hPadding)
         .padding(.vertical, spec.vPadding)
@@ -51,6 +70,7 @@ struct AppCapsuleLabel: View {
                 ? Color.secondary
                 : (isDark ? tint.brightened(toAtLeast: 1.0, maxSaturation: 0.5) : tint)
         )
+        .contentShape(Capsule())
     }
 
     private struct Spec {
@@ -138,28 +158,36 @@ struct AppValueBadge: View {
     }
 }
 
-/// Statistic tile: caption title above value, tinted background.
+/// Statistic tile: caption title above value, tinted background (supports optional active selection state).
 struct AppStatTile: View {
+    @Environment(\.colorScheme) private var colorScheme
     let title: String
     let value: String
     let tint: Color
+    var isSelected: Bool = false
 
     var body: some View {
+        let isDark = colorScheme == .dark
+        let fillOpacity: Double = isSelected ? (isDark ? 0.26 : 0.18) : (isDark ? 0.11 : 0.08)
+        let strokeOpacity: Double = isSelected ? (isDark ? 0.90 : 0.78) : 0.22
+
         VStack(spacing: 3) {
             Text(title)
                 .font(AppTheme.Typography.caption2Bold)
-                .foregroundStyle(tint)
+                .foregroundStyle(isDark ? tint.brightened(toAtLeast: 0.95, maxSaturation: 0.6) : tint)
             Text(value)
                 .font(AppTheme.Typography.captionMeta)
                 .foregroundStyle(.primary)
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppTheme.Space.s)
-        .background(tint.opacity(0.12), in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
+        .background(tint.opacity(fillOpacity), in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous)
-                .strokeBorder(tint.opacity(0.24), lineWidth: 1)
+                .strokeBorder(tint.opacity(strokeOpacity), lineWidth: isSelected ? 1.8 : 1)
         )
+        .contentShape(RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
     }
 }
 

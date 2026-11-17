@@ -71,4 +71,39 @@ final class RatingCalculatorTests: XCTestCase {
         XCTAssertTrue(VersionString.isNewer("1.10.0", than: "1.9.9"))
         XCTAssertFalse(VersionString.isNewer("1.0.0", than: "1.0.0"))
     }
+
+    func testBuildTierRowsIncludesSSSIntraTierJumpThresholdsAndB50Gains() {
+        // 14.8 has SSS base 319 (100.0000%), +1 jumps at 100.1002% (320) and 100.4130% (321), SSS+ 333 (100.5000%)
+        let rows = RatingCalculator.buildTierRows(
+            ds: 14.8,
+            currentAchievement: 98.3500,
+            b50BaselineRating: 300
+        )
+
+        let sssRows = rows.filter { $0.rate == "sss" }
+        XCTAssertEqual(sssRows.map(\.achiTenThousandths), [1_004_130, 1_001_002, 1_000_000])
+        XCTAssertEqual(sssRows.map(\.singleRating), [321, 320, 319])
+
+        // Current score 98.3500% highlights S+ (98.0000%)
+        let current = rows.first { $0.isCurrentTier }
+        XCTAssertEqual(current?.rate, "sp")
+        XCTAssertNil(current?.b50Gain)
+
+        // Tiers below S+ (97%, 94%) are marked passed with nil gain
+        let sRow = rows.first { $0.rate == "s" }
+        XCTAssertEqual(sRow?.isPassed, true)
+        XCTAssertNil(sRow?.b50Gain)
+
+        // SS (99.0% -> 304) exceeds baseline 300 by +4; SSS+ (333) exceeds by +33
+        XCTAssertEqual(rows.first { $0.rate == "ss" }?.b50Gain, 4)
+        XCTAssertEqual(rows.first { $0.rate == "sssp" }?.b50Gain, 33)
+
+        // Un-gainable song (baseline 340 > 333 max) yields +0 for all unreached tiers
+        let zeroGainRows = RatingCalculator.buildTierRows(ds: 14.8, currentAchievement: nil, b50BaselineRating: 340)
+        XCTAssertTrue(zeroGainRows.allSatisfy { $0.b50Gain == 0 })
+
+        // Logged-out state (b50BaselineRating == nil) omits b50Gain across all rows
+        let loggedOutRows = RatingCalculator.buildTierRows(ds: 14.8, currentAchievement: nil, b50BaselineRating: nil)
+        XCTAssertTrue(loggedOutRows.allSatisfy { $0.b50Gain == nil })
+    }
 }

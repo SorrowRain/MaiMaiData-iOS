@@ -15,7 +15,8 @@ MaimaiData/
 │   ├── Badges.swift                 # 胶囊标签、统计砖块、难度定数徽章、分类胶囊、谱面类型角标、封面框、筛选 Chip
 │   ├── Buttons.swift                # 主按钮、次级玻璃按钮、行内胶囊按钮、菜单触发胶囊、圆形玻璃图标按钮
 │   ├── Checklist.swift              # 进度表顶部完成度统计卡片与歌曲网格封面格
-│   ├── Containers.swift             # 流式布局 FlowLayout、标准卡片 AppCard / AppSectionCard、分组头、内嵌分组、图片预览脚手架
+│   ├── Containers.swift             # 流式布局 FlowLayout、标准卡片 AppCard / AppSectionCard、分组头、内嵌分组与行、图片预览脚手架
+│   ├── RatingTierTable.swift        # 分段达成率与单曲 Rating / B50 净涨分三列对照表（详情页与计算器共用）
 │   ├── Feedback.swift               # 自适应玻璃封装 appGlass、底部状态 Toast、同步状态横幅、错误弹窗与键盘收起修饰符
 │   └── Forms.swift                  # 标准单行输入框 AppTextField、密码框 AppSecureField、键盘收起工具 KeyboardDismiss
 ├── Bridges/
@@ -41,7 +42,8 @@ MaimaiData/
     ├── SearchFilterSheet.swift      # 等级/定数双滑块、分类、收录版本与难度排序筛选弹窗
     ├── SongDetailView.swift         # 曲目详情、难度切换、拟合定数、物量分布条与容错扣分参考
     ├── CoverZoomView.swift          # 曲目高清封面全屏缩放预览页
-    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、实用工具入口、单曲计算、目标反推）
+    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、成绩牌子入口、算分工具入口）
+    ├── RatingCalculatorView.swift   # Rating 计算器二级页（双滑块定数分段算分 + 目标总分反推）
     ├── ProberView.swift             # B35 / B15 成绩列表与 Best 50 成绩图生成预览
     ├── VersionCheckView.swift       # 按国服版本分组的 Master 完成度进度表（牌子查询）
     ├── LevelCheckView.swift         # 按 1～15 级定数分组的全难度完成度进度表
@@ -149,7 +151,8 @@ MaimaiData/
 | `AppInsetRow` | `Containers.swift` | `AppInsetGroup` 内的标准行（支持左侧图标块、主副标题、右侧控件与导航箭头，禁止在业务页手写重复行） |
 | `FlowLayout` | `Containers.swift` | 自适应折行流式布局，用于筛选条件 Chip、歌曲别名胶囊等多标签排布 |
 | `PhotoPreviewScaffold` | `Containers.swift` | 全屏纯黑底图片缩放预览、系统分享与保存相册通用脚手架（`CoverZoomView` 与 `B50PreviewSheet` 共用） |
-| `ChecklistStatsHeader` | `Checklist.swift` | 进度表顶部「完成度统计」（SSS / FC / AP / FSD 四宫格 + 角标模式切换按钮） |
+| `RatingTierTable` | `RatingTierTable.swift` | 谱面各达成率分段（含 SSS 区间 +1 跳分线）单曲分与 B50 净涨分对照表（未登录自动退化为两列） |
+| `ChecklistStatsHeader` | `Checklist.swift` | 进度表顶部「完成度统计」（SSS / FC / AP / FSD 四宫格点击切换角标 + 仅看未达成过滤开关） |
 | `ChecklistSongGrid` / `ChecklistSongTile` | `Checklist.swift` | 进度表标准自适应网格与 72×72 曲绘网格单元（内置评级/连击/同步无障碍标签与难度边框） |
 
 ### 3.2 按钮与菜单触发器 (`Buttons.swift`)

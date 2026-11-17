@@ -143,6 +143,8 @@ struct SearchFilterSheet: View {
                 .padding(.vertical, AppTheme.Space.m)
             }
             .appPageBackground()
+            .sensoryFeedback(.selection, trigger: currentLevelIndex)
+            .sensoryFeedback(.selection, trigger: currentDecIndex)
             .navigationTitle("筛选与排序")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

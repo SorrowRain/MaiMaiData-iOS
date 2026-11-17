@@ -1,103 +1,149 @@
 import SwiftUI
 
 struct SongDetailView: View {
+    private enum DetailTab: Int, CaseIterable {
+        case overview = 0
+        case rating = 1
+        case tolerance = 2
+
+        var title: String {
+            switch self {
+            case .overview: return "谱面概览"
+            case .rating: return "Rating与推分"
+            case .tolerance: return "容错参考"
+            }
+        }
+    }
+
     @Environment(DataStore.self) private var store
     @Environment(\.colorScheme) private var colorScheme
-    let song: SongData
 
-    @State private var selectedChartIndex: Int = 0
+    @State private var currentSong: SongData
+    @State private var selectedChartIndex: Int
+    @State private var selectedTab: DetailTab = .overview
     @State private var showCoverZoom = false
     @State private var copiedToast: String?
+    @State private var copyTrigger = 0
+
+    init(song: SongData, initialDifficulty: DifficultyType? = nil) {
+        _currentSong = State(initialValue: song)
+        let reversed = Array(song.resolvedCharts.reversed())
+        if let initialDifficulty,
+           let matched = reversed.firstIndex(where: { $0.difficulty == initialDifficulty }) {
+            _selectedChartIndex = State(initialValue: matched)
+        } else {
+            _selectedChartIndex = State(initialValue: 0)
+        }
+    }
 
     private var chartsDesc: [ResolvedChart] {
-        Array(song.resolvedCharts.reversed())
+        Array(currentSong.resolvedCharts.reversed())
     }
 
     var body: some View {
-        let genreColors = MaimaiConstants.genreColors(for: song.basicInfo.genre)
+        let genreColors = MaimaiConstants.genreColors(for: currentSong.basicInfo.genre)
+        let isFav = store.isFavorite(currentSong)
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 headerCard(genreColors: genreColors)
 
-                if store.enableShowAlias, let aliases = song.alias, !aliases.isEmpty {
-                    aliasCard(aliases: aliases)
-                }
-
-                versionCard()
-
                 if !chartsDesc.isEmpty {
                     difficultyPicker
 
+                    Picker("详情分区", selection: $selectedTab.animation(.snappy(duration: 0.22))) {
+                        ForEach(DetailTab.allCases, id: \.self) { tab in
+                            Text(tab.title).tag(tab)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
                     let currentIndex = min(selectedChartIndex, chartsDesc.count - 1)
                     let chart = chartsDesc[currentIndex]
-                    chartDetailSection(chart: chart, genreColors: genreColors)
+                    tabContent(chart: chart, genreColors: genreColors)
+                } else {
+                    songMetadataCard
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
             .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground(tint: genreColors.bg)
-        .navigationTitle(song.title)
+        .navigationTitle("曲目详情")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    store.toggleFavorite(song)
+                    store.toggleFavorite(currentSong)
                 } label: {
-                    Image(systemName: store.isFavorite(song) ? "heart.fill" : "heart")
-                        .foregroundStyle(store.isFavorite(song) ? AppTheme.favoritePink : .primary)
+                    Image(systemName: isFav ? "heart.fill" : "heart")
+                        .foregroundStyle(isFav ? AppTheme.favoritePink : .primary)
+                        .symbolEffect(.bounce, value: isFav)
                 }
-                .accessibilityLabel(store.isFavorite(song) ? "取消收藏" : "收藏歌曲")
+                .sensoryFeedback(.impact(weight: .light), trigger: isFav)
+                .accessibilityLabel(isFav ? "取消收藏" : "收藏歌曲")
             }
         }
+        .sensoryFeedback(.selection, trigger: selectedChartIndex)
+        .sensoryFeedback(.selection, trigger: selectedTab)
+        .sensoryFeedback(.selection, trigger: currentSong.id)
+        .sensoryFeedback(.success, trigger: copyTrigger)
         .statusToast(copiedToast)
         .fullScreenCover(isPresented: $showCoverZoom) {
-            CoverZoomView(song: song)
+            CoverZoomView(song: currentSong)
         }
     }
 
     // MARK: - Hero Header Card
 
     private func headerCard(genreColors: (bg: Color, stroke: Color)) -> some View {
-        let cardFill = MaimaiConstants.genreCardFill(for: song.basicInfo.genre)
+        let cardFill = MaimaiConstants.genreCardFill(for: currentSong.basicInfo.genre)
         let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+        let counterpart = store.counterpartSong(for: currentSong)
+
         return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 14) {
                 Button {
                     showCoverZoom = true
                 } label: {
                     SongCoverBadgeView(
-                        song: song,
+                        song: currentSong,
                         size: .hero,
                         borderColor: genreColors.stroke,
                         showCornerTypeBadge: true
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("放大查看《\(song.title)》封面")
+                .accessibilityLabel("放大查看《\(currentSong.title)》封面")
 
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(song.title)
+                    if let counterpart {
+                        HStack {
+                            Spacer(minLength: 0)
+                            counterpartSwitchBadge(to: counterpart)
+                        }
+                    }
+
+                    Text(currentSong.title)
                         .font(AppTheme.Typography.heroTitle)
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
-                        .onLongPressGesture { copyText(song.title, label: "歌曲名") }
+                        .onLongPressGesture { copyText(currentSong.title, label: "歌曲名") }
 
-                    Text(song.basicInfo.artist)
+                    Text(currentSong.basicInfo.artist)
                         .font(AppTheme.Typography.body)
                         .foregroundStyle(.white.opacity(0.92))
                         .fixedSize(horizontal: false, vertical: true)
-                        .onLongPressGesture { copyText(song.basicInfo.artist, label: "曲师") }
+                        .onLongPressGesture { copyText(currentSong.basicInfo.artist, label: "曲师") }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             HStack(spacing: AppTheme.Space.s) {
-                factPill(label: "BPM", value: "\(song.basicInfo.bpm)")
-                factPill(label: "歌曲分类", value: song.basicInfo.genre)
-                factPill(label: "歌曲 ID", value: song.id)
-                    .onLongPressGesture { copyText(song.id, label: "歌曲 ID") }
+                factPill(label: "BPM", value: "\(currentSong.basicInfo.bpm)")
+                factPill(label: "歌曲分类", value: currentSong.basicInfo.genre)
+                factPill(label: "歌曲 ID", value: currentSong.id)
+                    .onLongPressGesture { copyText(currentSong.id, label: "歌曲 ID") }
             }
         }
         .padding(AppTheme.cardPadding)
@@ -114,6 +160,37 @@ struct SongDetailView: View {
         )
     }
 
+    private func counterpartSwitchBadge(to counterpart: SongData) -> some View {
+        Button {
+            let activeDiff = chartsDesc[safe: min(selectedChartIndex, max(0, chartsDesc.count - 1))]?.difficulty
+            let nextReversed = Array(counterpart.resolvedCharts.reversed())
+            let nextIdx = activeDiff.flatMap { diff in
+                nextReversed.firstIndex(where: { $0.difficulty == diff })
+            } ?? 0
+            withAnimation(.snappy(duration: 0.25)) {
+                currentSong = counterpart
+                selectedChartIndex = nextIdx
+            }
+        } label: {
+            HStack(spacing: AppTheme.Space.xs) {
+                Image(systemName: "arrow.left.arrow.right")
+                    .font(AppTheme.Typography.caption2Bold)
+                Text(counterpart.isDX ? "切至 DX" : "切至标准")
+                    .font(AppTheme.Typography.caption2Semibold)
+            }
+            .foregroundStyle(.white.opacity(0.95))
+            .padding(.horizontal, AppTheme.Space.s)
+            .padding(.vertical, 4)
+            .background(Color.black.opacity(0.22), in: Capsule())
+            .overlay(
+                Capsule().strokeBorder(Color.white.opacity(0.24), lineWidth: 0.8)
+            )
+            .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(counterpart.isDX ? "切换至 DX 谱面" : "切换至标准谱面")
+    }
+
     private func factPill(label: String, value: String) -> some View {
         VStack(spacing: 3) {
             Text(label)
@@ -124,6 +201,7 @@ struct SongDetailView: View {
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
+                .contentTransition(.numericText())
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, AppTheme.Space.s)
@@ -136,64 +214,6 @@ struct SongDetailView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: - Alias & Version Cards
-
-    private func aliasCard(aliases: [String]) -> some View {
-        let genre = song.basicInfo.genre
-        return AppSectionCard(title: "歌曲别名") {
-            FlowLayout(spacing: 6, lineSpacing: 6) {
-                ForEach(aliases, id: \.self) { alias in
-                    GenreCapsuleTag(genre: genre, text: alias, style: .regular)
-                        .onLongPressGesture { copyText(alias, label: "别名") }
-                }
-            }
-        }
-    }
-
-    private func versionCard() -> some View {
-        AppSectionCard(title: "收录版本") {
-            HStack(alignment: .center, spacing: AppTheme.itemSpacing) {
-                versionBox(
-                    title: "日服收录",
-                    asset: MaimaiConstants.jpVersionAsset(for: song.basicInfo.version),
-                    fallback: MaimaiConstants.jpVersionFallbackTitle(for: song.basicInfo.version)
-                )
-                versionBox(
-                    title: "国服收录",
-                    asset: MaimaiConstants.cnVersionAsset(for: song.basicInfo.from),
-                    fallback: song.basicInfo.from.isEmpty ? "暂无数据" : song.basicInfo.from
-                )
-            }
-        }
-    }
-
-    private func versionBox(title: String, asset: String?, fallback: String) -> some View {
-        AppInsetGroup(padding: 10) {
-            VStack(alignment: .center, spacing: 6) {
-                Text(title)
-                    .font(AppTheme.Typography.caption2Bold)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-
-                ZStack {
-                    if let asset {
-                        Image(asset)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: 108, maxHeight: 36)
-                            .accessibilityLabel(fallback)
-                    } else {
-                        Text(fallback)
-                            .font(AppTheme.Typography.inlineAction)
-                            .foregroundStyle(.primary)
-                            .multilineTextAlignment(.center)
-                    }
-                }
-                .frame(maxWidth: .infinity, minHeight: 36, alignment: .center)
-            }
-        }
-    }
-
     // MARK: - Difficulty Switcher
 
     private var difficultyPicker: some View {
@@ -203,7 +223,9 @@ struct SongDetailView: View {
                 let isRemaster = chart.difficulty == .remaster
                 let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.chip, style: .continuous)
                 Button {
-                    selectedChartIndex = idx
+                    withAnimation(.snappy(duration: 0.25)) {
+                        selectedChartIndex = idx
+                    }
                 } label: {
                     VStack(spacing: 2) {
                         Text(chart.difficulty.shortName)
@@ -246,14 +268,35 @@ struct SongDetailView: View {
         return colorScheme == .dark ? chart.difficulty.boardMainColor : .primary
     }
 
-    // MARK: - Chart Details
+    // MARK: - Segmented Tab Content
 
     @ViewBuilder
-    private func chartDetailSection(chart: ResolvedChart, genreColors: (bg: Color, stroke: Color)) -> some View {
-        let record = store.record(forSongId: song.numericId, difficultyIndex: chart.index)
-        let fitDiff = store.chartStats[song.numericId]?[safe: chart.index]?.fitDiff
+    private func tabContent(chart: ResolvedChart, genreColors: (bg: Color, stroke: Color)) -> some View {
+        switch selectedTab {
+        case .overview:
+            overviewSection(chart: chart)
+        case .rating:
+            ratingSection(chart: chart)
+        case .tolerance:
+            if chart.totalWeightedScore > 0 {
+                ChartToleranceCard(chart: chart, isDX: currentSong.isDX, tintColor: genreColors.bg)
+            } else {
+                AppSectionCard(title: "容错扣分参考") {
+                    Text("当前谱面暂无物量数据")
+                        .font(AppTheme.Typography.body)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        }
+    }
 
-        VStack(spacing: AppTheme.cardSpacing) {
+    // MARK: - Tab 1: Overview (Chart Info + Notes + Server Version & Aliases)
+
+    private func overviewSection(chart: ResolvedChart) -> some View {
+        let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
+        let fitDiff = store.chartStats[currentSong.numericId]?[safe: chart.index]?.fitDiff
+
+        return VStack(spacing: AppTheme.cardSpacing) {
             AppSectionCard(title: "谱面信息") {
                 VStack(spacing: AppTheme.itemSpacing) {
                     HStack(spacing: AppTheme.itemSpacing) {
@@ -264,11 +307,12 @@ struct SongDetailView: View {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
                                 .font(AppTheme.Typography.statValue)
                                 .foregroundStyle(.primary)
+                                .contentTransition(.numericText())
                         }
                     }
 
-                    AppInsetGroup(padding: 12) {
-                        VStack(spacing: 10) {
+                    AppInsetGroup(padding: AppTheme.Space.m) {
+                        VStack(spacing: AppTheme.itemSpacing) {
                             detailRow("谱面作者") {
                                 Text(chart.charter.isEmpty ? "—" : chart.charter)
                                     .font(AppTheme.Typography.rowTitle)
@@ -291,11 +335,79 @@ struct SongDetailView: View {
 
             ChartNotesBarCard(chart: chart, maxStats: store.maxNotesStats, barColor: chart.difficulty.color)
 
-            if chart.totalWeightedScore > 0 {
-                ChartToleranceCard(chart: chart, isDX: song.isDX, tintColor: genreColors.bg)
+            songMetadataCard
+        }
+    }
+
+    private var songMetadataCard: some View {
+        let versionInfo = MaimaiConstants.activeServerVersionDisplay(for: currentSong.basicInfo)
+        let aliases = store.enableShowAlias ? (currentSong.alias ?? []) : []
+
+        return AppSectionCard(title: "收录与别名") {
+            VStack(alignment: .leading, spacing: AppTheme.Space.m) {
+                AppInsetGroup(padding: AppTheme.Space.m) {
+                    detailRow("收录版本") {
+                        HStack(spacing: AppTheme.Space.s) {
+                            if let asset = versionInfo.asset {
+                                Image(asset)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: 112, maxHeight: 30, alignment: .leading)
+                                    .accessibilityLabel(versionInfo.fallback)
+                            } else {
+                                Text(versionInfo.fallback)
+                                    .font(AppTheme.Typography.rowTitle)
+                                    .foregroundStyle(.primary)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+
+                if !aliases.isEmpty {
+                    FlowLayout(spacing: 6, lineSpacing: 6) {
+                        ForEach(aliases, id: \.self) { alias in
+                            GenreCapsuleTag(
+                                genre: currentSong.basicInfo.genre,
+                                text: alias,
+                                style: .regular
+                            )
+                            .onLongPressGesture { copyText(alias, label: "别名") }
+                        }
+                    }
+                }
             }
         }
     }
+
+    // MARK: - Tab 2: Rating & B50 Gain Table
+
+    @ViewBuilder
+    private func ratingSection(chart: ResolvedChart) -> some View {
+        if currentSong.isUtage || chart.ds <= 0 {
+            AppSectionCard(title: "分段 Rating 对照") {
+                Text("宴会场谱面不计入 Rating")
+                    .font(AppTheme.Typography.body)
+                    .foregroundStyle(.secondary)
+            }
+        } else {
+            let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
+            let baseline = store.b50BaselineRating(forSong: currentSong, difficultyIndex: chart.index)
+            let rows = RatingCalculator.buildTierRows(
+                ds: chart.ds,
+                currentAchievement: record?.achievements,
+                b50BaselineRating: baseline
+            )
+
+            AppSectionCard(title: "分段 Rating 对照") {
+                AppCapsuleLabel(text: String(format: "定数 %.1f", chart.ds))
+            } content: {
+                RatingTierTable(rows: rows, showB50Column: store.isLoggedIn)
+            }
+        }
+    }
+
+    // MARK: - Helpers
 
     private func detailRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.m) {
@@ -314,6 +426,7 @@ struct SongDetailView: View {
             HStack(spacing: AppTheme.Space.s) {
                 Text(String(format: "%.4f%%", record.achievements))
                     .font(AppTheme.Typography.rowMetric)
+                    .contentTransition(.numericText())
                 RecordStatusBadges(record: record, size: .regular)
             }
         } else {
@@ -332,6 +445,7 @@ struct SongDetailView: View {
                 Text(String(format: "%.1f%@", chart.ds, arrow))
                     .font(AppTheme.Typography.statValue)
                     .foregroundStyle(deltaColor)
+                    .contentTransition(.numericText())
                 Text(String(format: "(旧 %.1f)", old))
                     .font(AppTheme.Typography.captionMono)
                     .foregroundStyle(.secondary)
@@ -340,11 +454,14 @@ struct SongDetailView: View {
             Text(String(format: "%.1f", chart.ds))
                 .font(AppTheme.Typography.statValue)
                 .foregroundStyle(.primary)
+                .contentTransition(.numericText())
         }
     }
 
     private func copyText(_ value: String, label: String) {
+        guard !value.isEmpty else { return }
         UIPasteboard.general.string = value
+        copyTrigger += 1
         withAnimation {
             copiedToast = "已复制\(label)：\(value)"
         }
@@ -373,10 +490,11 @@ private struct ChartNotesBarCard: View {
             Text("共 \(chart.totalNotes) Notes")
                 .font(AppTheme.Typography.captionMeta)
                 .foregroundStyle(.secondary)
+                .contentTransition(.numericText())
         } content: {
             VStack(spacing: AppTheme.Space.s) {
                 ForEach(rows, id: \.0) { label, value, maxValue in
-                    HStack(spacing: 10) {
+                    HStack(spacing: AppTheme.itemSpacing) {
                         Text(label)
                             .font(AppTheme.Typography.captionMeta)
                             .foregroundStyle(.secondary)
@@ -391,12 +509,14 @@ private struct ChartNotesBarCard: View {
                                 Capsule()
                                     .fill(barColor.gradient)
                                     .frame(width: barW)
+                                    .animation(.snappy(duration: 0.28), value: barW)
                             }
                         }
                         .frame(height: 12)
 
                         Text("\(value)")
                             .font(AppTheme.Typography.captionMeta)
+                            .contentTransition(.numericText())
                             .frame(width: 40, alignment: .leading)
                     }
                 }
@@ -437,21 +557,57 @@ private struct ChartToleranceCard: View {
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)
 
-                    AppInsetGroup {
-                        VStack(spacing: 0) {
-                            breakToleranceRow("Great", detail: "4x", value: pct(5.0 / total * 0.2 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
-                            Divider()
-                            breakToleranceRow("Great", detail: "3x", value: pct(5.0 / total * 0.4 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
-                            Divider()
-                            breakToleranceRow("Great", detail: "2.5x", value: pct(5.0 / total * 0.5 + (0.01 / brk) * 0.6), color: AppTheme.Palette.judgeGreat)
-                            Divider()
-                            breakToleranceRow("Good", value: pct(5.0 / total * 0.6 + (0.01 / brk) * 0.7), color: AppTheme.Palette.judgeGood)
-                            Divider()
-                            breakToleranceRow("Miss", value: pct(5.0 / total + 0.01 / brk), color: AppTheme.Palette.judgeMiss)
-                            Divider()
-                            breakToleranceRow("小P", detail: "-50", value: pct(0.01 / brk * 0.25), color: AppTheme.Palette.judgePerfect)
-                            Divider()
-                            breakToleranceRow("大P", detail: "-100", value: pct(0.01 / brk * 0.5), color: AppTheme.Palette.judgePerfect)
+                    VStack(spacing: AppTheme.Space.s) {
+                        // Row 1 (2 cells): Perfect -50 | Perfect -100
+                        HStack(spacing: AppTheme.Space.s) {
+                            breakCell(
+                                label: "Perfect",
+                                badge: "-50",
+                                value: pct(0.01 / brk * 0.25),
+                                tint: AppTheme.Palette.judgePerfect
+                            )
+                            breakCell(
+                                label: "Perfect",
+                                badge: "-100",
+                                value: pct(0.01 / brk * 0.5),
+                                tint: AppTheme.Palette.judgePerfect
+                            )
+                        }
+
+                        // Row 2 (3 cells): Great 4x | 3x | 2.5x
+                        HStack(spacing: AppTheme.Space.s) {
+                            breakCell(
+                                label: "Great",
+                                badge: "4x",
+                                value: pct(5.0 / total * 0.2 + (0.01 / brk) * 0.6),
+                                tint: AppTheme.Palette.judgeGreat
+                            )
+                            breakCell(
+                                label: "Great",
+                                badge: "3x",
+                                value: pct(5.0 / total * 0.4 + (0.01 / brk) * 0.6),
+                                tint: AppTheme.Palette.judgeGreat
+                            )
+                            breakCell(
+                                label: "Great",
+                                badge: "2.5x",
+                                value: pct(5.0 / total * 0.5 + (0.01 / brk) * 0.6),
+                                tint: AppTheme.Palette.judgeGreat
+                            )
+                        }
+
+                        // Row 3 (2 cells): Good | Miss
+                        HStack(spacing: AppTheme.Space.s) {
+                            breakCell(
+                                label: "Good",
+                                value: pct(5.0 / total * 0.6 + (0.01 / brk) * 0.7),
+                                tint: AppTheme.Palette.judgeGood
+                            )
+                            breakCell(
+                                label: "Miss",
+                                value: pct(5.0 / total + 0.01 / brk),
+                                tint: AppTheme.Palette.judgeMiss
+                            )
                         }
                     }
                 }
@@ -474,26 +630,30 @@ private struct ChartToleranceCard: View {
         }
     }
 
-    private func breakToleranceRow(
-        _ label: String,
-        detail: String = "",
+    private func breakCell(
+        label: String,
+        badge: String? = nil,
         value: String,
-        color: Color
+        tint: Color
     ) -> some View {
-        HStack(spacing: AppTheme.Space.s) {
-            Text(label)
-                .font(AppTheme.Typography.tag)
-                .foregroundStyle(.primary)
-            if !detail.isEmpty {
-                AppCapsuleLabel(text: detail, tint: color, style: .compact)
+        AppInsetGroup(padding: AppTheme.itemSpacing) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+                HStack(spacing: AppTheme.Space.xs) {
+                    Text(label)
+                        .font(AppTheme.Typography.caption2Bold)
+                        .foregroundStyle(.secondary)
+                    if let badge {
+                        AppCapsuleLabel(text: badge, tint: tint, style: .compact)
+                    }
+                }
+                Text("-\(value)")
+                    .font(AppTheme.Typography.captionMeta)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                    .contentTransition(.numericText())
             }
-            Spacer(minLength: 0)
-            Text(value)
-                .font(AppTheme.Typography.captionMono)
-                .foregroundStyle(.primary)
         }
-        .padding(.horizontal, AppTheme.Space.m)
-        .padding(.vertical, 9)
         .accessibilityElement(children: .combine)
     }
 
@@ -507,10 +667,11 @@ private struct ChartToleranceCard: View {
                 .foregroundStyle(isHeader ? .secondary : .primary)
                 .frame(width: 48, alignment: .leading)
             ForEach(values, id: \.self) { value in
-                Text(value)
+                Text(isHeader ? value : "-\(value)")
                     .foregroundStyle(isHeader ? .secondary : .primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .minimumScaleFactor(0.85)
+                    .contentTransition(.numericText())
             }
         }
         .font(isHeader ? AppTheme.Typography.captionBold : AppTheme.Typography.captionMono)

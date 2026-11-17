@@ -442,6 +442,39 @@ final class DataStore {
 
     // MARK: - Records & Best50 Helpers
 
+    var isLoggedIn: Bool {
+        !currentUsername.isEmpty || !currentCookie.isEmpty
+    }
+
+    /// Finds the SD <-> DX counterpart of the same song (`id ± 10000`), if present.
+    func counterpartSong(for song: SongData) -> SongData? {
+        guard !song.isUtage, song.numericId > 0 else { return nil }
+        let targetId = song.numericId < 10_000 ? song.numericId + 10_000 : song.numericId - 10_000
+        guard let candidate = songsById[targetId],
+              !candidate.isUtage,
+              candidate.title == song.title,
+              candidate.isDX != song.isDX else {
+            return nil
+        }
+        return candidate
+    }
+
+    /// Baseline single-song rating a chart must exceed to increase total B50 rating.
+    /// Returns `nil` when the user is not logged in.
+    func b50BaselineRating(forSong song: SongData, difficultyIndex: Int, summary: Best50Summary? = nil) -> Int? {
+        guard isLoggedIn else { return nil }
+        let resolved = summary ?? best35AndBest15()
+        let bucket = song.basicInfo.isNew ? resolved.b15 : resolved.b35
+        let limit = song.basicInfo.isNew ? 15 : 35
+        if let existing = bucket.first(where: { $0.songId == song.numericId && $0.levelIndex == difficultyIndex }) {
+            return existing.computedRating
+        }
+        if bucket.count >= limit {
+            return bucket.last?.computedRating ?? 0
+        }
+        return 0
+    }
+
     func record(forSongId songId: Int, difficultyIndex: Int) -> ProberRecord? {
         recordsByKey["\(songId)_\(difficultyIndex)"]
     }

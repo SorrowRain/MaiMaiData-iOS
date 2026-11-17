@@ -2,7 +2,8 @@ import SwiftUI
 
 struct VersionCheckView: View {
     @Environment(DataStore.self) private var store
-    @State private var displayMode: CheckDisplayMode = .rank
+    @State private var displayMode: CheckDisplayMode = .sss
+    @State private var onlyUnfinished: Bool = false
     @State private var groupedSongs: [LevelGroup] = []
 
     private struct LevelGroup: Identifiable {
@@ -31,6 +32,15 @@ struct VersionCheckView: View {
         let allSongs = groupedSongs.flatMap(\.songs)
         let matchedRecords = allSongs.compactMap { store.record(forSongId: $0.numericId, difficultyIndex: 3) }
         let stats = ChecklistStats(records: matchedRecords, totalCount: allSongs.count)
+
+        let visibleGroups: [LevelGroup] = onlyUnfinished
+            ? groupedSongs.compactMap { group in
+                let remaining = group.songs.filter { song in
+                    !displayMode.isCompleted(store.record(forSongId: song.numericId, difficultyIndex: 3))
+                }
+                return remaining.isEmpty ? nil : LevelGroup(level: group.level, songs: remaining)
+            }
+            : groupedSongs
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
@@ -63,23 +73,36 @@ struct VersionCheckView: View {
                     }
                 }
 
-                ChecklistStatsHeader(stats: stats, displayMode: $displayMode)
+                ChecklistStatsHeader(
+                    stats: stats,
+                    displayMode: $displayMode,
+                    onlyUnfinished: $onlyUnfinished
+                )
 
-                ForEach(groupedSongs) { group in
-                    AppSectionCard(title: "Level \(group.level)") {
-                        AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color)
-                    } content: {
-                        ChecklistSongGrid {
-                            ForEach(group.songs) { song in
-                                NavigationLink(value: song) {
-                                    ChecklistSongTile(
-                                        song: song,
-                                        record: store.record(forSongId: song.numericId, difficultyIndex: 3),
-                                        borderColor: DifficultyType.master.color,
-                                        displayMode: displayMode
-                                    )
+                if visibleGroups.isEmpty && !allSongs.isEmpty {
+                    ContentUnavailableView(
+                        "已全部达成 \(displayMode.title)",
+                        systemImage: "checkmark.seal.fill",
+                        description: Text("本版本全部 Master 曲目均已达成该目标")
+                    )
+                    .padding(.top, AppTheme.Space.xl)
+                } else {
+                    ForEach(visibleGroups) { group in
+                        AppSectionCard(title: "Level \(group.level)") {
+                            AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color)
+                        } content: {
+                            ChecklistSongGrid {
+                                ForEach(group.songs) { song in
+                                    NavigationLink(value: SongDetailRoute(song: song, initialDifficulty: .master)) {
+                                        ChecklistSongTile(
+                                            song: song,
+                                            record: store.record(forSongId: song.numericId, difficultyIndex: 3),
+                                            borderColor: DifficultyType.master.color,
+                                            displayMode: displayMode
+                                        )
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -89,6 +112,7 @@ struct VersionCheckView: View {
             .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
+        .sensoryFeedback(.selection, trigger: store.lastVersionCheckIndex)
         .navigationTitle("版本进度表 (MAS)")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

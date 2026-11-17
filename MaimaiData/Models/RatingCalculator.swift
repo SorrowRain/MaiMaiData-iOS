@@ -97,6 +97,117 @@ enum RatingCalculator {
         return maxAchi
     }
 
+    // MARK: - Per-Chart Rating Tier Table (with SSS Intra-Tier +1 Thresholds & B50 Net Gain)
+
+    struct TierRow: Identifiable, Equatable {
+        var id: Int { achiTenThousandths }
+        let rate: String
+        let achiTenThousandths: Int
+        let singleRating: Int
+        let isCurrentTier: Bool
+        let isPassed: Bool
+        /// Net increase to player's total B50 rating (`nil` when already reached or when B50 column is hidden).
+        let b50Gain: Int?
+
+        var achievementText: String {
+            String(format: "%.4f%%", Double(achiTenThousandths) / 10_000.0)
+        }
+
+        var rankAssetName: String {
+            "mmd_player_rtsong_\(rate)"
+        }
+    }
+
+    /// Builds the descending achievement tier table (`SSS+` -> intra-`SSS` +1 jump lines -> `SSS` -> ... -> `AAA`).
+    /// - Parameters:
+    ///   - ds: Chart constant (e.g. `14.8`).
+    ///   - currentAchievement: Player's current achievement on this chart, if any.
+    ///   - b50BaselineRating: If logged in, the rating threshold this chart must exceed to add total B50 points
+    ///     (either the chart's own existing rating if already in B35/B15, or the current B35/B15 floor rating).
+    ///     Pass `nil` when not logged in so `b50Gain` is omitted.
+    static func buildTierRows(
+        ds: Double,
+        currentAchievement: Double? = nil,
+        b50BaselineRating: Int? = nil
+    ) -> [TierRow] {
+        let lv = Int((ds * 10).rounded())
+        guard lv > 0 else { return [] }
+
+        var specs: [(rate: String, achi: Int)] = [
+            ("sssp", 1_005_000)
+        ]
+
+        // Compute exact +1 Ra integer jump thresholds strictly inside SSS (100.0001% ... 100.4998%)
+        let baseSSSRa = achievementToRating(levelTenths: lv, achievementTenThousandths: 1_000_000)
+        let maxIntraSSSRa = achievementToRating(levelTenths: lv, achievementTenThousandths: 1_004_998)
+        if maxIntraSSSRa > baseSSSRa {
+            for targetRa in stride(from: maxIntraSSSRa, through: baseSSSRa + 1, by: -1) {
+                if let threshold = minimumSSSThreshold(levelTenths: lv, targetRating: targetRa) {
+                    specs.append(("sss", threshold))
+                }
+            }
+        }
+
+        let tailSpecs: [(rate: String, achi: Int)] = [
+            ("sss", 1_000_000),
+            ("ssp", 995_000),
+            ("ss", 990_000),
+            ("sp", 980_000),
+            ("s", 970_000),
+            ("aaa", 940_000)
+        ]
+        specs.append(contentsOf: tailSpecs)
+
+        let currentAchiInt = currentAchievement.map { Int(($0 * 10_000).rounded()) }
+        let matchedCurrentIndex: Int? = {
+            guard let cur = currentAchiInt else { return nil }
+            return specs.firstIndex { cur >= $0.achi }
+        }()
+
+        return specs.enumerated().map { idx, spec in
+            let ra = achievementToRating(levelTenths: lv, achievementTenThousandths: spec.achi)
+            let isCurrent = (matchedCurrentIndex == idx)
+            let isPassed: Bool = {
+                guard let matchedCurrentIndex else { return false }
+                return idx > matchedCurrentIndex
+            }()
+
+            let gain: Int? = {
+                guard let baseline = b50BaselineRating else { return nil }
+                if let cur = currentAchiInt, spec.achi <= cur {
+                    return nil
+                }
+                return max(0, ra - baseline)
+            }()
+
+            return TierRow(
+                rate: spec.rate,
+                achiTenThousandths: spec.achi,
+                singleRating: ra,
+                isCurrentTier: isCurrent,
+                isPassed: isPassed,
+                b50Gain: gain
+            )
+        }
+    }
+
+    private static func minimumSSSThreshold(levelTenths: Int, targetRating: Int) -> Int? {
+        var low = 1_000_001
+        var high = 1_004_998
+        guard achievementToRating(levelTenths: levelTenths, achievementTenThousandths: high) >= targetRating else {
+            return nil
+        }
+        while low < high {
+            let mid = (low + high) / 2
+            if achievementToRating(levelTenths: levelTenths, achievementTenThousandths: mid) >= targetRating {
+                high = mid
+            } else {
+                low = mid + 1
+            }
+        }
+        return low
+    }
+
     // MARK: - FiNALE (Old Cabinet) -> DX Achievement Conversion
 
     struct FinaleNoteCounts: Equatable {

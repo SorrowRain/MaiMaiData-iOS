@@ -150,7 +150,9 @@ struct CoverImageView: View {
                 return
             }
             if let loaded = await CoverImageCache.shared.loadCover(song: song) {
-                image = loaded
+                withAnimation(.easeOut(duration: 0.18)) {
+                    image = loaded
+                }
             }
         }
     }

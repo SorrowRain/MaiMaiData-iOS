@@ -1,20 +1,32 @@
 import SwiftUI
 
 enum CheckDisplayMode: Int, CaseIterable {
-    case rank = 0
+    case sss = 0
     case fc = 1
-    case fs = 2
+    case ap = 2
+    case fsd = 3
 
-    var label: String {
+    var title: String {
         switch self {
-        case .rank: return "达成率"
-        case .fc: return "FC / AP"
-        case .fs: return "FS / FDX"
+        case .sss: return "SSS (将)"
+        case .fc: return "FC (极)"
+        case .ap: return "AP (神)"
+        case .fsd: return "FSD (舞舞)"
         }
     }
 
-    func next() -> CheckDisplayMode {
-        CheckDisplayMode(rawValue: (rawValue + 1) % Self.allCases.count) ?? .rank
+    func isCompleted(_ record: ProberRecord?) -> Bool {
+        guard let record else { return false }
+        switch self {
+        case .sss:
+            return record.achievements >= 100.0
+        case .fc:
+            return !record.fc.isEmpty
+        case .ap:
+            return record.fc == "ap" || record.fc == "app"
+        case .fsd:
+            return record.fs == "fsd" || record.fs == "fsdp"
+        }
     }
 }
 
@@ -23,23 +35,53 @@ private let checklistGridColumns = [GridItem(.adaptive(minimum: 72), spacing: Ap
 struct ChecklistStatsHeader: View {
     let stats: ChecklistStats
     @Binding var displayMode: CheckDisplayMode
+    @Binding var onlyUnfinished: Bool
 
     var body: some View {
         AppSectionCard(
             title: "完成度统计",
-            subtitle: "当前角标：\(displayMode.label)"
+            subtitle: onlyUnfinished
+                ? "当前：\(displayMode.title) · 仅显示未达成"
+                : "当前：\(displayMode.title) · 点击统计块切换角标"
         ) {
-            AppInlineButton(title: "切换标识", icon: "arrow.triangle.2.circlepath") {
-                displayMode = displayMode.next()
+            AppInlineButton(
+                title: "仅看未达成",
+                icon: onlyUnfinished ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle",
+                tint: onlyUnfinished ? AppTheme.accent : .secondary
+            ) {
+                withAnimation(.snappy(duration: 0.22)) {
+                    onlyUnfinished.toggle()
+                }
             }
         } content: {
             LazyVGrid(columns: checklistGridColumns, spacing: AppTheme.itemSpacing) {
-                AppStatTile(title: "SSS", value: "\(stats.sssCount)/\(stats.totalCount)", tint: AppTheme.Palette.statSSS)
-                AppStatTile(title: "FC", value: "\(stats.fcCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFC)
-                AppStatTile(title: "AP", value: "\(stats.apCount)/\(stats.totalCount)", tint: AppTheme.Palette.statAP)
-                AppStatTile(title: "FSD", value: "\(stats.fsdCount)/\(stats.totalCount)", tint: AppTheme.Palette.statFSD)
+                statButton(mode: .sss, title: "SSS", count: stats.sssCount, tint: AppTheme.Palette.statSSS)
+                statButton(mode: .fc, title: "FC", count: stats.fcCount, tint: AppTheme.Palette.statFC)
+                statButton(mode: .ap, title: "AP", count: stats.apCount, tint: AppTheme.Palette.statAP)
+                statButton(mode: .fsd, title: "FSD", count: stats.fsdCount, tint: AppTheme.Palette.statFSD)
             }
         }
+        .sensoryFeedback(.selection, trigger: displayMode)
+        .sensoryFeedback(.selection, trigger: onlyUnfinished)
+    }
+
+    private func statButton(mode: CheckDisplayMode, title: String, count: Int, tint: Color) -> some View {
+        let selected = displayMode == mode
+        return Button {
+            withAnimation(.snappy(duration: 0.2)) {
+                displayMode = mode
+            }
+        } label: {
+            AppStatTile(
+                title: title,
+                value: "\(count)/\(stats.totalCount)",
+                tint: tint,
+                isSelected: selected
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("\(mode.title) 进度 \(count) / \(stats.totalCount)")
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
 
@@ -91,13 +133,13 @@ struct ChecklistSongTile: View {
     @ViewBuilder
     private func overlayMark(for record: ProberRecord) -> some View {
         switch displayMode {
-        case .rank:
+        case .sss:
             Image(record.rankAssetName)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 52, height: 24)
                 .accessibilityLabel(record.rankAccessibilityLabel)
-        case .fc:
+        case .fc, .ap:
             if let fc = record.fcAssetName {
                 Image(fc)
                     .resizable()
@@ -105,7 +147,7 @@ struct ChecklistSongTile: View {
                     .frame(width: 32, height: 32)
                     .accessibilityLabel(record.fcAccessibilityLabel)
             }
-        case .fs:
+        case .fsd:
             if let fs = record.fsAssetName {
                 Image(fs)
                     .resizable()

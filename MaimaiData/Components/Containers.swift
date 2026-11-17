@@ -323,6 +323,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
 
     @State private var saveStatus: String?
     @State private var showShare = false
+    @State private var didSaveTrigger = 0
 
     init(
         title: String,
@@ -383,6 +384,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
                 }
             }
             .statusToast(saveStatus)
+            .sensoryFeedback(.success, trigger: didSaveTrigger)
             .sheet(isPresented: $showShare) {
                 if let image {
                     ShareSheet(items: [image])
@@ -396,6 +398,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
         do {
             try await PhotoLibrarySaver.save(image)
             message = "已保存到系统相册"
+            didSaveTrigger += 1
         } catch {
             message = error.localizedDescription
         }

@@ -25,6 +25,7 @@ struct SongListView: View {
 
                     if criteria.isActive {
                         activeFilterSummaryCard
+                            .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     if store.isLoadingLocalData {
@@ -65,11 +66,15 @@ struct SongListView: View {
                 ToolbarItemGroup(placement: .topBarTrailing) {
                     Button {
                         isSearchFocused = false
-                        criteria.onlyFavorites.toggle()
+                        withAnimation(.snappy(duration: 0.22)) {
+                            criteria.onlyFavorites.toggle()
+                        }
                     } label: {
                         Image(systemName: criteria.onlyFavorites ? "heart.fill" : "heart")
                             .foregroundStyle(criteria.onlyFavorites ? AppTheme.favoritePink : .primary)
+                            .symbolEffect(.bounce, value: criteria.onlyFavorites)
                     }
+                    .sensoryFeedback(.impact(weight: .light), trigger: criteria.onlyFavorites)
                     .accessibilityLabel(criteria.onlyFavorites ? "取消收藏筛选" : "仅显示收藏歌曲")
                     .accessibilityValue(criteria.onlyFavorites ? "已开启" : "未开启")
 
@@ -212,31 +217,46 @@ struct SongListView: View {
                         .foregroundStyle(.secondary)
                     Spacer()
                     AppInlineButton(title: "重置", icon: "arrow.counterclockwise") {
-                        let currentKeyword = criteria.keyword
-                        var reset = SongFilterCriteria()
-                        reset.keyword = currentKeyword
-                        criteria = reset
+                        withAnimation(.snappy(duration: 0.22)) {
+                            let currentKeyword = criteria.keyword
+                            var reset = SongFilterCriteria()
+                            reset.keyword = currentKeyword
+                            criteria = reset
+                        }
                     }
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         if criteria.onlyFavorites {
-                            filterBadge("仅看收藏", tint: AppTheme.favoritePink)
+                            filterBadge("仅看收藏", tint: AppTheme.favoritePink) {
+                                criteria.onlyFavorites = false
+                            }
                         }
                         if criteria.sortOption != .defaultDesc {
-                            filterBadge(criteria.sortOption.rawValue)
+                            filterBadge(criteria.sortOption.rawValue) {
+                                criteria.sortOption = .defaultDesc
+                            }
                         }
                         if criteria.useExactDS {
-                            filterBadge(String(format: "定数 %.1f", criteria.exactDS))
+                            filterBadge(String(format: "定数 %.1f", criteria.exactDS)) {
+                                criteria.useExactDS = false
+                                criteria.selectedLevel = "ALL"
+                            }
                         } else if criteria.selectedLevel != "ALL" {
-                            filterBadge("等级 \(criteria.selectedLevel)")
+                            filterBadge("等级 \(criteria.selectedLevel)") {
+                                criteria.selectedLevel = "ALL"
+                            }
                         }
                         ForEach(Array(criteria.selectedGenres).sorted(), id: \.self) { genre in
-                            filterBadge(genre, tint: MaimaiConstants.genreColors(for: genre).bg)
+                            filterBadge(genre, tint: MaimaiConstants.genreColors(for: genre).bg) {
+                                criteria.selectedGenres.remove(genre)
+                            }
                         }
                         ForEach(Array(criteria.selectedVersions).sorted(), id: \.self) { ver in
-                            filterBadge(ver)
+                            filterBadge(ver) {
+                                criteria.selectedVersions.remove(ver)
+                            }
                         }
                     }
                 }
@@ -244,8 +264,16 @@ struct SongListView: View {
         }
     }
 
-    private func filterBadge(_ text: String, tint: Color = AppTheme.accent) -> some View {
-        AppCapsuleLabel(text: text, tint: tint, style: .filter)
+    private func filterBadge(
+        _ text: String,
+        tint: Color = AppTheme.accent,
+        onRemove: @escaping () -> Void
+    ) -> some View {
+        AppCapsuleLabel(text: text, tint: tint, style: .filter) {
+            withAnimation(.snappy(duration: 0.22)) {
+                onRemove()
+            }
+        }
     }
 }
 

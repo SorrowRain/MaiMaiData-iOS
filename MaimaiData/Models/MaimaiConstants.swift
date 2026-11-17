@@ -141,4 +141,12 @@ enum MaimaiConstants {
     static func cnVersionAsset(for fromName: String) -> String? {
         cnVersions.first { $0.name == fromName }?.asset
     }
+
+    /// Resolves the version logo asset and fallback label for the active game server (currently CN;
+    /// structured as a single entry point for future CN / JP / INTL server switching).
+    static func activeServerVersionDisplay(for info: SongData.BasicInfo) -> (asset: String?, fallback: String) {
+        let asset = cnVersionAsset(for: info.from)
+        let fallback = info.from.isEmpty ? "暂无数据" : info.from
+        return (asset, fallback)
+    }
 }
