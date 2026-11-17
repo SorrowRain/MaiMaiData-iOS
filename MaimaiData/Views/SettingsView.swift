@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(DataStore.self) private var store
     @State private var cacheSizeText: String = "计算中..."
+    @State private var showAcknowledgmentsSheet = false
 
     private var appVersionText: String {
         let info = Bundle.main.infoDictionary
@@ -175,7 +176,16 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 aboutRow(title: "版本", value: appVersionText)
                                 Divider().padding(.leading, AppTheme.Space.m)
-                                aboutRow(title: "致谢参考", value: "PaperPig / Diving-Fish / LXNS / Zetaraku")
+                                Button {
+                                    showAcknowledgmentsSheet = true
+                                } label: {
+                                    AppInsetRow(title: "致谢与参考", showsChevron: true) {
+                                        Text("查看详情")
+                                            .font(AppTheme.Typography.inlineAction)
+                                            .foregroundStyle(AppTheme.accentText)
+                                    }
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -191,6 +201,9 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 refreshCacheSize()
+            }
+            .sheet(isPresented: $showAcknowledgmentsSheet) {
+                AcknowledgmentsSheet()
             }
             .errorAlert("同步结果", message: $storeBindable.statusMessage)
         }
@@ -215,5 +228,150 @@ struct SettingsView: View {
     private func refreshCacheSize() {
         let bytes = CoverImageCache.shared.cacheSizeBytes()
         cacheSizeText = ByteCountFormatter.string(fromByteCount: bytes, countStyle: .file)
+    }
+}
+
+private struct AcknowledgmentsSheet: View {
+    @Environment(\.dismiss) private var dismiss
+
+    private struct ReferenceItem: Identifiable {
+        var id: String { name }
+        let name: String
+        let tag: String
+        let summary: String
+        let urlString: String
+        let displayHost: String
+    }
+
+    private static let designReferences: [ReferenceItem] = [
+        ReferenceItem(
+            name: "PaperPig / MaimaiData",
+            tag: "客户端参考",
+            summary: "Android 端开源舞萌 DX 查询工具，为本项目提供了基础功能形态、国服离线曲库结构与部分贴图素材参考。",
+            urlString: "https://github.com/PaperPig/MaimaiData",
+            displayHost: "github.com/PaperPig/MaimaiData"
+        )
+    ]
+
+    private static let proberReferences: [ReferenceItem] = [
+        ReferenceItem(
+            name: "Diving-Fish（水鱼查分器）",
+            tag: "查分与统计",
+            summary: "提供国服玩家成绩同步接口、水鱼全服拟合定数统计数据以及曲绘封面兜底服务。",
+            urlString: "https://github.com/Diving-Fish/maimaidx-prober",
+            displayHost: "diving-fish.com"
+        ),
+        ReferenceItem(
+            name: "LXNS（落雪咖啡屋）",
+            tag: "曲绘镜像",
+            summary: "提供国内高速稳定的高清曲绘 CDN 镜像服务与舞萌 DX 曲库数据结构参考。",
+            urlString: "https://maimai.lxns.net",
+            displayHost: "maimai.lxns.net"
+        )
+    ]
+
+    private static let multiRegionReferences: [ReferenceItem] = [
+        ReferenceItem(
+            name: "zetaraku / arcade-songs-fetch",
+            tag: "多区服曲库",
+            summary: "提供日服与国际服完整曲库、版本归属、区服定数覆写、外服曲绘镜像及宴会场谱面说明数据。",
+            urlString: "https://github.com/zetaraku/arcade-songs-fetch",
+            displayHost: "github.com/zetaraku/arcade-songs-fetch"
+        ),
+        ReferenceItem(
+            name: "DXRating (gekichumai)",
+            tag: "ID 与新规参考",
+            summary: "提供日服与国际服曲目底层数字 ID 实时映射数据，以及 CiRCLE 起实行的两代 B15 与 AP+1 新规参考。",
+            urlString: "https://github.com/gekichumai/dxrating",
+            displayHost: "dxrating.net"
+        ),
+        ReferenceItem(
+            name: "Yuri-YuzuChaN & 社区资源库",
+            tag: "别名与贴图",
+            summary: "提供社区共同维护的舞萌 DX 曲目中文别名库，以及各世代版本与评级贴图静态素材整理。",
+            urlString: "https://github.com/Yuri-YuzuChaN/maimaiDX",
+            displayHost: "github.com/Yuri-YuzuChaN/maimaiDX"
+        )
+    ]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: AppTheme.cardSpacing) {
+                    referenceSection(title: "客户端与设计参考", items: Self.designReferences)
+                    referenceSection(title: "查分器与曲绘服务", items: Self.proberReferences)
+                    referenceSection(title: "多区服数据与社区生态", items: Self.multiRegionReferences)
+
+                    AppSectionCard(title: "版权与免责声明") {
+                        AppInsetGroup(padding: AppTheme.Space.m) {
+                            Text("《maimai でらっくす》与《舞萌 DX》游戏本体及其曲绘封面、版本标识、评级贴图等相关美术与音乐素材版权均归 SEGA 及华立科技（Wahlap）所有。本应用为非商用开源工具，仅作玩家个人谱面查询与算分辅助使用。")
+                                .font(AppTheme.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+                .padding(.horizontal, AppTheme.pagePadding)
+                .padding(.vertical, AppTheme.Space.m)
+            }
+            .appPageBackground()
+            .navigationTitle("致谢与参考")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("关闭") { dismiss() }
+                }
+            }
+        }
+    }
+
+    private func referenceSection(title: String, items: [ReferenceItem]) -> some View {
+        AppSectionCard(title: title) {
+            VStack(spacing: AppTheme.itemSpacing) {
+                ForEach(items) { item in
+                    if let url = URL(string: item.urlString) {
+                        Link(destination: url) {
+                            referenceCardContent(item)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(item.name)，\(item.tag)，点击在浏览器中打开")
+                    } else {
+                        referenceCardContent(item)
+                    }
+                }
+            }
+        }
+    }
+
+    private func referenceCardContent(_ item: ReferenceItem) -> some View {
+        AppInsetGroup(padding: AppTheme.Space.m) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.s) {
+                HStack(alignment: .center, spacing: AppTheme.Space.s) {
+                    Text(item.name)
+                        .font(AppTheme.Typography.songTitle)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+
+                    AppCapsuleLabel(text: item.tag, style: .compact)
+
+                    Spacer(minLength: AppTheme.Space.xs)
+
+                    Image(systemName: "arrow.up.right")
+                        .font(AppTheme.Typography.captionBold)
+                        .foregroundStyle(.tertiary)
+                }
+
+                Text(item.summary)
+                    .font(AppTheme.Typography.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(item.displayHost)
+                    .font(AppTheme.Typography.captionMono)
+                    .foregroundStyle(AppTheme.accentText)
+                    .lineLimit(1)
+            }
+        }
     }
 }
