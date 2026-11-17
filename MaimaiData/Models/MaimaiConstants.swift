@@ -142,11 +142,26 @@ enum MaimaiConstants {
         cnVersions.first { $0.name == fromName }?.asset
     }
 
-    /// Resolves the version logo asset and fallback label for the active game server (currently CN;
-    /// structured as a single entry point for future CN / JP / INTL server switching).
-    static func activeServerVersionDisplay(for info: SongData.BasicInfo) -> (asset: String?, fallback: String) {
-        let asset = cnVersionAsset(for: info.from)
-        let fallback = info.from.isEmpty ? "暂无数据" : info.from
-        return (asset, fallback)
+    enum ServerRegion: String, Codable, CaseIterable {
+        case cn
+        case jp
+        case intl
+    }
+
+    /// Resolves the version logo asset and fallback label for the active game server.
+    static func activeServerVersionDisplay(
+        for info: SongData.BasicInfo,
+        region: ServerRegion = .cn
+    ) -> (asset: String?, fallback: String) {
+        switch region {
+        case .cn:
+            let asset = cnVersionAsset(for: info.from)
+            let fallback = info.from.isEmpty ? "暂无数据" : info.from
+            return (asset, fallback)
+        case .jp, .intl:
+            let asset = jpVersionAsset(for: info.version)
+            let fallback = jpVersionFallbackTitle(for: info.version)
+            return (asset, fallback)
+        }
     }
 }

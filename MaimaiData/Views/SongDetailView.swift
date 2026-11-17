@@ -301,21 +301,23 @@ struct SongDetailView: View {
             AppSectionCard(title: "谱面信息") {
                 VStack(spacing: AppTheme.itemSpacing) {
                     HStack(spacing: AppTheme.Space.s) {
-                        AppMetricTile(title: "谱面定数", valueSlotHeight: 38) {
+                        AppMetricTile(title: "谱面定数", valueSlotHeight: 28) {
                             dsText(chart: chart)
                         }
-                        AppMetricTile(title: "水鱼拟合定数", valueSlotHeight: 38) {
+                        AppMetricTile(title: "水鱼拟合定数", valueSlotHeight: 28) {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
-                                .font(AppTheme.Typography.statValue)
+                                .font(AppTheme.Typography.heroTitle)
                                 .foregroundStyle(.primary)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                                 .contentTransition(.numericText())
                         }
-                        AppMetricTile(title: "收录版本", valueSlotHeight: 38) {
+                        AppMetricTile(title: "收录版本", valueSlotHeight: 28) {
                             if let asset = versionInfo.asset {
                                 Image(asset)
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(maxWidth: 92, maxHeight: 38)
+                                    .frame(maxWidth: 88, maxHeight: 28)
                                     .accessibilityLabel(versionInfo.fallback)
                             } else {
                                 Text(versionInfo.fallback)
@@ -431,19 +433,23 @@ struct SongDetailView: View {
         if let old = chart.oldDs, old > 0 {
             let deltaColor: Color = old < chart.ds ? AppTheme.Palette.deltaUp : (old > chart.ds ? AppTheme.Palette.deltaDown : .primary)
             let arrow = old < chart.ds ? "↑" : (old > chart.ds ? "↓" : "")
-            VStack(spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(String(format: "%.1f%@", chart.ds, arrow))
-                    .font(AppTheme.Typography.statValue)
+                    .font(AppTheme.Typography.heroTitle)
                     .foregroundStyle(deltaColor)
                     .contentTransition(.numericText())
-                Text(String(format: "旧 %.1f", old))
+                Text(String(format: "(%.1f)", old))
                     .font(AppTheme.Typography.caption2)
                     .foregroundStyle(.secondary)
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.72)
         } else {
             Text(String(format: "%.1f", chart.ds))
-                .font(AppTheme.Typography.statValue)
+                .font(AppTheme.Typography.heroTitle)
                 .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
                 .contentTransition(.numericText())
         }
     }

@@ -39,11 +39,18 @@ struct RatingTierTable: View {
 
     private func tierRowView(_ row: RatingCalculator.TierRow) -> some View {
         HStack(spacing: AppTheme.Space.s) {
-            HStack(spacing: 6) {
+            HStack(spacing: 4) {
+                // All rank PNGs share a 200x89 canvas where `sss`/`ss`/`s`/`aaa` center their
+                // letters at x=100px, while `sssp`/`ssp`/`sp` include the trailing `+` in canvas
+                // centering (shifting the base letters 13~14px left). Shifting `+` variants right
+                // aligns the base letters (`SSS`, `SS`, `S`) identically within each tier while
+                // keeping all letter bodies centered along the same vertical axis.
                 Image(row.rankAssetName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 42, height: 18, alignment: .center)
+                    .frame(height: 18)
+                    .offset(x: opticalLetterOffset(for: row.rate))
+                    .frame(width: 46, height: 18, alignment: .leading)
 
                 Text(row.achievementText)
                     .font(row.isCurrentTier ? AppTheme.Typography.captionMeta : AppTheme.Typography.captionMono)
@@ -91,5 +98,16 @@ struct RatingTierTable: View {
         )
         .opacity(row.isPassed ? 0.52 : 1.0)
         .accessibilityElement(children: .combine)
+    }
+
+    private func opticalLetterOffset(for rate: String) -> CGFloat {
+        switch rate {
+        case "sssp":
+            return 2.6
+        case "ssp", "sp":
+            return 2.8
+        default:
+            return 0
+        }
     }
 }

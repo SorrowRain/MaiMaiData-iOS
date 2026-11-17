@@ -133,8 +133,8 @@ struct AppMetricTile<Content: View>: View {
     }
 
     var body: some View {
-        AppInsetGroup(padding: AppTheme.itemSpacing) {
-            VStack(alignment: .center, spacing: AppTheme.Space.xs) {
+        AppInsetGroup {
+            VStack(alignment: .center, spacing: 5) {
                 Text(title)
                     .font(AppTheme.Typography.caption2Semibold)
                     .foregroundStyle(highlight ? AppTheme.accentText : .secondary)
@@ -147,6 +147,9 @@ struct AppMetricTile<Content: View>: View {
                     content()
                 }
             }
+            .padding(.horizontal, AppTheme.Space.s)
+            .padding(.top, 12)
+            .padding(.bottom, valueSlotHeight != nil ? 11 : 12)
             .frame(maxWidth: .infinity, alignment: .center)
         }
     }
