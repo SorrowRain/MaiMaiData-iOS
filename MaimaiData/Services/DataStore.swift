@@ -241,6 +241,7 @@ final class DataStore {
         } catch {
             statusMessage = force ? "曲库更新失败：\(error.localizedDescription)" : nil
             syncNotice = DataSyncNotice(
+                kind: .songs,
                 message: "曲库更新失败，正在使用本地数据。请检查网络后重试。\n\(error.localizedDescription)"
             )
         }
@@ -266,6 +267,7 @@ final class DataStore {
         } catch {
             statusMessage = force ? "拟合定数获取失败：\(error.localizedDescription)" : nil
             syncNotice = DataSyncNotice(
+                kind: .stats,
                 message: "拟合定数获取失败，正在使用本地数据。可前往「设置与数据」重试。"
             )
         }
@@ -486,6 +488,12 @@ private struct SongSnapshot {
 }
 
 struct DataSyncNotice: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case songs
+        case stats
+    }
+
     let id = UUID()
+    let kind: Kind
     let message: String
 }

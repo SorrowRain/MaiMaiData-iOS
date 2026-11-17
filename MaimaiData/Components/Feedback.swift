@@ -97,13 +97,19 @@ struct SyncStatusBanner: View {
                         }
                         Spacer(minLength: 0)
                     }
-                    if store.syncNotice != nil {
+                    if let notice = store.syncNotice {
                         HStack(spacing: 10) {
                             AppInlineButton(title: "重试", icon: "arrow.clockwise") {
                                 store.syncNotice = nil
-                                Task { await store.checkSongDataUpdateIfNeeded(force: true) }
+                                // Retry the operation that actually failed.
+                                switch notice.kind {
+                                case .songs:
+                                    Task { await store.checkSongDataUpdateIfNeeded(force: true) }
+                                case .stats:
+                                    Task { await store.refreshChartStatsIfStale(force: true) }
+                                }
                             }
-                            .disabled(store.isSyncingSongs)
+                            .disabled(notice.kind == .songs ? store.isSyncingSongs : store.isSyncingStats)
 
                             AppInlineButton(title: "关闭", tint: .secondary) {
                                 store.syncNotice = nil
