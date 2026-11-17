@@ -91,7 +91,7 @@ enum MaimaiConstants {
     /// Fill for the big genre card on the song detail page. Locked genre colors stay
     /// untouched; only 其他游戏 uses a lighter green so white text reads comfortably.
     static func genreCardFill(for genre: String) -> Color {
-        genre == "其他游戏" ? Color(hex: 0x398428) : genreColors(for: genre).bg
+        genre == "其他游戏" ? AppTheme.Palette.genreGameCardFill : genreColors(for: genre).bg
     }
 
     static func genreTextColor(for genre: String) -> Color {

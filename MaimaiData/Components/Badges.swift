@@ -201,7 +201,7 @@ struct FilterCapsuleChip: View {
                         : AnyShapeStyle(
                             colorScheme == .dark
                                 ? Color.white.opacity(0.07)
-                                : Color(hex: 0x0F2952, alpha: 0.055)
+                                : AppTheme.Palette.hairline.opacity(0.055)
                         ),
                     in: Capsule()
                 )
@@ -209,7 +209,7 @@ struct FilterCapsuleChip: View {
                     Capsule().strokeBorder(
                         isSelected
                             ? Color.white.opacity(0.28)
-                            : Color(hex: 0x0F2952, alpha: colorScheme == .dark ? 0.15 : 0.08),
+                            : AppTheme.Palette.hairline.opacity(colorScheme == .dark ? 0.15 : 0.08),
                         lineWidth: 1
                     )
                 )

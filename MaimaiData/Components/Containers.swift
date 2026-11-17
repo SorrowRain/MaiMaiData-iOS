@@ -59,7 +59,7 @@ struct AppCard<Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(
                 colorScheme == .dark
-                    ? Color(hex: 0x172135)
+                    ? AppTheme.Palette.surfaceDark
                     : Color.white.opacity(0.92),
                 in: shape
             )
@@ -79,7 +79,7 @@ struct AppCard<Content: View>: View {
                 shape.strokeBorder(
                     colorScheme == .dark
                         ? Color.white.opacity(0.09)
-                        : Color(hex: 0x0F2952, alpha: 0.08),
+                        : AppTheme.Palette.hairline.opacity(0.08),
                     lineWidth: 1
                 )
             }
@@ -149,14 +149,14 @@ struct AppInsetGroup<Content: View>: View {
             .background(
                 colorScheme == .dark
                     ? Color.white.opacity(0.045)
-                    : Color(hex: 0x0F2952, alpha: 0.04),
+                    : AppTheme.Palette.hairline.opacity(0.04),
                 in: shape
             )
             .overlay(
                 shape.strokeBorder(
                     colorScheme == .dark
                         ? Color.white.opacity(0.08)
-                        : Color(hex: 0x0F2952, alpha: 0.065),
+                        : AppTheme.Palette.hairline.opacity(0.065),
                     lineWidth: 1
                 )
             )

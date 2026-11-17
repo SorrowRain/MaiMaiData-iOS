@@ -4,7 +4,7 @@ enum AppTheme {
     // Brand & Accent Colors
     static let accent = Color(hex: 0x1668DC)
     static let accentBright = Color(hex: 0x2B88FF)
-    static let favoritePink = Color(hex: 0xF43F7E)
+    static let favoritePink = Palette.noteBreak
 
     // Semantic Palette (game terms + shared accents; values must not change)
     enum Palette {
@@ -25,16 +25,16 @@ enum AppTheme {
         static let judgeGood = Color(hex: 0x176523)
         static let judgeMiss = Color(.secondaryLabel)
 
-        // Rating tool row icons (reuse note values)
+        // Rating tool row icons (same values as note / difficulty colors)
         static let ratingPurple = Color(hex: 0x9F51DC)
-        static let ratingOrange = Color(hex: 0xFF9C24)
-        static let ratingBlue = Color(hex: 0x12B4FF)
+        static let ratingOrange = noteHold
+        static let ratingBlue = noteTap
 
         // Difficulty
         static let diffBasic = Color(hex: 0x6FD43D)
         static let diffAdvanced = Color(hex: 0xF8B709)
         static let diffExpert = Color(hex: 0xFF818D)
-        static let diffMaster = Color(hex: 0x9F51DC)
+        static let diffMaster = ratingPurple
         static let diffRemaster = Color(hex: 0xCB5EEA)
         static let diffUtage = Color(hex: 0xB12876)
         static let diffBasicText = Color(hex: 0x183C12)
@@ -47,17 +47,24 @@ enum AppTheme {
         static let diffRemasterDark = Color(hex: 0x8C2DD5)
         static let diffOtherDark = Color(hex: 0x053264)
 
+        // Brightened difficulty colors for text/board on dark tinted backgrounds.
+        static let boardMainBasic = Color(hex: 0x6FE163)
+        static let boardMainAdvanced = Color(hex: 0xF8DF3B)
+        static let boardMainExpert = Color(hex: 0xFFA0AE)
+        static let boardMainMaster = Color(hex: 0xC27FF4)
+        static let boardMainRemaster = Color(hex: 0xE5DDEA)
+
         // Genres: (fill, stroke) and text
         static let genrePop: (bg: Color, stroke: Color) = (bg: Color(hex: 0xFF9C24), stroke: Color(hex: 0xFFD21F))
         static let genreNico: (bg: Color, stroke: Color) = (bg: Color(hex: 0x12B4FF), stroke: Color(hex: 0x7ED6FF))
         static let genreTouhou: (bg: Color, stroke: Color) = (bg: Color(hex: 0xCA6FEB), stroke: Color(hex: 0xE8A7FF))
         static let genreGame: (bg: Color, stroke: Color) = (bg: Color(hex: 0x287516), stroke: Color(hex: 0xBAFBA3))
         static let genreMaimai: (bg: Color, stroke: Color) = (bg: Color(hex: 0xFF4646), stroke: Color(hex: 0xFFA7A7))
-        static let genreUtage: (bg: Color, stroke: Color) = (bg: Color(hex: 0xDC39B8), stroke: Color(hex: 0xB12876))
+        static let genreUtage: (bg: Color, stroke: Color) = (bg: Color(hex: 0xDC39B8), stroke: diffUtage)
         static let genreOther: (bg: Color, stroke: Color) = (bg: Color(hex: 0x319DF8), stroke: Color(hex: 0x99D1FF))
         static let genrePopText = Color(hex: 0x8A4800)
         static let genreNicoText = Color(hex: 0x055C84)
-        static let genreTouhouText = Color(hex: 0x762D8C)
+        static let genreTouhouText = chartRemaster
         static let genreGameText = Color(hex: 0x1C560C)
         static let genreMaimaiText = Color(hex: 0x9A1B1B)
         static let genreUtageText = Color(hex: 0x8F1863)
@@ -68,6 +75,11 @@ enum AppTheme {
         static let statFC = Color(hex: 0x237818)
         static let statAP = Color(hex: 0xC85A00)
         static let statFSD = Color(hex: 0x0A6BA1)
+
+        // Shared surfaces & hairlines (light-mode chrome over the page gradient)
+        static let surfaceDark = Color(hex: 0x172135)
+        static let hairline = Color(hex: 0x0F2952)
+        static let genreGameCardFill = Color(hex: 0x398428)
     }
 
     // Spacing & Sizing

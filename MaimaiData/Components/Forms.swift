@@ -37,7 +37,7 @@ struct AppTextField: View {
             .background(
                 colorScheme == .dark
                     ? Color.white.opacity(0.06)
-                    : Color(hex: 0x0F2952, alpha: 0.045),
+                    : AppTheme.Palette.hairline.opacity(0.045),
                 in: shape
             )
             .overlay(
@@ -46,7 +46,7 @@ struct AppTextField: View {
                         ? AppTheme.accent.opacity(0.6)
                         : (colorScheme == .dark
                             ? Color.white.opacity(0.12)
-                            : Color(hex: 0x0F2952, alpha: 0.10)),
+                            : AppTheme.Palette.hairline.opacity(0.10)),
                     lineWidth: isFocused ? 1.2 : 1
                 )
             )
@@ -111,7 +111,7 @@ struct AppSecureField: View {
             .background(
                 colorScheme == .dark
                     ? Color.white.opacity(0.06)
-                    : Color(hex: 0x0F2952, alpha: 0.045),
+                    : AppTheme.Palette.hairline.opacity(0.045),
                 in: shape
             )
             .overlay(
@@ -120,7 +120,7 @@ struct AppSecureField: View {
                         ? AppTheme.accent.opacity(0.6)
                         : (colorScheme == .dark
                             ? Color.white.opacity(0.12)
-                            : Color(hex: 0x0F2952, alpha: 0.10)),
+                            : AppTheme.Palette.hairline.opacity(0.10)),
                     lineWidth: isFocused ? 1.2 : 1
                 )
             )
