@@ -3,7 +3,6 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(DataStore.self) private var store
     @State private var cacheSizeText: String = "计算中..."
-    @State private var showSyncAlert = false
 
     var body: some View {
         @Bindable var storeBindable = store
@@ -187,14 +186,7 @@ struct SettingsView: View {
             .onAppear {
                 refreshCacheSize()
             }
-            .onChange(of: store.statusMessage) { _, msg in
-                if msg != nil { showSyncAlert = true }
-            }
-            .alert("同步结果", isPresented: $showSyncAlert) {
-                Button("确定") { store.statusMessage = nil }
-            } message: {
-                Text(store.statusMessage ?? "")
-            }
+            .errorAlert("同步结果", message: $storeBindable.statusMessage)
         }
     }
 

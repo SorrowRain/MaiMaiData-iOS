@@ -86,6 +86,55 @@ struct AppCard<Content: View>: View {
     }
 }
 
+struct AppSectionHeader<Trailing: View>: View {
+    let title: String
+    var subtitle: String? = nil
+    var subtitleColor: Color = .secondary
+    @ViewBuilder let trailing: () -> Trailing
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        subtitleColor: Color = .secondary,
+        @ViewBuilder trailing: @escaping () -> Trailing
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.subtitleColor = subtitleColor
+        self.trailing = trailing
+    }
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        subtitleColor: Color = .secondary
+    ) where Trailing == EmptyView {
+        self.init(title: title, subtitle: subtitle, subtitleColor: subtitleColor, trailing: { EmptyView() })
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: AppTheme.Space.s) {
+            Capsule()
+                .fill(AppTheme.accent.gradient)
+                .frame(width: 4, height: 16)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(AppTheme.Typography.cardTitle)
+                    .foregroundStyle(Color(.label))
+                if let subtitle {
+                    Text(subtitle)
+                        .font(AppTheme.Typography.caption)
+                        .foregroundStyle(subtitleColor)
+                }
+            }
+
+            Spacer(minLength: 8)
+            trailing()
+        }
+    }
+}
+
 struct AppSectionCard<Trailing: View, Content: View>: View {
     let title: String
     var subtitle: String? = nil
@@ -119,23 +168,7 @@ struct AppSectionCard<Trailing: View, Content: View>: View {
     var body: some View {
         AppCard(padding: padding) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-                HStack(alignment: .center, spacing: AppTheme.Space.s) {
-                    Capsule()
-                        .fill(AppTheme.accent.gradient)
-                        .frame(width: 4, height: 16)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(title)
-                            .font(AppTheme.Typography.cardTitle)
-                            .foregroundStyle(Color(.label))
-                        if let subtitle {
-                            Text(subtitle)
-                                .font(AppTheme.Typography.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                    }
-
-                    Spacer(minLength: 8)
+                AppSectionHeader(title: title, subtitle: subtitle) {
                     trailing()
                 }
 

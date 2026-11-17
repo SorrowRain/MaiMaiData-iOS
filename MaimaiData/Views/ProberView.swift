@@ -241,63 +241,16 @@ private struct ProberRecordRow: View {
 }
 
 private struct B50PreviewSheet: View {
-    @Environment(\.dismiss) private var dismiss
     let image: UIImage
 
-    @State private var saveToast: String?
-    @State private var showShare = false
-
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.black.ignoresSafeArea()
-
-                ZoomableImageScrollView(image: image)
-                    .padding(AppTheme.Space.m)
-                    .accessibilityLabel("Best50 成绩图，可双击或双指缩放预览")
-            }
-            .navigationTitle("Best 50 预览")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("关闭") { dismiss() }
-                        .foregroundStyle(.white)
-                }
-                ToolbarItemGroup(placement: .topBarTrailing) {
-                    Button {
-                        showShare = true
-                    } label: {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundStyle(.white)
-                    }
-                    .accessibilityLabel("分享 Best50 图片")
-
-                    Button("保存") {
-                        Task {
-                            do {
-                                try await PhotoLibrarySaver.save(image)
-                                saveToast = "已保存到系统相册"
-                            } catch {
-                                saveToast = error.localizedDescription
-                            }
-                        }
-                    }
-                    .fontWeight(.semibold)
-                    .foregroundStyle(.white)
-                }
-            }
-            .overlay(alignment: .bottom) {
-                if let message = saveToast {
-                    StatusToast(text: message)
-                        .onAppear {
-                            Task { await dismissToast($saveToast, after: 2.5) }
-                        }
-                }
-            }
-            .sheet(isPresented: $showShare) {
-                ShareSheet(items: [image])
-            }
+        PhotoPreviewScaffold(
+            title: "Best 50 预览",
+            image: image,
+            accessibilityLabel: "Best50 成绩图，可双击或双指缩放预览",
+            shareAccessibilityLabel: "分享 Best50 图片"
+        ) {
+            EmptyView()
         }
     }
 }

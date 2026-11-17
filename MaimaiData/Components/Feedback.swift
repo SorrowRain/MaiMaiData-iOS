@@ -53,8 +53,15 @@ extension View {
 
 /// Clears an optional toast text after a delay.
 @MainActor
-func dismissToast(_ text: Binding<String?>, after seconds: Double, animated: Bool = false) async {
+func dismissToast(
+    _ text: Binding<String?>,
+    after seconds: Double,
+    animated: Bool = false,
+    ifContains expected: String? = nil
+) async {
     try? await Task.sleep(for: .seconds(seconds))
+    // A newer toast may have replaced this one while we waited.
+    if let expected, text.wrappedValue?.contains(expected) != true { return }
     if animated {
         withAnimation { text.wrappedValue = nil }
     } else {

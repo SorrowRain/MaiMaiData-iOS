@@ -18,21 +18,11 @@ struct AccountManagementView: View {
     var body: some View {
         List {
             Section {
-                HStack(alignment: .center, spacing: AppTheme.Space.s) {
-                    Capsule()
-                        .fill(AppTheme.accent.gradient)
-                        .frame(width: 4, height: 16)
-
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("已保存账号")
-                            .font(AppTheme.Typography.cardTitle)
-                            .foregroundStyle(Color(.label))
-                        Text("点击切换并登录账号，左滑可删除")
-                            .font(AppTheme.Typography.caption)
-                            .foregroundStyle(Color(.secondaryLabel))
-                    }
-                    Spacer(minLength: 0)
-                }
+                AppSectionHeader(
+                    title: "已保存账号",
+                    subtitle: "点击切换并登录账号，左滑可删除",
+                    subtitleColor: Color(.secondaryLabel)
+                )
                 .padding(.vertical, AppTheme.Space.xs)
 
                 if store.savedAccounts.isEmpty {

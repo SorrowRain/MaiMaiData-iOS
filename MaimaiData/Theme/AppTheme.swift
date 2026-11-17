@@ -76,6 +76,9 @@ enum AppTheme {
         static let statAP = Color(hex: 0xC85A00)
         static let statFSD = Color(hex: 0x0A6BA1)
 
+        // Level progress header (reuses the note-orange value with an explicit semantic name)
+        static let progressAccent = noteHold
+
         // Shared surfaces & hairlines (light-mode chrome over the page gradient)
         static let surfaceDark = Color(hex: 0x172135)
         static let hairline = Color(hex: 0x0F2952)

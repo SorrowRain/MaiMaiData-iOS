@@ -381,12 +381,7 @@ struct SongDetailView: View {
             copiedToast = "已复制\(label)：\(value)"
         }
         Task {
-            try? await Task.sleep(for: .seconds(1.8))
-            withAnimation {
-                if copiedToast?.contains(value) == true {
-                    copiedToast = nil
-                }
-            }
+            await dismissToast($copiedToast, after: 1.8, animated: true, ifContains: value)
         }
     }
 }
