@@ -100,20 +100,28 @@ struct AppCapsuleLabel: View {
 struct AppMetricTile<Content: View>: View {
     let title: String
     var highlight: Bool = false
+    var valueSlotHeight: CGFloat? = nil
     @ViewBuilder let content: () -> Content
 
     init(
         title: String,
         highlight: Bool = false,
+        valueSlotHeight: CGFloat? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.title = title
         self.highlight = highlight
+        self.valueSlotHeight = valueSlotHeight
         self.content = content
     }
 
-    init(title: String, value: String, highlight: Bool = false) where Content == AnyView {
-        self.init(title: title, highlight: highlight) {
+    init(
+        title: String,
+        value: String,
+        highlight: Bool = false,
+        valueSlotHeight: CGFloat? = nil
+    ) where Content == AnyView {
+        self.init(title: title, highlight: highlight, valueSlotHeight: valueSlotHeight) {
             AnyView(
                 Text(value)
                     .font(AppTheme.Typography.sectionMetric)
@@ -131,7 +139,13 @@ struct AppMetricTile<Content: View>: View {
                     .font(AppTheme.Typography.caption2Semibold)
                     .foregroundStyle(highlight ? AppTheme.accentText : .secondary)
                     .lineLimit(1)
-                content()
+                    .minimumScaleFactor(0.85)
+                if let valueSlotHeight {
+                    content()
+                        .frame(maxWidth: .infinity, minHeight: valueSlotHeight, maxHeight: valueSlotHeight, alignment: .center)
+                } else {
+                    content()
+                }
             }
             .frame(maxWidth: .infinity, alignment: .center)
         }

@@ -300,36 +300,36 @@ struct SongDetailView: View {
         return VStack(spacing: AppTheme.cardSpacing) {
             AppSectionCard(title: "谱面信息") {
                 VStack(spacing: AppTheme.itemSpacing) {
-                    HStack(spacing: AppTheme.itemSpacing) {
-                        AppMetricTile(title: "谱面定数") {
+                    HStack(spacing: AppTheme.Space.s) {
+                        AppMetricTile(title: "谱面定数", valueSlotHeight: 38) {
                             dsText(chart: chart)
                         }
-                        AppMetricTile(title: "水鱼拟合定数") {
+                        AppMetricTile(title: "水鱼拟合定数", valueSlotHeight: 38) {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
                                 .font(AppTheme.Typography.statValue)
                                 .foregroundStyle(.primary)
                                 .contentTransition(.numericText())
                         }
+                        AppMetricTile(title: "收录版本", valueSlotHeight: 38) {
+                            if let asset = versionInfo.asset {
+                                Image(asset)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: 92, maxHeight: 38)
+                                    .accessibilityLabel(versionInfo.fallback)
+                            } else {
+                                Text(versionInfo.fallback)
+                                    .font(AppTheme.Typography.inlineAction)
+                                    .foregroundStyle(.primary)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.75)
+                            }
+                        }
                     }
 
                     AppInsetGroup {
                         VStack(spacing: 0) {
-                            detailRow("收录版本") {
-                                if let asset = versionInfo.asset {
-                                    Image(asset)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(maxWidth: 108, maxHeight: 22, alignment: .trailing)
-                                        .accessibilityLabel(versionInfo.fallback)
-                                } else {
-                                    Text(versionInfo.fallback)
-                                        .font(AppTheme.Typography.rowTitle)
-                                        .foregroundStyle(.primary)
-                                }
-                            }
-
-                            Divider().padding(.leading, AppTheme.Space.m)
-
                             detailRow("谱面作者") {
                                 Text(chart.charter.isEmpty ? "—" : chart.charter)
                                     .font(AppTheme.Typography.rowTitle)
@@ -431,13 +431,13 @@ struct SongDetailView: View {
         if let old = chart.oldDs, old > 0 {
             let deltaColor: Color = old < chart.ds ? AppTheme.Palette.deltaUp : (old > chart.ds ? AppTheme.Palette.deltaDown : .primary)
             let arrow = old < chart.ds ? "↑" : (old > chart.ds ? "↓" : "")
-            HStack(spacing: AppTheme.Space.xs) {
+            VStack(spacing: 1) {
                 Text(String(format: "%.1f%@", chart.ds, arrow))
                     .font(AppTheme.Typography.statValue)
                     .foregroundStyle(deltaColor)
                     .contentTransition(.numericText())
-                Text(String(format: "(旧 %.1f)", old))
-                    .font(AppTheme.Typography.captionMono)
+                Text(String(format: "旧 %.1f", old))
+                    .font(AppTheme.Typography.caption2)
                     .foregroundStyle(.secondary)
             }
         } else {

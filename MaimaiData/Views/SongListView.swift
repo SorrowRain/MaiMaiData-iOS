@@ -14,50 +14,67 @@ struct SongListView: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                LazyVStack(spacing: AppTheme.itemSpacing) {
-                    SyncStatusBanner(store: store)
+            ZStack(alignment: .top) {
+                ScrollView {
+                    LazyVStack(spacing: AppTheme.itemSpacing) {
+                        SyncStatusBanner(store: store)
+
+                        if criteria.isActive {
+                            activeFilterSummaryCard
+                                .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))
+                        }
+
+                        if store.isLoadingLocalData {
+                            ProgressView("正在读取曲库…")
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 56)
+                        } else if displayedSongs.isEmpty {
+                            ContentUnavailableView(
+                                criteria.onlyFavorites && store.favoriteIds.isEmpty ? "还没有收藏歌曲" : "未找到匹配曲目",
+                                systemImage: criteria.onlyFavorites && store.favoriteIds.isEmpty ? "heart" : "magnifyingglass",
+                                description: Text(
+                                    criteria.onlyFavorites && store.favoriteIds.isEmpty
+                                        ? "在曲目详情页点击右上角心形按钮即可收藏"
+                                        : "试试修改关键词或重置筛选条件"
+                                )
+                            )
+                            .padding(.top, 48)
+                        } else {
+                            ForEach(displayedSongs) { song in
+                                NavigationLink(value: song) {
+                                    SongRowView(song: song, isFavorite: store.isFavorite(song))
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppTheme.pagePadding)
+                    .padding(.vertical, 10)
+                }
+                .scrollDismissesKeyboard(.immediately)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    Color.clear.frame(height: 54)
+                }
+
+                VStack(spacing: 2) {
+                    searchInputBar
 
                     if showSearchHistory && !store.searchHistory.isEmpty {
                         searchHistoryCard
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    if criteria.isActive {
-                        activeFilterSummaryCard
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    if store.isLoadingLocalData {
-                        ProgressView("正在读取曲库…")
-                            .frame(maxWidth: .infinity)
-                            .padding(.top, 56)
-                    } else if displayedSongs.isEmpty {
-                        ContentUnavailableView(
-                            criteria.onlyFavorites && store.favoriteIds.isEmpty ? "还没有收藏歌曲" : "未找到匹配曲目",
-                            systemImage: criteria.onlyFavorites && store.favoriteIds.isEmpty ? "heart" : "magnifyingglass",
-                            description: Text(
-                                criteria.onlyFavorites && store.favoriteIds.isEmpty
-                                    ? "在曲目详情页点击右上角心形按钮即可收藏"
-                                    : "试试修改关键词或重置筛选条件"
+                            .background(
+                                .ultraThinMaterial,
+                                in: RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
                             )
-                        )
-                        .padding(.top, 48)
-                    } else {
-                        ForEach(displayedSongs) { song in
-                            NavigationLink(value: song) {
-                                SongRowView(song: song, isFavorite: store.isFavorite(song))
-                            }
-                            .buttonStyle(.plain)
-                        }
+                            .padding(.horizontal, AppTheme.pagePadding)
+                            .shadow(color: .black.opacity(0.10), radius: 12, y: 6)
+                            .transition(
+                                .asymmetric(
+                                    insertion: .opacity.combined(with: .scale(scale: 0.96, anchor: .top)),
+                                    removal: .opacity.combined(with: .scale(scale: 0.98, anchor: .top))
+                                )
+                            )
                     }
                 }
-                .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, 10)
-            }
-            .scrollDismissesKeyboard(.immediately)
-            .safeAreaInset(edge: .top, spacing: 0) {
-                searchInputBar
             }
             .appPageBackground()
             .navigationTitle("曲目列表")
@@ -118,7 +135,7 @@ struct SongListView: View {
                 }
             }
             .onChange(of: isSearchFocused) { _, focused in
-                withAnimation(.snappy(duration: 0.24)) {
+                withAnimation(.spring(duration: 0.22, bounce: 0)) {
                     showSearchHistory = focused
                 }
             }

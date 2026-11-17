@@ -8,21 +8,20 @@ struct RatingTierTable: View {
     let rows: [RatingCalculator.TierRow]
     var showB50Column: Bool = false
 
-    private var singleRaColumnWidth: CGFloat {
-        showB50Column ? 76 : 88
-    }
-
     var body: some View {
         AppInsetGroup {
             VStack(spacing: 0) {
                 HStack(spacing: AppTheme.Space.s) {
                     Text("分段档位")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("单曲 Ra")
-                        .frame(width: singleRaColumnWidth, alignment: .center)
+                        .frame(maxWidth: .infinity, alignment: .center)
                     if showB50Column {
+                        Text("单曲 Ra")
+                            .frame(width: 82, alignment: .center)
                         Text("B50 可加")
-                            .frame(width: 76, alignment: .center)
+                            .frame(width: 82, alignment: .center)
+                    } else {
+                        Text("单曲 Ra")
+                            .frame(maxWidth: .infinity, alignment: .center)
                     }
                 }
                 .font(AppTheme.Typography.caption2Bold)
@@ -40,26 +39,27 @@ struct RatingTierTable: View {
 
     private func tierRowView(_ row: RatingCalculator.TierRow) -> some View {
         HStack(spacing: AppTheme.Space.s) {
-            HStack(spacing: AppTheme.Space.s) {
+            HStack(spacing: 6) {
                 Image(row.rankAssetName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 44, height: 18, alignment: .leading)
+                    .frame(width: 42, height: 18, alignment: .center)
 
                 Text(row.achievementText)
                     .font(row.isCurrentTier ? AppTheme.Typography.captionMeta : AppTheme.Typography.captionMono)
                     .foregroundStyle(.primary)
+                    .frame(width: 68, alignment: .trailing)
                     .lineLimit(1)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text("\(row.singleRating)")
-                .font(AppTheme.Typography.captionMeta)
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-                .frame(width: singleRaColumnWidth, alignment: .center)
+            .frame(maxWidth: .infinity, alignment: .center)
 
             if showB50Column {
+                Text("\(row.singleRating)")
+                    .font(AppTheme.Typography.captionMeta)
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                    .frame(width: 82, alignment: .center)
+
                 let gain = row.b50Gain ?? 0
                 Group {
                     if gain > 0 {
@@ -73,7 +73,13 @@ struct RatingTierTable: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .frame(width: 76, alignment: .center)
+                .frame(width: 82, alignment: .center)
+            } else {
+                Text("\(row.singleRating)")
+                    .font(AppTheme.Typography.captionMeta)
+                    .foregroundStyle(.primary)
+                    .contentTransition(.numericText())
+                    .frame(maxWidth: .infinity, alignment: .center)
             }
         }
         .padding(.horizontal, AppTheme.Space.m)
