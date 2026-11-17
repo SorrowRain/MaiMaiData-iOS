@@ -228,7 +228,7 @@ final class DataStore {
         do {
             let info = try await MaimaiAPI.fetchUpdateInfo()
             guard let (remoteVer, remoteURL) = info.bestDataVersionAndURL else { return }
-            if force || remoteVer > dataVersion || songs.isEmpty {
+            if force || VersionString.isNewer(remoteVer, than: dataVersion) || songs.isEmpty {
                 let raw = try await MaimaiAPI.downloadSongData(from: remoteURL)
                 let decoded = try JSONDecoder().decode([SongData].self, from: raw)
                 try raw.write(to: cachedSongsURL, options: .atomic)

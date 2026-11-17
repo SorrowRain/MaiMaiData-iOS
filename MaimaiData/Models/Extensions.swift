@@ -29,3 +29,22 @@ extension Collection {
         indices.contains(index) ? self[index] : nil
     }
 }
+
+/// Compares dotted version strings component-wise so digit-count changes
+/// (e.g. "2026113" vs "20261113") cannot invert the ordering.
+enum VersionString {
+    static func isNewer(_ candidate: String, than current: String) -> Bool {
+        let lhs = candidate.split(separator: ".").map(String.init)
+        let rhs = current.split(separator: ".").map(String.init)
+        for index in 0..<max(lhs.count, rhs.count) {
+            let a = index < lhs.count ? lhs[index] : "0"
+            let b = index < rhs.count ? rhs[index] : "0"
+            if let ai = Int(a), let bi = Int(b) {
+                if ai != bi { return ai > bi }
+            } else if a != b {
+                return a > b
+            }
+        }
+        return false
+    }
+}

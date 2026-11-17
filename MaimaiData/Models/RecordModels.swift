@@ -15,7 +15,7 @@ struct AppUpdateInfo: Codable {
 
     var bestDataVersionAndURL: (version: String, url: String)? {
         if let v5 = dataVersion5, let u5 = dataUrl5, !u5.isEmpty {
-            if let v4 = dataVersion4, v4 > v5, let u4 = dataUrl4, !u4.isEmpty {
+            if let v4 = dataVersion4, VersionString.isNewer(v4, than: v5), let u4 = dataUrl4, !u4.isEmpty {
                 return (v4, u4)
             }
             return (v5, u5)
