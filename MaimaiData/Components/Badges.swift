@@ -7,6 +7,7 @@ struct AppCapsuleLabel: View {
     var tint: Color = AppTheme.accent
     var font: Font = .caption.weight(.semibold).monospacedDigit()
     var backgroundOpacity: Double = 0.12
+    var strokeOpacity: Double = 0
     var horizontalPadding: CGFloat = 8
     var verticalPadding: CGFloat = 3
     var foreground: Color? = nil
@@ -17,6 +18,7 @@ struct AppCapsuleLabel: View {
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background(tint.opacity(colorScheme == .dark ? max(backgroundOpacity, 0.22) : backgroundOpacity), in: Capsule())
+            .overlay(Capsule().strokeBorder(tint.opacity(strokeOpacity), lineWidth: strokeOpacity > 0 ? 0.8 : 0))
             .foregroundStyle(foreground ?? (colorScheme == .dark ? tint.brightened(toAtLeast: 1.0, maxSaturation: 0.5) : tint))
     }
 }

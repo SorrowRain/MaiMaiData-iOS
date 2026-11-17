@@ -61,7 +61,7 @@ enum DifficultyType: Int, Codable, CaseIterable, Hashable {
         switch self {
         case .basic: return Color(hex: 0x6FE163)
         case .advanced: return Color(hex: 0xF8DF3B)
-        case .expert: return Color(hex: 0xFF818D)
+        case .expert: return Color(hex: 0xFFA0AE)
         case .master: return Color(hex: 0xC27FF4)
         case .remaster: return Color(hex: 0xE5DDEA)
         default: return AppTheme.Palette.diffUtage.brightened(toAtLeast: 1.0, maxSaturation: 0.5)

@@ -180,12 +180,15 @@ private struct ProberRecordRow: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     HStack(spacing: 6) {
-                        Text("#\(rank)")
-                            .font(.caption.weight(.bold).monospacedDigit())
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.primary.opacity(0.07), in: Capsule())
-                            .foregroundStyle(.secondary)
+                        AppCapsuleLabel(
+                            text: "#\(rank)",
+                            tint: .secondary,
+                            font: .caption.weight(.bold).monospacedDigit(),
+                            backgroundOpacity: 0.07,
+                            horizontalPadding: 6,
+                            verticalPadding: 2,
+                            foreground: .secondary
+                        )
 
                         Text(record.title)
                             .font(AppTheme.Typography.songTitle)

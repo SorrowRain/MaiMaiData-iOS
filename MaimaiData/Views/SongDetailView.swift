@@ -65,6 +65,7 @@ struct SongDetailView: View {
     // MARK: - Hero Header Card
 
     private func headerCard(genreColors: (bg: Color, stroke: Color)) -> some View {
+        let cardFill = MaimaiConstants.genreCardFill(for: song.basicInfo.genre)
         let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
         return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 14) {
@@ -107,14 +108,14 @@ struct SongDetailView: View {
         .padding(AppTheme.cardPadding)
         .background(
             LinearGradient(
-                colors: [genreColors.bg, genreColors.bg.opacity(0.84)],
+                colors: [cardFill, cardFill.opacity(0.84)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             ),
             in: shape
         )
         .overlay(
-            shape.strokeBorder(Color.white.opacity(0.28), lineWidth: 1)
+            shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
         )
     }
 
@@ -132,7 +133,7 @@ struct SongDetailView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
         .padding(.horizontal, 6)
-        .background(Color.black.opacity(0.18), in: RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous))
+        .background(Color.black.opacity(0.14), in: RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous)
                 .strokeBorder(Color.white.opacity(0.16), lineWidth: 0.8)
@@ -229,7 +230,7 @@ struct SongDetailView: View {
                     .foregroundStyle(tabForeground(isSelected: isSelected, chart: chart))
                     .overlay(
                         shape.strokeBorder(
-                            chart.difficulty.color.opacity(isSelected || isRemaster ? 1.0 : 0.45),
+                            chart.difficulty.color.opacity(isSelected || isRemaster ? 1.0 : (colorScheme == .dark ? 0.75 : 0.45)),
                             lineWidth: isSelected ? 2 : 1
                         )
                     )
@@ -243,11 +244,11 @@ struct SongDetailView: View {
 
     private func tabBackground(isSelected: Bool, chart: ResolvedChart) -> Color {
         if chart.difficulty == .remaster {
-            if colorScheme == .dark && !isSelected { return chart.difficulty.color.opacity(0.22) }
+            if colorScheme == .dark && !isSelected { return chart.difficulty.color.opacity(0.26) }
             return isSelected ? Color.white : Color.white.opacity(0.65)
         }
         if isSelected { return chart.difficulty.solidFill(isDark: colorScheme == .dark) }
-        return chart.difficulty.color.opacity(colorScheme == .dark ? 0.22 : 0.14)
+        return chart.difficulty.color.opacity(colorScheme == .dark ? 0.26 : 0.14)
     }
 
     private func tabForeground(isSelected: Bool, chart: ResolvedChart) -> Color {

@@ -247,13 +247,15 @@ struct SongListView: View {
     }
 
     private func filterBadge(_ text: String, tint: Color = AppTheme.accent) -> some View {
-        Text(text)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 9)
-            .padding(.vertical, 4)
-            .background(tint.opacity(0.14), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(0.28), lineWidth: 0.8))
-            .foregroundStyle(tint)
+        AppCapsuleLabel(
+            text: text,
+            tint: tint,
+            font: .caption2.weight(.semibold),
+            backgroundOpacity: 0.14,
+            strokeOpacity: 0.28,
+            horizontalPadding: 9,
+            verticalPadding: 4
+        )
     }
 }
 
