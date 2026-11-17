@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SearchFilterSheet: View {
+    @Environment(DataStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @Binding var criteria: SongFilterCriteria
 
@@ -127,7 +128,7 @@ struct SearchFilterSheet: View {
                         }
                     } content: {
                         FlowLayout(spacing: AppTheme.Space.s, lineSpacing: AppTheme.Space.s) {
-                            ForEach(MaimaiConstants.searchVersions, id: \.self) { ver in
+                            ForEach(MaimaiConstants.searchVersionChips(for: store.serverRegion), id: \.self) { ver in
                                 FilterCapsuleChip(
                                     title: ver,
                                     isSelected: draft.selectedVersions.contains(ver),

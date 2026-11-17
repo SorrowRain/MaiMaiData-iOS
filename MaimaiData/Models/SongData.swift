@@ -10,6 +10,8 @@ struct SongData: Codable, Identifiable, Hashable {
     let title: String
     let type: String
     var alias: [String]?
+    var remoteCoverName: String? = nil
+    var sortOrder: Int? = nil
 
     enum CodingKeys: String, CodingKey {
         case basicInfo = "basic_info"
@@ -21,9 +23,12 @@ struct SongData: Codable, Identifiable, Hashable {
         case title
         case type
         case alias
+        case remoteCoverName = "remote_cover"
+        case sortOrder = "sort_order"
     }
 
     var numericId: Int { Int(id) ?? 0 }
+    var defaultSortKey: Int { sortOrder ?? numericId }
     var baseJacketId: Int {
         let rem = numericId % 10000
         return rem > 0 ? rem : numericId
@@ -67,8 +72,12 @@ struct SongData: Codable, Identifiable, Hashable {
         }
     }
 
-    /// Ordered domestic CDN cover URLs (LXNS COS CDN -> Diving-Fish 5-digit padded IDs).
+    /// Ordered CDN cover URLs: domestic LXNS / Diving-Fish for CN-indexed songs,
+    /// with Zetaraku CloudFront cover CDN directly for JP/INTL-exclusive songs (and as fallback).
     var coverCandidateURLs: [URL] {
+        guard numericId > 0 else {
+            return [Self.zetarakuCoverURL(for: remoteCoverName)].compactMap { $0 }
+        }
         var urls: [URL] = []
         if let lxns = URL(string: "https://assets2.lxns.net/maimai/jacket/\(baseJacketId).png") {
             urls.append(lxns)
@@ -83,7 +92,18 @@ struct SongData: Codable, Identifiable, Hashable {
                 urls.append(dfBase)
             }
         }
+        if let remoteURL = Self.zetarakuCoverURL(for: remoteCoverName) {
+            urls.append(remoteURL)
+        }
         return urls
+    }
+
+    private static func zetarakuCoverURL(for fileName: String?) -> URL? {
+        guard let fileName, !fileName.isEmpty,
+              let encoded = fileName.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+            return nil
+        }
+        return URL(string: "https://dp4p6x0xfi5o9.cloudfront.net/maimai/img/cover/\(encoded)")
     }
 
     struct BasicInfo: Codable, Hashable {

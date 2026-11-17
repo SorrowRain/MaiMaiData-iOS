@@ -140,7 +140,16 @@ struct SongListView: View {
                 }
             }
             .onChange(of: criteria) { _, _ in refreshDisplayedSongs() }
-            .onChange(of: store.songs.count) { _, _ in refreshDisplayedSongs() }
+            .onChange(of: store.catalogRevision) { _, _ in refreshDisplayedSongs() }
+            .onChange(of: store.serverRegion) { _, newRegion in
+                let allowedVersions = Set(MaimaiConstants.searchVersionChips(for: newRegion))
+                let pruned = criteria.selectedVersions.intersection(allowedVersions)
+                if pruned != criteria.selectedVersions {
+                    criteria.selectedVersions = pruned
+                } else {
+                    refreshDisplayedSongs()
+                }
+            }
             .onChange(of: store.favoriteIds) { _, _ in
                 if criteria.onlyFavorites { refreshDisplayedSongs() }
             }

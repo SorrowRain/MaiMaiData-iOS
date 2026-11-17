@@ -41,7 +41,42 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
 
-                    // 2. 曲库与搜索
+                    // 2. 游戏区服
+                    AppSectionCard(title: "游戏区服") {
+                        AppInsetGroup {
+                            AppInsetRow(
+                                title: "当前曲库与算分区服",
+                                subtitle: store.serverRegion == .cn
+                                    ? "曲库、收录版本与 Rating 按国服规则展示"
+                                    : "曲库、定数与 B50 按\(store.serverRegion.shortName)最新新规 (AP+1) 重排"
+                            ) {
+                                HStack(spacing: AppTheme.Space.s) {
+                                    if store.isSyncingSongs && store.serverRegion != .cn {
+                                        ProgressView().controlSize(.small)
+                                    }
+                                    Menu {
+                                        Picker(
+                                            "游戏区服",
+                                            selection: Binding(
+                                                get: { store.serverRegion },
+                                                set: { region in
+                                                    Task { await store.switchServerRegion(region) }
+                                                }
+                                            )
+                                        ) {
+                                            ForEach(MaimaiConstants.ServerRegion.allCases) { region in
+                                                Text(region.displayName).tag(region)
+                                            }
+                                        }
+                                    } label: {
+                                        AppMenuCapsule(title: store.serverRegion.shortName)
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // 3. 曲库与搜索
                     AppSectionCard(title: "曲库与搜索") {
                         AppInsetGroup {
                             VStack(spacing: 0) {
@@ -90,14 +125,14 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 AppInsetRow(
                                     title: "本地曲库",
-                                    subtitle: "版本 \(store.dataVersion) · 共 \(store.songs.count) 首"
+                                    subtitle: store.activeCatalogSubtitle
                                 ) {
                                     AppInlineButton(
                                         title: "检查更新",
                                         icon: "arrow.down.circle",
                                         isLoading: store.isSyncingSongs
                                     ) {
-                                        Task { await store.checkSongDataUpdateIfNeeded(force: true) }
+                                        Task { await store.syncActiveRegionSongs(force: true) }
                                     }
                                 }
 
@@ -145,7 +180,7 @@ struct SettingsView: View {
                             VStack(spacing: 0) {
                                 aboutRow(title: "版本", value: appVersionText)
                                 Divider().padding(.leading, AppTheme.Space.m)
-                                aboutRow(title: "致谢参考", value: "PaperPig / Diving-Fish / LXNS")
+                                aboutRow(title: "致谢参考", value: "PaperPig / Diving-Fish / LXNS / Zetaraku")
                             }
                         }
                     }
@@ -156,6 +191,7 @@ struct SettingsView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .appPageBackground()
+            .sensoryFeedback(.selection, trigger: store.serverRegion)
             .navigationTitle("设置与数据")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {

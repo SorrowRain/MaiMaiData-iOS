@@ -62,11 +62,18 @@ struct RatingToolsView: View {
 
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-                HStack(alignment: .center) {
+                HStack(alignment: .center, spacing: AppTheme.Space.s) {
                     Text(isLoggedIn ? store.displayPlayerName : "未登录")
                         .font(AppTheme.Typography.cardTitle)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
+
+                    if store.serverRegion != .cn {
+                        AppCapsuleLabel(
+                            text: "\(store.serverRegion.shortName)新规",
+                            style: .compact
+                        )
+                    }
 
                     Spacer()
 
@@ -149,7 +156,7 @@ struct RatingToolsView: View {
                             icon: "square.grid.3x3.fill",
                             iconColor: AppTheme.Palette.ratingPurple,
                             title: "版本进度表 / 牌子查询",
-                            subtitle: "按国服版本查看 Master 将 / 极 / 神 / 舞舞进度"
+                            subtitle: "按\(store.serverRegion.shortName)版本查看 Master 将 / 极 / 神 / 舞舞进度"
                         )
                     }
                     .buttonStyle(.plain)

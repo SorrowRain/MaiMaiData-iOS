@@ -44,26 +44,98 @@ enum MaimaiConstants {
         ("舞萌DX 2026", "maimaidx_2026")
     ]
 
-    /// Filter chips mirror Android SearchLayout's grouped version chips.
-    static let searchVersions: [String] = [
-        "maimai", "GreeN", "ORANGE", "PiNK", "MURASAKi", "MiLK", "FiNALE",
+    /// Complete SEGA arcade version table matching Zetaraku `data.json` version strings.
+    static let jpVersions: [(name: String, asset: String)] = [
+        ("maimai", "maimai"),
+        ("maimai PLUS", "maimai_plus"),
+        ("GreeN", "maimai_green"),
+        ("GreeN PLUS", "maimai_green_plus"),
+        ("ORANGE", "maimai_orange"),
+        ("ORANGE PLUS", "maimai_orange_plus"),
+        ("PiNK", "maimai_pink"),
+        ("PiNK PLUS", "maimai_pink_plus"),
+        ("MURASAKi", "maimai_murasaki"),
+        ("MURASAKi PLUS", "maimai_murasaki_plus"),
+        ("MiLK", "maimai_milk"),
+        ("MiLK PLUS", "maimai_milk_plus"),
+        ("FiNALE", "maimai_finale"),
+        ("maimaiでらっくす", "maimaidx"),
+        ("maimaiでらっくす PLUS", "maimaidx_plus"),
+        ("Splash", "maimaidx_splash"),
+        ("Splash PLUS", "maimaidx_splash_plus"),
+        ("UNiVERSE", "maimaidx_universe"),
+        ("UNiVERSE PLUS", "maimaidx_universe_plus"),
+        ("FESTiVAL", "maimaidx_festival"),
+        ("FESTiVAL PLUS", "maimaidx_festival_plus"),
+        ("BUDDiES", "maimaidx_buddies"),
+        ("BUDDiES PLUS", "maimaidx_buddies_plus"),
+        ("PRiSM", "maimaidx_prism"),
+        ("PRiSM PLUS", "maimaidx_prism_plus"),
+        ("CiRCLE", "maimaidx_circle"),
+        ("CiRCLE PLUS", "maimaidx_circle_plus"),
+        ("MAGiCAL", "maimaidx_magical")
+    ]
+
+    private static let classicEraChips: [String] = [
+        "maimai", "GreeN", "ORANGE", "PiNK", "MURASAKi", "MiLK", "FiNALE"
+    ]
+
+    /// Filter chips mirror Android SearchLayout's grouped version chips for CN.
+    static let searchVersions: [String] = classicEraChips + [
         "舞萌DX", "舞萌DX 2021", "舞萌DX 2022", "舞萌DX 2023",
         "舞萌DX 2024", "舞萌DX 2025", "舞萌DX 2026"
     ]
 
-    static func expandVersionFilter(_ selected: [String]) -> Set<String> {
+    static func checklistVersions(for region: ServerRegion) -> [(name: String, asset: String)] {
+        switch region {
+        case .cn:
+            return cnVersions
+        case .intl:
+            return jpVersions.filter { $0.name != "MAGiCAL" }
+        case .jp:
+            return jpVersions
+        }
+    }
+
+    static func searchVersionChips(for region: ServerRegion) -> [String] {
+        switch region {
+        case .cn:
+            return searchVersions
+        case .intl, .jp:
+            let dxNames = checklistVersions(for: region).dropFirst(13).map(\.name)
+            return classicEraChips + dxNames
+        }
+    }
+
+    static func expandVersionFilter(_ selected: [String], region: ServerRegion = .cn) -> Set<String> {
         var result = Set<String>()
-        for item in selected {
-            if item == "maimai" {
-                result.insert("maimai")
-                result.insert("maimai PLUS")
-            } else if item == "FiNALE" {
-                result.insert("maimai FiNALE")
-            } else if !item.hasPrefix("舞萌") && !item.contains("FiNALE") {
-                result.insert("maimai \(item) PLUS")
-                result.insert("maimai \(item)")
-            } else {
-                result.insert(item)
+        switch region {
+        case .cn:
+            for item in selected {
+                if item == "maimai" {
+                    result.insert("maimai")
+                    result.insert("maimai PLUS")
+                } else if item == "FiNALE" {
+                    result.insert("maimai FiNALE")
+                } else if !item.hasPrefix("舞萌") && !item.contains("FiNALE") {
+                    result.insert("maimai \(item) PLUS")
+                    result.insert("maimai \(item)")
+                } else {
+                    result.insert(item)
+                }
+            }
+        case .intl, .jp:
+            let groupedClassic: Set<String> = ["GreeN", "ORANGE", "PiNK", "MURASAKi", "MiLK"]
+            for item in selected {
+                if item == "maimai" {
+                    result.insert("maimai")
+                    result.insert("maimai PLUS")
+                } else if groupedClassic.contains(item) {
+                    result.insert(item)
+                    result.insert("\(item) PLUS")
+                } else {
+                    result.insert(item)
+                }
             }
         }
         return result
@@ -124,7 +196,8 @@ enum MaimaiConstants {
             ("230", "maimaidx_festival"), ("235", "maimaidx_festival_plus"),
             ("240", "maimaidx_buddies"), ("245", "maimaidx_buddies_plus"),
             ("250", "maimaidx_prism"), ("255", "maimaidx_prism_plus"),
-            ("260", "maimaidx_circle")
+            ("260", "maimaidx_circle"), ("265", "maimaidx_circle_plus"),
+            ("270", "maimaidx_magical")
         ]
         return map.first { versionCode.hasPrefix($0.0) }?.1
     }
@@ -135,6 +208,9 @@ enum MaimaiConstants {
         if trimmed.hasPrefix("265") {
             return "maimai でらっくす CiRCLE PLUS"
         }
+        if trimmed.hasPrefix("270") {
+            return "maimai でらっくす MAGiCAL"
+        }
         return "Ver. \(trimmed)"
     }
 
@@ -142,10 +218,40 @@ enum MaimaiConstants {
         cnVersions.first { $0.name == fromName }?.asset
     }
 
-    enum ServerRegion: String, Codable, CaseIterable {
+    static func jpVersionAssetByName(_ fromName: String) -> String? {
+        jpVersions.first { $0.name == fromName }?.asset
+    }
+
+    enum ServerRegion: String, Codable, CaseIterable, Identifiable {
         case cn
-        case jp
         case intl
+        case jp
+
+        var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .cn: return "国服（舞萌DX）"
+            case .intl: return "国际服（International）"
+            case .jp: return "日服（日本版）"
+            }
+        }
+
+        var shortName: String {
+            switch self {
+            case .cn: return "国服"
+            case .intl: return "国际服"
+            case .jp: return "日服"
+            }
+        }
+
+        /// Starting from `CiRCLE` in JP / International, `AP` and `AP+` grant `+1` single-song Rating.
+        var usesAPBonus: Bool {
+            switch self {
+            case .cn: return false
+            case .intl, .jp: return true
+            }
+        }
     }
 
     /// Resolves the version logo asset and fallback label for the active game server.
@@ -159,8 +265,8 @@ enum MaimaiConstants {
             let fallback = info.from.isEmpty ? "暂无数据" : info.from
             return (asset, fallback)
         case .jp, .intl:
-            let asset = jpVersionAsset(for: info.version)
-            let fallback = jpVersionFallbackTitle(for: info.version)
+            let asset = jpVersionAssetByName(info.from) ?? jpVersionAsset(for: info.version)
+            let fallback = !info.from.isEmpty ? info.from : jpVersionFallbackTitle(for: info.version)
             return (asset, fallback)
         }
     }

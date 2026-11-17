@@ -108,7 +108,7 @@ struct SyncStatusBanner: View {
                     HStack(alignment: .center, spacing: AppTheme.itemSpacing) {
                         if store.isLoadingLocalData || store.isSyncingSongs {
                             ProgressView().controlSize(.small)
-                            Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在检查曲库更新…")
+                            Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在同步\(store.serverRegion.shortName)曲库…")
                                 .font(AppTheme.Typography.tag)
                                 .foregroundStyle(.secondary)
                         } else if let notice = store.syncNotice {
@@ -129,7 +129,7 @@ struct SyncStatusBanner: View {
                                 // Retry the operation that actually failed.
                                 switch notice.kind {
                                 case .songs:
-                                    Task { await store.checkSongDataUpdateIfNeeded(force: true) }
+                                    Task { await store.syncActiveRegionSongs(force: true) }
                                 case .stats:
                                     Task { await store.refreshChartStatsIfStale(force: true) }
                                 }

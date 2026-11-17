@@ -29,8 +29,9 @@ MaimaiData/
 │   ├── RecordModels.swift           # 水鱼查分器响应模型、成绩模型、已存账号、进度表统计、筛选条件模型
 │   └── Extensions.swift             # Color(hex:) / 自适应与提亮扩展、安全下标 Collection[safe:]、版本号按段数值比较 VersionString
 ├── Services/
-│   ├── DataStore.swift              # @MainActor @Observable 全局状态中心（本地缓存、曲库/拟合定数同步、登录与成绩拉取、B50 拆表）
-│   ├── MaimaiAPI.swift              # 无状态网络层（曲库更新检查、曲库下载、水鱼拟合定数、登录与玩家成绩拉取）
+│   ├── DataStore.swift              # @MainActor @Observable 全局状态中心（本地缓存、多区服切换、曲库/拟合定数同步、登录与成绩拉取、B50 拆表）
+│   ├── MaimaiAPI.swift              # 无状态网络层（曲库更新检查、日服/国际服 Zetaraku 曲库下载、水鱼拟合定数、登录与玩家成绩拉取）
+│   ├── ZetarakuCatalogConverter.swift # 日服/国际服 Zetaraku 曲库纯函数转换器（关联国服 ID/别名/基准定数、国际服覆写与两代 B15 判定）
 │   ├── AccountCredentialStore.swift # Keychain 凭据存储（水鱼账号列表、密码、Cookie）与缓存文件名 SHA-256 脱敏
 │   ├── ImageLoader.swift            # 内存 + 磁盘双层曲绘缓存 CoverImageCache 与异步曲绘视图 CoverImageView
 │   ├── Best50Renderer.swift         # Best 50 成绩图离屏并发预取与 UIGraphicsImageRenderer 渲染引擎
@@ -196,21 +197,24 @@ MaimaiData/
 
 1. **曲绘封面源与缓存 (`SongData.coverCandidateURLs` & `CoverImageCache`)**：
    - 官方源 `maimaidx.jp` 的 TLS 证书链不完整，在 iOS `URLSession` 下会因 SSL 验证失败直接报错。
-   - 必须保持国内高可用 CDN 顺序：`https://assets2.lxns.net/maimai/jacket/{baseJacketId}.png` 优先，水鱼 5 位补零地址 `https://www.diving-fish.com/covers/{paddedId}.png` 兜底；内存与磁盘缓存 Key 统一按 `jacket_{baseJacketId}` 归并。
-2. **搜索框中文输入法防闪屏 (`SongFilterCriteria.isActive` & `SongListView`)**：
+   - 国服曲目（`numericId > 0`）优先走国内高可用 CDN：`https://assets2.lxns.net/maimai/jacket/{baseJacketId}.png` 优先，水鱼 5 位补零地址兜底，缓存 Key 统一按 `jacket_{baseJacketId}` 归并；日服/国际服独占曲目（`numericId == 0`）走 Zetaraku CloudFront 封面 CDN，缓存 Key 按 `jacket_remote_{stem}` 隔离，严禁与国服取模 ID 混用。
+2. **多区服切换与算分新规一致性 (`ZetarakuCatalogConverter` & `DataStore`)**：
+   - 国服（`.cn`）保持水鱼原始定数与算分规则；日服（`.jp`）与国际服（`.intl`）由 `ZetarakuCatalogConverter` 融合国服歌曲 ID 与社区别名，B15 采用 `CiRCLE` 起实行的**两代半版本规则**（`.jp`：`MAGiCAL` + `CiRCLE PLUS`；`.intl`：`CiRCLE PLUS` + `CiRCLE`），且达成 `AP / AP+` 单曲 Rating 额外 `+1`。
+   - 在非国服模式下，曲目详情页「分段 Rating 对照」固定退化为两列（隐藏 `B50 可加` 列），避免缺少日服/国际服新曲成绩时产生误导性的推分提示。
+3. **搜索框中文输入法防闪屏 (`SongFilterCriteria.isActive` & `SongListView`)**：
    - `SongFilterCriteria.isActive` **绝对不能包含 `!keyword.isEmpty`**。中文输入法选词上屏瞬间会先清空拼音再填入汉字，若 `keyword` 计入 `isActive` 会导致「已筛选」摘要卡片在选词瞬间反复挂载/卸载引起列表剧烈跳动。
    - 搜索历史卡片统一由 `.onChange(of: isSearchFocused)` 驱动展开收起，并在 `onDisappear` 中关闭动画重置焦点，防止键盘弹起时点进详情页再返回出现布局跳动。
-3. **水鱼凭据安全与登录态一致性 (`AccountCredentialStore` & `DataStore`)**：
+4. **水鱼凭据安全与登录态一致性 (`AccountCredentialStore` & `DataStore`)**：
    - 水鱼密码、Cookie 与已保存账号列表**只能存入 Keychain**（`AccountCredentialStore`），本地成绩缓存文件名使用 `records_\(username.sha256Hex).json`。
    - `DataStore.loginAndSyncRecords` 必须严格区分**登录请求本身失败**与**登录成功后拉取成绩失败**（`MaimaiAPIError.recordSyncFailedAfterLogin`），严禁在未拿到有效 Cookie 时向用户误报登录成功，也严禁在 `isSyncingRecords` 期间静默吞掉登录操作。
    - 同步成绩返回时应始终缓存 `divingFishNickname`，最终展示名称统一由 `DataStore.displayPlayerName` 根据 `useDivingFishNickname` 开关裁决。
-4. **下拉刷新防取消与缓存竞态防护 (`DataStore`)**：
+5. **下拉刷新防取消与缓存竞态防护 (`DataStore`)**：
    - `DataStore.performFetchRecordsWithCurrentCookie()` 内部使用非结构化 `Task` 承载网络请求，防止 SwiftUI `.refreshable` 在状态更新重绘瞬间取消底层 `URLSession` 请求（`NSURLErrorCancelled`）。
    - 切换账号异步回填本地成绩缓存（`restoreCachedRecords`）受单调递增令牌 `recordsEpoch` 保护，绝不能覆盖网络刚拉回的新鲜成绩。
-5. **导航栈复用与图片缩放约束 (`RatingToolsView` & `ZoomableImageScrollView`)**：
+6. **导航栈复用与图片缩放约束 (`RatingToolsView` & `ZoomableImageScrollView`)**：
    - 「Rating 与查分」Tab 下的二级工具页（`ProberView`、`VersionCheckView`、`LevelCheckView`）点击曲目进入详情页时，统一复用根视图 `RatingToolsView` 注册的 `.navigationDestination(for: SongData.self)`，**严禁在子页面重复注册同类型 `navigationDestination`**。
    - `ZoomableImageScrollView` 内的 `UIImageView` 必须同时绑定 `contentLayoutGuide`（四边）与 `frameLayoutGuide`（宽高）共 6 条约束，确保初始自适应居中且支持 `1.0x–4.5x` 双指与双击缩放。
-6. **工程配置同步与测试宿主隔离 (`project.yml` & `MaimaiData.xcodeproj` & `MaimaiDataApp`)**：
+7. **工程配置同步与测试宿主隔离 (`project.yml` & `MaimaiData.xcodeproj` & `MaimaiDataApp`)**：
    - 增删源码/资源文件或修改构建配置时，必须同步维护 `project.yml` 与 `MaimaiData.xcodeproj/project.pbxproj`。
    - 当前工程固定为 **iPhone 竖屏应用**（`TARGETED_DEVICE_FAMILY = 1`），最低部署目标 `iOS 17.0`。
    - `MaimaiDataApp` 启动时通过 `XCTestConfigurationFilePath` 环境变量跳过 `store.bootstrap()`，确保单元测试宿主纯净、不发起真实网络请求。

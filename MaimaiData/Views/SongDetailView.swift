@@ -90,6 +90,19 @@ struct SongDetailView: View {
         .fullScreenCover(isPresented: $showCoverZoom) {
             CoverZoomView(song: currentSong)
         }
+        .onChange(of: store.catalogRevision) { _, _ in
+            if currentSong.numericId > 0, let refreshed = store.songsById[currentSong.numericId] {
+                currentSong = refreshed
+            } else if let refreshed = store.songs.first(where: {
+                $0.id == currentSong.id || (
+                    $0.title == currentSong.title &&
+                    $0.basicInfo.genre == currentSong.basicInfo.genre &&
+                    $0.type == currentSong.type
+                )
+            }) {
+                currentSong = refreshed
+            }
+        }
     }
 
     // MARK: - Hero Header Card
@@ -134,8 +147,12 @@ struct SongDetailView: View {
             HStack(spacing: AppTheme.Space.s) {
                 factPill(label: "BPM", value: "\(currentSong.basicInfo.bpm)")
                 factPill(label: "歌曲分类", value: currentSong.basicInfo.genre)
-                factPill(label: "歌曲 ID", value: currentSong.id)
-                    .onLongPressGesture { copyText(currentSong.id, label: "歌曲 ID") }
+                factPill(label: "歌曲 ID", value: currentSong.numericId > 0 ? currentSong.id : "—")
+                    .onLongPressGesture {
+                        if currentSong.numericId > 0 {
+                            copyText(currentSong.id, label: "歌曲 ID")
+                        }
+                    }
             }
         }
         .padding(AppTheme.cardPadding)
@@ -290,8 +307,18 @@ struct SongDetailView: View {
 
     private func overviewSection(chart: ResolvedChart) -> some View {
         let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
-        let fitDiff = store.chartStats[currentSong.numericId]?[safe: chart.index]?.fitDiff
-        let versionInfo = MaimaiConstants.activeServerVersionDisplay(for: currentSong.basicInfo)
+        let fitDiff = currentSong.numericId > 0
+            ? store.chartStats[currentSong.numericId]?[safe: chart.index]?.fitDiff
+            : nil
+        let versionInfo = MaimaiConstants.activeServerVersionDisplay(
+            for: currentSong.basicInfo,
+            region: store.serverRegion
+        )
+        let dsTileTitle: String = {
+            guard let old = chart.oldDs else { return "谱面定数" }
+            let prefix = store.serverRegion == .cn ? "旧" : "国服"
+            return String(format: "定数 (\(prefix)%.1f)", old)
+        }()
         let titleKey = currentSong.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         let aliases = store.enableShowAlias
             ? (currentSong.alias ?? []).filter { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != titleKey }
@@ -302,7 +329,7 @@ struct SongDetailView: View {
                 VStack(spacing: AppTheme.itemSpacing) {
                     HStack(spacing: AppTheme.Space.s) {
                         AppMetricTile(
-                            title: chart.oldDs.map { String(format: "定数 (旧%.1f)", $0) } ?? "谱面定数",
+                            title: dsTileTitle,
                             valueSlotHeight: 28
                         ) {
                             dsText(chart: chart)
@@ -385,17 +412,23 @@ struct SongDetailView: View {
             }
         } else {
             let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
-            let baseline = store.b50BaselineRating(forSong: currentSong, difficultyIndex: chart.index)
+            let showB50 = store.isLoggedIn && store.serverRegion == .cn
+            let baseline = showB50 ? store.b50BaselineRating(forSong: currentSong, difficultyIndex: chart.index) : nil
             let rows = RatingCalculator.buildTierRows(
                 ds: chart.ds,
                 currentAchievement: record?.achievements,
                 b50BaselineRating: baseline
             )
 
-            AppSectionCard(title: "分段 Rating 对照") {
+            AppSectionCard(
+                title: "分段 Rating 对照",
+                subtitle: store.serverRegion.usesAPBonus
+                    ? "\(store.serverRegion.shortName)新规：达成 AP / AP+ 时单曲 Rating 额外 +1"
+                    : nil
+            ) {
                 AppCapsuleLabel(text: String(format: "定数 %.1f", chart.ds))
             } content: {
-                RatingTierTable(rows: rows, showB50Column: store.isLoggedIn)
+                RatingTierTable(rows: rows, showB50Column: showB50)
             }
         }
     }

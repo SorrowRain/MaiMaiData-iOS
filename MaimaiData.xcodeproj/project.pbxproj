@@ -11,12 +11,14 @@
 		047664CBCB45A9D7737FB820 /* Forms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 433AEC193A7374D120E9917B /* Forms.swift */; };
 		1E8892EB23B71E9E0B271F32 /* Feedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7761DD89B30EC6D482A20819 /* Feedback.swift */; };
 		28EFE6131BE94257A9106AFA /* Checklist.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7AB4F5116D994960464BC3C /* Checklist.swift */; };
+		2BBF6D09FD22DEE392AA57E5 /* MultiRegionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CEC8E1214ACB060EEC4D0796 /* MultiRegionTests.swift */; };
 		2D4CAD33027847F8DE021660 /* LoginSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E54374623C23A45F46C0AC2C /* LoginSheet.swift */; };
 		33654FD385BC0E95EBDE42F5 /* AccountCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BB2CECB91004C605053CA9C /* AccountCredentialStore.swift */; };
 		460F2D2B1F963A96D8480BB2 /* AccountManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 796ABC531B5BC2DAAA9F3A67 /* AccountManagementView.swift */; };
 		468A4BD342E6D40CA878A7BB /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 05B2002357F1D17D595CEC90 /* Buttons.swift */; };
 		5430AF688F3F3B43797C5C76 /* ImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F607E11D6A4A9DF629B3351 /* ImageLoader.swift */; };
 		55576063F22E5DAA7A618C17 /* FinaleToDxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8271F7524C0425C7500C1768 /* FinaleToDxView.swift */; };
+		62742A1CB7A9D2F1AF56438E /* ZetarakuCatalogConverter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1186A3E558759F92570B4825 /* ZetarakuCatalogConverter.swift */; };
 		628158235C34EBFA34FAE563 /* RatingCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4B1DD5EEBBCC06EAB4C8BC8 /* RatingCalculatorTests.swift */; };
 		63EDED7ED7514E0F31501357 /* RatingTierTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ED553F4D7BE916073E169B4 /* RatingTierTable.swift */; };
 		774D834322BDF285D1D8EEEE /* SongFilter.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC02C11CEC716B77962D93D2 /* SongFilter.swift */; };
@@ -63,6 +65,7 @@
 /* Begin PBXFileReference section */
 		05B2002357F1D17D595CEC90 /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
 		0AB24DE975528707D5A75673 /* SongListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongListView.swift; sourceTree = "<group>"; };
+		1186A3E558759F92570B4825 /* ZetarakuCatalogConverter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ZetarakuCatalogConverter.swift; sourceTree = "<group>"; };
 		121595B1DF3114C6764E0B90 /* SongDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongDetailView.swift; sourceTree = "<group>"; };
 		167173D2473D31999EA6FA56 /* MaimaiDataApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaimaiDataApp.swift; sourceTree = "<group>"; };
 		1C1B8D96FC15D419F836716F /* UIKitBridges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIKitBridges.swift; sourceTree = "<group>"; };
@@ -98,6 +101,7 @@
 		BC02C11CEC716B77962D93D2 /* SongFilter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SongFilter.swift; sourceTree = "<group>"; };
 		C306167D619FC61CCCA481F6 /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
 		C93B227E70AE382A245FE5E6 /* LevelCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LevelCheckView.swift; sourceTree = "<group>"; };
+		CEC8E1214ACB060EEC4D0796 /* MultiRegionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiRegionTests.swift; sourceTree = "<group>"; };
 		D59B9DE91B34FD5A65D4CB48 /* VersionCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VersionCheckView.swift; sourceTree = "<group>"; };
 		E1519A8BABE8FF45D1E1B15E /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		E54374623C23A45F46C0AC2C /* LoginSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginSheet.swift; sourceTree = "<group>"; };
@@ -119,6 +123,7 @@
 		16D32964663BC8EA744A1B3F /* MaimaiDataTests */ = {
 			isa = PBXGroup;
 			children = (
+				CEC8E1214ACB060EEC4D0796 /* MultiRegionTests.swift */,
 				B4B1DD5EEBBCC06EAB4C8BC8 /* RatingCalculatorTests.swift */,
 				E9AE3D5AA7E3DF2D9310E9EB /* SongFilterTests.swift */,
 			);
@@ -223,6 +228,7 @@
 				6736A5D4376B2ED85A90D27B /* MaimaiAPI.swift */,
 				503CEAE4469ABEC6DBE660AB /* PreferenceKeys.swift */,
 				BC02C11CEC716B77962D93D2 /* SongFilter.swift */,
+				1186A3E558759F92570B4825 /* ZetarakuCatalogConverter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -334,6 +340,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2BBF6D09FD22DEE392AA57E5 /* MultiRegionTests.swift in Sources */,
 				628158235C34EBFA34FAE563 /* RatingCalculatorTests.swift in Sources */,
 				A0B254E7C7B914854371D439 /* SongFilterTests.swift in Sources */,
 			);
@@ -380,6 +387,7 @@
 				E4BA6B78B235B1DF58E8C45D /* SongListView.swift in Sources */,
 				865A00366131488DD75E4E32 /* UIKitBridges.swift in Sources */,
 				9E6A08344AF53BD596B55C2A /* VersionCheckView.swift in Sources */,
+				62742A1CB7A9D2F1AF56438E /* ZetarakuCatalogConverter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

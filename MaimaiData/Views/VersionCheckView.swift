@@ -12,9 +12,14 @@ struct VersionCheckView: View {
         let songs: [SongData]
     }
 
+    private var versions: [(name: String, asset: String)] {
+        MaimaiConstants.checklistVersions(for: store.serverRegion)
+    }
+
     private var selectedVersion: (name: String, asset: String) {
-        let idx = min(max(0, store.lastVersionCheckIndex), MaimaiConstants.cnVersions.count - 1)
-        return MaimaiConstants.cnVersions[idx]
+        let list = versions
+        let idx = min(max(0, store.activeVersionCheckIndex), max(0, list.count - 1))
+        return list[idx]
     }
 
     private func rebuildGroups() {
@@ -62,8 +67,8 @@ struct VersionCheckView: View {
                         Spacer()
 
                         Menu {
-                            Picker("版本", selection: $storeBindable.lastVersionCheckIndex) {
-                                ForEach(Array(MaimaiConstants.cnVersions.enumerated()), id: \.offset) { idx, ver in
+                            Picker("版本", selection: $storeBindable.activeVersionCheckIndex) {
+                                ForEach(Array(versions.enumerated()), id: \.offset) { idx, ver in
                                     Text(ver.name).tag(idx)
                                 }
                             }
@@ -112,7 +117,7 @@ struct VersionCheckView: View {
             .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
-        .sensoryFeedback(.selection, trigger: store.lastVersionCheckIndex)
+        .sensoryFeedback(.selection, trigger: store.activeVersionCheckIndex)
         .navigationTitle("版本进度表 (MAS)")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -120,8 +125,9 @@ struct VersionCheckView: View {
                 rebuildGroups()
             }
         }
-        .onChange(of: store.lastVersionCheckIndex) { _, _ in rebuildGroups() }
-        .onChange(of: store.songs.count) { _, _ in rebuildGroups() }
+        .onChange(of: store.activeVersionCheckIndex) { _, _ in rebuildGroups() }
+        .onChange(of: store.serverRegion) { _, _ in rebuildGroups() }
+        .onChange(of: store.catalogRevision) { _, _ in rebuildGroups() }
     }
 
     private func levelOrder(_ level: String) -> Double {

@@ -60,6 +60,7 @@ struct ProberRecord: Codable, Identifiable, Hashable {
     let songId: Int
     let title: String
     let type: String
+    var apBonusEnabled: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case achievements, ds
@@ -74,8 +75,38 @@ struct ProberRecord: Codable, Identifiable, Hashable {
         DifficultyType(rawValue: levelIndex) ?? .unknown
     }
 
+    var isAllPerfect: Bool {
+        fc == "ap" || fc == "app"
+    }
+
     var computedRating: Int {
-        RatingCalculator.singleSongRating(ds: ds, achievement: achievements)
+        RatingCalculator.singleSongRating(
+            ds: ds,
+            achievement: achievements,
+            isAP: isAllPerfect,
+            apBonusEnabled: apBonusEnabled
+        )
+    }
+
+    /// Re-projects a player's CN record onto the active server's chart constants and AP+1 rule.
+    func projected(onto song: SongData, region: MaimaiConstants.ServerRegion) -> ProberRecord {
+        guard region != .cn else { return self }
+        let targetDS = song.ds[safe: levelIndex] ?? ds
+        let targetLevel = song.level[safe: levelIndex] ?? level
+        return ProberRecord(
+            achievements: achievements,
+            ds: targetDS,
+            fc: fc,
+            fs: fs,
+            level: targetLevel,
+            levelIndex: levelIndex,
+            ra: ra,
+            rate: rate,
+            songId: songId,
+            title: title,
+            type: type,
+            apBonusEnabled: region.usesAPBonus
+        )
     }
 
     var rankAssetName: String {

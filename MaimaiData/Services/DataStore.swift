@@ -7,6 +7,11 @@ final class DataStore {
     // MARK: - Domain Data
     private(set) var songs: [SongData] = []
     private(set) var songsById: [Int: SongData] = [:]
+    private(set) var catalogRevision = 0
+    private var cnSongs: [SongData] = []
+    private var cnSongsById: [Int: SongData] = [:]
+    private var zetarakuCatalog: ZetarakuCatalog?
+    private var regionEpoch = 0
     private(set) var chartStats: [Int: [ChartStatEntry]] = [:]
     private(set) var records: [ProberRecord] = [] {
         didSet {
@@ -24,7 +29,9 @@ final class DataStore {
     private(set) var maxNotesStats: MaxNotesStats = .fallback
 
     // MARK: - Loading & Status
-    private(set) var isSyncingSongs = false
+    private var isFetchingCNSongs = false
+    private var isFetchingZetaraku = false
+    var isSyncingSongs: Bool { isFetchingCNSongs || isFetchingZetaraku }
     private(set) var isSyncingRecords = false
     private(set) var isSyncingStats = false
     private(set) var isLoadingLocalData = true
@@ -63,6 +70,12 @@ final class DataStore {
     var dataVersion: String {
         didSet { UserDefaults.standard.set(dataVersion, forKey: Keys.dataVersion) }
     }
+    var serverRegion: MaimaiConstants.ServerRegion {
+        didSet { UserDefaults.standard.set(serverRegion.rawValue, forKey: Keys.serverRegion) }
+    }
+    var lastZetarakuSync: Date? {
+        didSet { UserDefaults.standard.set(lastZetarakuSync?.timeIntervalSince1970, forKey: Keys.zetarakuSync) }
+    }
     var lastChartStatsSync: Date? {
         didSet { UserDefaults.standard.set(lastChartStatsSync?.timeIntervalSince1970, forKey: Keys.chartStatsSync) }
     }
@@ -86,8 +99,48 @@ final class DataStore {
     var lastVersionCheckIndex: Int {
         didSet { UserDefaults.standard.set(lastVersionCheckIndex, forKey: Keys.lastVersionCheck) }
     }
+    var lastVersionCheckIntlIndex: Int {
+        didSet { UserDefaults.standard.set(lastVersionCheckIntlIndex, forKey: Keys.lastVersionCheckIntl) }
+    }
+    var lastVersionCheckJpIndex: Int {
+        didSet { UserDefaults.standard.set(lastVersionCheckJpIndex, forKey: Keys.lastVersionCheckJp) }
+    }
     var lastLevelCheckIndex: Int {
         didSet { UserDefaults.standard.set(lastLevelCheckIndex, forKey: Keys.lastLevelCheck) }
+    }
+
+    var activeVersionCheckIndex: Int {
+        get {
+            switch serverRegion {
+            case .cn: return lastVersionCheckIndex
+            case .intl: return lastVersionCheckIntlIndex
+            case .jp: return lastVersionCheckJpIndex
+            }
+        }
+        set {
+            switch serverRegion {
+            case .cn: lastVersionCheckIndex = newValue
+            case .intl: lastVersionCheckIntlIndex = newValue
+            case .jp: lastVersionCheckJpIndex = newValue
+            }
+        }
+    }
+
+    var activeCatalogSubtitle: String {
+        switch serverRegion {
+        case .cn:
+            return "国服版本 \(dataVersion) · 共 \(songs.count) 首"
+        case .intl, .jp:
+            let stamp: String
+            if let updateTime = zetarakuCatalog?.updateTime, !updateTime.isEmpty {
+                stamp = String(updateTime.prefix(10))
+            } else if let last = lastZetarakuSync {
+                stamp = last.formatted(date: .numeric, time: .omitted)
+            } else {
+                stamp = "尚未同步"
+            }
+            return "\(serverRegion.shortName)数据 \(stamp) · 共 \(songs.count) 首"
+        }
     }
 
     private typealias Keys = PreferenceKeys
@@ -103,6 +156,7 @@ final class DataStore {
     }
 
     private var cachedSongsURL: URL { appSupportDir.appendingPathComponent("songdata.json") }
+    private var cachedZetarakuURL: URL { appSupportDir.appendingPathComponent("zetaraku_data.json") }
     private var cachedStatsURL: URL { appSupportDir.appendingPathComponent("chart_stats.json") }
     private var cachedRecordsURL: URL {
         guard !currentUsername.isEmpty else {
@@ -129,6 +183,13 @@ final class DataStore {
         ud.removeObject(forKey: Keys.cookie)
         self.divingFishNickname = ud.string(forKey: Keys.dfNickname) ?? ""
         self.dataVersion = ud.string(forKey: Keys.dataVersion) ?? Self.seedDataVersion
+        self.serverRegion = ud.string(forKey: Keys.serverRegion)
+            .flatMap(MaimaiConstants.ServerRegion.init(rawValue:)) ?? .cn
+        if let zTs = ud.object(forKey: Keys.zetarakuSync) as? TimeInterval {
+            self.lastZetarakuSync = Date(timeIntervalSince1970: zTs)
+        } else {
+            self.lastZetarakuSync = nil
+        }
         if let ts = ud.object(forKey: Keys.chartStatsSync) as? TimeInterval {
             self.lastChartStatsSync = Date(timeIntervalSince1970: ts)
         } else {
@@ -141,6 +202,10 @@ final class DataStore {
         self.useDivingFishNickname = ud.bool(forKey: Keys.useDFNickname)
         self.customNickname = ud.string(forKey: Keys.customNickname) ?? ""
         self.lastVersionCheckIndex = ud.integer(forKey: Keys.lastVersionCheck)
+        self.lastVersionCheckIntlIndex = (ud.object(forKey: Keys.lastVersionCheckIntl) as? Int)
+            ?? max(0, MaimaiConstants.checklistVersions(for: .intl).count - 1)
+        self.lastVersionCheckJpIndex = (ud.object(forKey: Keys.lastVersionCheckJp) as? Int)
+            ?? max(0, MaimaiConstants.checklistVersions(for: .jp).count - 1)
         self.lastLevelCheckIndex = ud.integer(forKey: Keys.lastLevelCheck)
     }
 
@@ -148,6 +213,7 @@ final class DataStore {
 
     private func loadLocalCaches() async {
         let songsURL = cachedSongsURL
+        let zetarakuURL = cachedZetarakuURL
         let statsURL = cachedStatsURL
         let recordsURL = cachedRecordsURL
         let caches = await Task.detached(priority: .userInitiated) { () -> LocalCaches in
@@ -163,6 +229,9 @@ final class DataStore {
                 cache.songs = decoded
                 cache.usedSeed = true
             }
+            if let zData = try? Data(contentsOf: zetarakuURL) {
+                cache.zetaraku = try? JSONDecoder().decode(ZetarakuCatalog.self, from: zData)
+            }
             if let data = try? Data(contentsOf: statsURL) {
                 cache.stats = try? JSONDecoder().decode(ChartStatsResponse.self, from: data)
             }
@@ -172,10 +241,24 @@ final class DataStore {
             return cache
         }.value
 
-        if let songs = caches.songs {
-            await applySongs(songs)
+        if let loadedCNSongs = caches.songs {
+            await storeCNBaseline(loadedCNSongs)
             if caches.usedSeed { dataVersion = Self.seedDataVersion }
         }
+        zetarakuCatalog = caches.zetaraku
+
+        let epoch = regionEpoch
+        switch serverRegion {
+        case .cn:
+            if !cnSongs.isEmpty {
+                await applySongs(cnSongs, epoch: epoch)
+            }
+        case .intl, .jp:
+            if let catalog = zetarakuCatalog {
+                await applyZetarakuCatalog(catalog, for: serverRegion, epoch: epoch)
+            }
+        }
+
         if let stats = caches.stats { applyChartStats(stats) }
         records = caches.records ?? []
         isLoadingLocalData = false
@@ -189,24 +272,69 @@ final class DataStore {
 
         async let songCheck: Void = checkSongDataUpdateIfNeeded()
         async let statsCheck: Void = refreshChartStatsIfStale()
-        _ = await (songCheck, statsCheck)
+        async let regionCheck: Void = bootstrapNonCNRegionIfNeeded()
+        _ = await (songCheck, statsCheck, regionCheck)
     }
 
-    private func applySongs(_ list: [SongData]) async {
-        let snapshot = await Task.detached(priority: .userInitiated) { () -> SongSnapshot in
-            let enriched = SongData.mergingCounterpartAliases(list)
-            let ordered = enriched.sorted {
-                if $0.numericId != $1.numericId { return $0.numericId > $1.numericId }
-                return $0.id > $1.id
-            }
-            var map: [Int: SongData] = [:]
-            map.reserveCapacity(ordered.count)
-            for song in ordered { map[song.numericId] = song }
-            return SongSnapshot(songs: ordered, songsById: map, maxNotes: MaxNotesStats.compute(from: ordered))
-        }.value
+    private func bootstrapNonCNRegionIfNeeded() async {
+        guard serverRegion != .cn else { return }
+        if zetarakuCatalog == nil {
+            await syncZetarakuCatalog(force: false)
+        } else {
+            await refreshZetarakuIfStale()
+        }
+    }
+
+    private func storeCNBaseline(_ rawList: [SongData]) async {
+        let snapshot = await Self.buildSnapshot(from: rawList)
+        cnSongs = snapshot.songs
+        cnSongsById = snapshot.songsById
+    }
+
+    private func applySongs(_ list: [SongData], epoch: Int? = nil) async {
+        let snapshot = await Self.buildSnapshot(from: list)
+        if let epoch, regionEpoch != epoch { return }
         songs = snapshot.songs
         songsById = snapshot.songsById
         maxNotesStats = snapshot.maxNotes
+        catalogRevision &+= 1
+    }
+
+    private func applyZetarakuCatalog(
+        _ catalog: ZetarakuCatalog,
+        for region: MaimaiConstants.ServerRegion,
+        epoch: Int? = nil
+    ) async {
+        let cnRef = cnSongs
+        let snapshot = await Task.detached(priority: .userInitiated) { () -> SongSnapshot in
+            let converted = ZetarakuCatalogConverter.convert(catalog, region: region, cnReference: cnRef)
+            return Self.buildSnapshotSync(from: converted)
+        }.value
+        if let epoch, regionEpoch != epoch { return }
+        songs = snapshot.songs
+        songsById = snapshot.songsById
+        maxNotesStats = snapshot.maxNotes
+        catalogRevision &+= 1
+    }
+
+    private static func buildSnapshot(from list: [SongData]) async -> SongSnapshot {
+        await Task.detached(priority: .userInitiated) {
+            buildSnapshotSync(from: list)
+        }.value
+    }
+
+    nonisolated private static func buildSnapshotSync(from list: [SongData]) -> SongSnapshot {
+        let enriched = SongData.mergingCounterpartAliases(list)
+        let ordered = enriched.sorted {
+            if $0.defaultSortKey != $1.defaultSortKey { return $0.defaultSortKey > $1.defaultSortKey }
+            return $0.id > $1.id
+        }
+        var map: [Int: SongData] = [:]
+        map.reserveCapacity(ordered.count)
+        for song in ordered where song.numericId > 0 {
+            map[song.numericId] = song
+        }
+        return SongSnapshot(songs: ordered, songsById: map, maxNotes: MaxNotesStats.compute(from: ordered))
     }
 
     private func applyChartStats(_ response: ChartStatsResponse) {
@@ -220,27 +348,117 @@ final class DataStore {
         self.chartStats = map
     }
 
-    // MARK: - Remote Sync
+    // MARK: - Server Region Switching & Remote Sync
+
+    func switchServerRegion(_ newRegion: MaimaiConstants.ServerRegion) async {
+        guard newRegion != serverRegion else { return }
+        regionEpoch += 1
+        let epoch = regionEpoch
+        serverRegion = newRegion
+        syncNotice = nil
+
+        switch newRegion {
+        case .cn:
+            await applySongs(cnSongs, epoch: epoch)
+        case .intl, .jp:
+            if let catalog = zetarakuCatalog {
+                await applyZetarakuCatalog(catalog, for: newRegion, epoch: epoch)
+                await refreshZetarakuIfStale()
+            } else {
+                songs = []
+                songsById = [:]
+                catalogRevision &+= 1
+                await loadOrFetchZetaraku(for: newRegion, epoch: epoch)
+            }
+        }
+        guard regionEpoch == epoch else { return }
+        prefetchBest50Covers()
+    }
+
+    func syncActiveRegionSongs(force: Bool = false) async {
+        switch serverRegion {
+        case .cn:
+            await checkSongDataUpdateIfNeeded(force: force)
+        case .intl, .jp:
+            await syncZetarakuCatalog(force: force)
+        }
+    }
+
+    private func loadOrFetchZetaraku(for region: MaimaiConstants.ServerRegion, epoch: Int) async {
+        let url = cachedZetarakuURL
+        if let diskCatalog = await Task.detached(priority: .userInitiated, operation: { () -> ZetarakuCatalog? in
+            guard let data = try? Data(contentsOf: url) else { return nil }
+            return try? JSONDecoder().decode(ZetarakuCatalog.self, from: data)
+        }).value {
+            guard regionEpoch == epoch else { return }
+            zetarakuCatalog = diskCatalog
+            await applyZetarakuCatalog(diskCatalog, for: region, epoch: epoch)
+            await refreshZetarakuIfStale()
+            return
+        }
+        await syncZetarakuCatalog(force: false)
+    }
+
+    private func refreshZetarakuIfStale() async {
+        let oneDay: TimeInterval = 24 * 3600
+        if let last = lastZetarakuSync, Date().timeIntervalSince(last) < oneDay, zetarakuCatalog != nil {
+            return
+        }
+        await syncZetarakuCatalog(force: false)
+    }
+
+    func syncZetarakuCatalog(force: Bool = false) async {
+        guard !isFetchingZetaraku else { return }
+        isFetchingZetaraku = true
+        defer { isFetchingZetaraku = false }
+        do {
+            let (raw, decoded) = try await MaimaiAPI.fetchZetarakuCatalog()
+            try raw.write(to: cachedZetarakuURL, options: .atomic)
+            zetarakuCatalog = decoded
+            lastZetarakuSync = Date()
+            if serverRegion != .cn {
+                await applyZetarakuCatalog(decoded, for: serverRegion, epoch: regionEpoch)
+                if force {
+                    let verText = decoded.updateTime.map { String($0.prefix(10)) } ?? "最新"
+                    statusMessage = "\(serverRegion.shortName)曲库已同步（\(verText)，共 \(songs.count) 首）"
+                }
+            }
+        } catch {
+            if serverRegion != .cn {
+                statusMessage = force ? "\(serverRegion.shortName)曲库更新失败：\(error.localizedDescription)" : nil
+                syncNotice = DataSyncNotice(
+                    kind: .songs,
+                    message: "\(serverRegion.shortName)曲库更新失败，请检查网络后重试。\n\(error.localizedDescription)"
+                )
+            }
+        }
+    }
 
     func checkSongDataUpdateIfNeeded(force: Bool = false) async {
-        guard !isSyncingSongs else { return }
-        isSyncingSongs = true
-        defer { isSyncingSongs = false }
+        guard !isFetchingCNSongs else { return }
+        isFetchingCNSongs = true
+        defer { isFetchingCNSongs = false }
         do {
             let info = try await MaimaiAPI.fetchUpdateInfo()
             guard let (remoteVer, remoteURL) = info.bestDataVersionAndURL else { return }
-            if force || VersionString.isNewer(remoteVer, than: dataVersion) || songs.isEmpty {
+            if force || VersionString.isNewer(remoteVer, than: dataVersion) || cnSongs.isEmpty {
                 let (raw, decoded) = try await MaimaiAPI.downloadSongData(from: remoteURL)
                 try raw.write(to: cachedSongsURL, options: .atomic)
                 dataVersion = remoteVer
-                await applySongs(decoded)
-                if force {
-                    statusMessage = "曲库已更新至 \(remoteVer)（共 \(decoded.count) 首）"
+                await storeCNBaseline(decoded)
+                if serverRegion == .cn {
+                    await applySongs(cnSongs, epoch: regionEpoch)
+                    if force {
+                        statusMessage = "曲库已更新至 \(remoteVer)（共 \(decoded.count) 首）"
+                    }
+                } else if let catalog = zetarakuCatalog {
+                    await applyZetarakuCatalog(catalog, for: serverRegion, epoch: regionEpoch)
                 }
-            } else if force {
+            } else if force && serverRegion == .cn {
                 statusMessage = "当前曲库已是最新版本（\(dataVersion)）"
             }
         } catch {
+            guard serverRegion == .cn else { return }
             statusMessage = force ? "曲库更新失败：\(error.localizedDescription)" : nil
             syncNotice = DataSyncNotice(
                 kind: .songs,
@@ -437,7 +655,8 @@ final class DataStore {
             to: songs,
             favoriteIds: favoriteIds,
             enableAliasSearch: enableAliasSearch,
-            enableCharterSearch: enableCharterSearch
+            enableCharterSearch: enableCharterSearch,
+            region: serverRegion
         )
     }
 
@@ -447,23 +666,30 @@ final class DataStore {
         !currentUsername.isEmpty || !currentCookie.isEmpty
     }
 
-    /// Finds the SD <-> DX counterpart of the same song (`id ± 10000`), if present.
+    /// Finds the SD <-> DX counterpart of the same song (`id ± 10000` or same title+genre in JP/INTL), if present.
     func counterpartSong(for song: SongData) -> SongData? {
-        guard !song.isUtage, song.numericId > 0 else { return nil }
-        let targetId = song.numericId < 10_000 ? song.numericId + 10_000 : song.numericId - 10_000
-        guard let candidate = songsById[targetId],
-              !candidate.isUtage,
-              candidate.title == song.title,
-              candidate.isDX != song.isDX else {
-            return nil
+        guard !song.isUtage else { return nil }
+        if song.numericId > 0 {
+            let targetId = song.numericId < 10_000 ? song.numericId + 10_000 : song.numericId - 10_000
+            if let candidate = songsById[targetId],
+               !candidate.isUtage,
+               candidate.title == song.title,
+               candidate.isDX != song.isDX {
+                return candidate
+            }
         }
-        return candidate
+        return songs.first { candidate in
+            !candidate.isUtage &&
+            candidate.isDX != song.isDX &&
+            candidate.title == song.title &&
+            candidate.basicInfo.genre == song.basicInfo.genre
+        }
     }
 
     /// Baseline single-song rating a chart must exceed to increase total B50 rating.
-    /// Returns `nil` when the user is not logged in.
+    /// Returns `nil` when the user is not logged in or when viewing non-CN servers.
     func b50BaselineRating(forSong song: SongData, difficultyIndex: Int, summary: Best50Summary? = nil) -> Int? {
-        guard isLoggedIn else { return nil }
+        guard isLoggedIn, serverRegion == .cn, song.numericId > 0 else { return nil }
         let resolved = summary ?? best35AndBest15()
         let bucket = song.basicInfo.isNew ? resolved.b15 : resolved.b35
         let limit = song.basicInfo.isNew ? 15 : 35
@@ -477,29 +703,41 @@ final class DataStore {
     }
 
     func record(forSongId songId: Int, difficultyIndex: Int) -> ProberRecord? {
-        recordsByKey["\(songId)_\(difficultyIndex)"]
+        guard songId > 0 else { return nil }
+        return recordsByKey["\(songId)_\(difficultyIndex)"]
     }
 
     func sortedRecords(isNewVersion: Bool) -> [ProberRecord] {
-        records.filter { rec in
-            guard let song = songsById[rec.songId] else { return false }
-            return song.basicInfo.isNew == isNewVersion
+        let region = serverRegion
+        return records.compactMap { rec in
+            guard let song = songsById[rec.songId],
+                  !song.isUtage,
+                  rec.levelIndex < song.ds.count,
+                  song.basicInfo.isNew == isNewVersion else {
+                return nil
+            }
+            return rec.projected(onto: song, region: region)
         }.sorted(by: Self.recordOrder)
     }
 
     func best35AndBest15() -> Best50Summary {
+        let region = serverRegion
         var matching = true
         var oldList: [ProberRecord] = []
         var newList: [ProberRecord] = []
         for rec in records {
             guard let song = songsById[rec.songId] else {
-                matching = false
+                if region == .cn || cnSongsById[rec.songId] == nil {
+                    matching = false
+                }
                 continue
             }
+            guard !song.isUtage, rec.levelIndex < song.ds.count else { continue }
+            let projected = rec.projected(onto: song, region: region)
             if song.basicInfo.isNew {
-                newList.append(rec)
+                newList.append(projected)
             } else {
-                oldList.append(rec)
+                oldList.append(projected)
             }
         }
         oldList.sort(by: Self.recordOrder)
@@ -535,6 +773,7 @@ final class DataStore {
 
 private struct LocalCaches {
     var songs: [SongData]?
+    var zetaraku: ZetarakuCatalog?
     var stats: ChartStatsResponse?
     var records: [ProberRecord]?
     var usedSeed = false

@@ -10,6 +10,8 @@ enum PreferenceKeys {
     static let cookie = "df_cookie"
     static let dfNickname = "df_nickname"
     static let dataVersion = "song_data_version"
+    static let serverRegion = "server_region"
+    static let zetarakuSync = "zetaraku_sync_ts"
     static let chartStatsSync = "chart_stats_sync_ts"
     static let showAlias = "enable_show_alias"
     static let aliasSearch = "enable_alias_search"
@@ -17,6 +19,8 @@ enum PreferenceKeys {
     static let useDFNickname = "use_df_nickname"
     static let customNickname = "custom_nickname"
     static let lastVersionCheck = "last_version_check"
+    static let lastVersionCheckIntl = "last_version_check_intl"
+    static let lastVersionCheckJp = "last_version_check_jp"
     static let lastLevelCheck = "last_level_check"
 }
 

@@ -167,6 +167,7 @@ struct LevelCheckView: View {
             }
         }
         .onChange(of: store.lastLevelCheckIndex) { _, _ in rebuildGroups() }
-        .onChange(of: store.songs.count) { _, _ in rebuildGroups() }
+        .onChange(of: store.serverRegion) { _, _ in rebuildGroups() }
+        .onChange(of: store.catalogRevision) { _, _ in rebuildGroups() }
     }
 }

@@ -36,11 +36,18 @@ enum RatingCalculator {
         return Int(Double(capped) * Double(levelTenths) * multiplier / 10_000_000.0)
     }
 
-    static func singleSongRating(ds: Double, achievement: Double) -> Int {
-        achievementToRating(
+    static func singleSongRating(
+        ds: Double,
+        achievement: Double,
+        isAP: Bool = false,
+        apBonusEnabled: Bool = false
+    ) -> Int {
+        let base = achievementToRating(
             levelTenths: Int((ds * 10).rounded()),
             achievementTenThousandths: Int((achievement * 10000).rounded())
         )
+        let bonus = (apBonusEnabled && isAP && ds > 0) ? 1 : 0
+        return base + bonus
     }
 
     struct TargetRow: Identifiable {

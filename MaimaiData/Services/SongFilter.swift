@@ -7,10 +7,14 @@ enum SongFilter {
         to songs: [SongData],
         favoriteIds: Set<String>,
         enableAliasSearch: Bool,
-        enableCharterSearch: Bool
+        enableCharterSearch: Bool,
+        region: MaimaiConstants.ServerRegion = .cn
     ) -> [SongData] {
         let query = criteria.keyword.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        let expandedVersions = MaimaiConstants.expandVersionFilter(Array(criteria.selectedVersions))
+        let expandedVersions = MaimaiConstants.expandVersionFilter(
+            Array(criteria.selectedVersions),
+            region: region
+        )
         let targetDS = criteria.useExactDS ? (criteria.exactDS * 10).rounded() / 10 : nil
         let levelFilter = criteria.useExactDS ? nil : criteria.selectedLevel
         let seqDiff = criteria.sortOption.filterDifficulty
@@ -65,7 +69,7 @@ enum SongFilter {
 
         switch criteria.sortOption {
         case .defaultDesc:
-            return filtered.sorted { $0.numericId > $1.numericId }
+            return filtered.sorted { $0.defaultSortKey > $1.defaultSortKey }
         case .expertAsc:
             return filtered.sorted { ($0.ds[safe: 2] ?? 0) < ($1.ds[safe: 2] ?? 0) }
         case .expertDesc:
@@ -87,7 +91,7 @@ enum SongFilter {
         if aHas != bHas { return aHas }
         let aDs = a.ds[safe: 4] ?? 0
         let bDs = b.ds[safe: 4] ?? 0
-        if aDs == bDs { return a.numericId > b.numericId }
+        if aDs == bDs { return a.defaultSortKey > b.defaultSortKey }
         return ascending ? aDs < bDs : aDs > bDs
     }
 }

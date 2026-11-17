@@ -39,7 +39,15 @@ final class CoverImageCache: @unchecked Sendable {
     }
 
     private func cacheKey(for song: SongData) -> String {
-        "jacket_\(song.baseJacketId)"
+        if song.numericId > 0 {
+            return "jacket_\(song.baseJacketId)"
+        }
+        if let remote = song.remoteCoverName, !remote.isEmpty {
+            let sanitized = remote.replacingOccurrences(of: "/", with: "_")
+            let stem = (sanitized as NSString).deletingPathExtension
+            return "jacket_remote_\(stem.isEmpty ? sanitized : stem)"
+        }
+        return "jacket_\(song.id)"
     }
 
     func cachedMemoryImage(for song: SongData) -> UIImage? {
