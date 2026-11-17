@@ -21,25 +21,25 @@ struct CoverZoomView: View {
                 Group {
                     if let img = activeImage {
                         ZoomableImageScrollView(image: img)
-                            .padding(16)
+                            .padding(AppTheme.Space.l)
                             .accessibilityLabel("\(song.title) 封面，可双击或双指缩放")
                     } else if isLoading {
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Space.m) {
                             ProgressView()
                                 .tint(.white)
                             Text("正在加载曲绘…")
-                                .font(.caption)
+                                .font(AppTheme.Typography.caption)
                                 .foregroundStyle(.white.opacity(0.75))
                         }
                     } else {
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Space.m) {
                             Image("mmd_song_jacket_placeholder")
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 220, height: 220)
                                 .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.chip, style: .continuous))
                             Text("曲绘加载失败，请检查网络连接")
-                                .font(.caption)
+                                .font(AppTheme.Typography.caption)
                                 .foregroundStyle(.white.opacity(0.75))
                         }
                     }

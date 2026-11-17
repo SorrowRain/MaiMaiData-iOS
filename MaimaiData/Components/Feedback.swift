@@ -66,17 +66,17 @@ struct StatusToast: View {
     let text: String
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Space.s) {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(AppTheme.accentBright)
             Text(text)
-                .font(.caption.weight(.semibold))
+                .font(AppTheme.Typography.captionSemibold)
                 .multilineTextAlignment(.center)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, AppTheme.Space.l)
         .padding(.vertical, 10)
         .appGlass(in: Capsule(), interactive: false)
-        .padding(.bottom, 24)
+        .padding(.bottom, AppTheme.Space.xl)
         .accessibilityAddTraits(.isStaticText)
     }
 }
@@ -87,19 +87,19 @@ struct SyncStatusBanner: View {
     var body: some View {
         if store.isLoadingLocalData || store.isSyncingSongs || store.syncNotice != nil {
             AppCard(padding: 12, tint: AppTheme.accent) {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                     HStack(alignment: .center, spacing: 10) {
                         if store.isLoadingLocalData || store.isSyncingSongs {
                             ProgressView().controlSize(.small)
                             Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在检查曲库更新…")
-                                .font(.caption.weight(.medium))
+                                .font(AppTheme.Typography.tag)
                                 .foregroundStyle(.secondary)
                         } else if let notice = store.syncNotice {
                             Image(systemName: "wifi.exclamationmark")
                                 .foregroundStyle(.orange)
                                 .accessibilityHidden(true)
                             Text(notice.message)
-                                .font(.caption)
+                                .font(AppTheme.Typography.caption)
                                 .foregroundStyle(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
                         }

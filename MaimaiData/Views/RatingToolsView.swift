@@ -29,7 +29,7 @@ struct RatingToolsView: View {
                             .id("reverseRatingCard")
                     }
                     .padding(.horizontal, AppTheme.pagePadding)
-                    .padding(.vertical, 12)
+                    .padding(.vertical, AppTheme.Space.m)
                     .dismissKeyboardOnTap()
                 }
                 .scrollDismissesKeyboard(.interactively)
@@ -71,10 +71,10 @@ struct RatingToolsView: View {
         let totalRa = b35Sum + b15Sum
 
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center) {
                     Text(store.currentUsername.isEmpty ? "水鱼查分器（未登录）" : store.displayPlayerName)
-                        .font(.headline.weight(.bold))
+                        .font(AppTheme.Typography.headlineBold)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -82,7 +82,7 @@ struct RatingToolsView: View {
 
                     if store.currentUsername.isEmpty {
                         Text("可在「设置与数据」中登录")
-                            .font(.caption)
+                            .font(AppTheme.Typography.caption)
                             .foregroundStyle(.secondary)
                     } else {
                         AppInlineButton(
@@ -96,7 +96,7 @@ struct RatingToolsView: View {
                     }
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: AppTheme.Space.s) {
                     ratingMetricBox(
                         label: "总 Rating",
                         value: "\(totalRa)",
@@ -131,13 +131,13 @@ struct RatingToolsView: View {
 
     private func ratingMetricBox(label: String, value: String, highlight: Bool) -> some View {
         AppInsetGroup(padding: 10) {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
                 Text(label)
-                    .font(.caption2.weight(.semibold))
+                    .font(AppTheme.Typography.caption2Semibold)
                     .foregroundStyle(highlight ? AppTheme.accent : .secondary)
                     .lineLimit(1)
                 Text(value)
-                    .font(.headline.weight(.bold).monospacedDigit())
+                    .font(AppTheme.Typography.headlineBoldMonospaced)
                     .foregroundStyle(highlight ? AppTheme.accent : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -149,8 +149,6 @@ struct RatingToolsView: View {
 
     private var toolsGridCard: some View {
         AppSectionCard(title: "实用工具") {
-            EmptyView()
-        } content: {
             AppInsetGroup {
                 VStack(spacing: 0) {
                     NavigationLink(value: ToolRoute.prober) {
@@ -204,9 +202,9 @@ struct RatingToolsView: View {
     }
 
     private func toolRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
-        HStack(spacing: 12) {
+        HStack(spacing: AppTheme.Space.m) {
             Image(systemName: icon)
-                .font(.subheadline.weight(.bold))
+                .font(AppTheme.Typography.subheadlineBold)
                 .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
                 .background(color.gradient, in: RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous))
@@ -223,10 +221,10 @@ struct RatingToolsView: View {
             }
             Spacer(minLength: 4)
             Image(systemName: "chevron.right")
-                .font(.caption.weight(.bold))
+                .font(AppTheme.Typography.captionBold)
                 .foregroundStyle(.tertiary)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppTheme.Space.m)
         .padding(.vertical, 11)
         .contentShape(Rectangle())
     }
@@ -249,7 +247,7 @@ struct RatingToolsView: View {
             )
         } content: {
             VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Space.m) {
                     AppTextField(
                         title: "谱面定数",
                         placeholder: "14.8",
@@ -275,7 +273,7 @@ struct RatingToolsView: View {
 
                 if let singleInputError {
                     Label(singleInputError, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption)
+                        .font(AppTheme.Typography.caption)
                         .foregroundStyle(Color(.systemRed))
                 }
             }
@@ -289,9 +287,7 @@ struct RatingToolsView: View {
             title: "目标 Rating 达成率反推",
             subtitle: "按 50 首均分推算所需最低定数与达成率"
         ) {
-            EmptyView()
-        } content: {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .bottom, spacing: 10) {
                     AppTextField(
                         title: "目标总 Rating",
@@ -326,7 +322,7 @@ struct RatingToolsView: View {
 
                 if let targetError {
                     Label(targetError, systemImage: "exclamationmark.circle.fill")
-                        .font(.caption)
+                        .font(AppTheme.Typography.caption)
                         .foregroundStyle(Color(.systemRed))
                 }
 
@@ -343,10 +339,10 @@ struct RatingToolsView: View {
                                 Text("50首总计")
                                     .frame(width: 72, alignment: .trailing)
                             }
-                            .font(.caption2.weight(.bold))
+                            .font(AppTheme.Typography.caption2Bold)
                             .foregroundStyle(.secondary)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
+                            .padding(.horizontal, AppTheme.Space.m)
+                            .padding(.vertical, AppTheme.Space.s)
 
                             ForEach(targetRows) { row in
                                 Divider()
@@ -364,9 +360,9 @@ struct RatingToolsView: View {
                                         .foregroundStyle(.secondary)
                                         .frame(width: 72, alignment: .trailing)
                                 }
-                                .font(.caption.monospacedDigit())
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
+                                .font(AppTheme.Typography.captionMonospaced)
+                                .padding(.horizontal, AppTheme.Space.m)
+                                .padding(.vertical, AppTheme.Space.s)
                             }
                         }
                     }

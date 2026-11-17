@@ -40,7 +40,7 @@ struct VersionCheckView: View {
                             Text(selectedVersion.name)
                                 .font(AppTheme.Typography.rowTitle)
                             Text("共 \(allSongs.count) 首 Master 曲目")
-                                .font(.caption)
+                                .font(AppTheme.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
 

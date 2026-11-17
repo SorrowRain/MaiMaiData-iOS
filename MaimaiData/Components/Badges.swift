@@ -15,7 +15,7 @@ struct AppCapsuleLabel: View {
     var prefixFont: Font = .caption.weight(.bold)
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: AppTheme.Space.xs) {
             if let prefix {
                 Text(prefix)
                     .font(prefixFont)
@@ -40,10 +40,10 @@ struct AppStatTile: View {
     var body: some View {
         VStack(spacing: 3) {
             Text(title)
-                .font(.caption2.weight(.bold))
+                .font(AppTheme.Typography.caption2Bold)
                 .foregroundStyle(tint)
             Text(value)
-                .font(.caption.monospacedDigit().weight(.semibold))
+                .font(AppTheme.Typography.captionMeta)
                 .foregroundStyle(.primary)
         }
         .frame(maxWidth: .infinity)
@@ -106,8 +106,8 @@ struct GenreCapsuleTag: View {
 
     var body: some View {
         Text(genre)
-            .font(.caption2.weight(.semibold))
-            .padding(.horizontal, 8)
+            .font(AppTheme.Typography.caption2Semibold)
+            .padding(.horizontal, AppTheme.Space.s)
             .padding(.vertical, 3)
             .modifier(GenreTagChrome(genre: genre))
     }
@@ -173,10 +173,10 @@ struct SongCoverBadgeView: View {
 
             if showCornerTypeBadge, let song {
                 ChartTypeBadge(isDX: song.isDX, compact: size != .hero)
-                    .padding(.horizontal, 4)
+                    .padding(.horizontal, AppTheme.Space.xs)
                     .padding(.vertical, 2)
                     .background(Color.black.opacity(0.55), in: Capsule())
-                    .padding(4)
+                    .padding(AppTheme.Space.xs)
             }
         }
     }
@@ -193,7 +193,7 @@ struct FilterCapsuleChip: View {
         Button(action: action) {
             Text(title)
                 .font(AppTheme.Typography.tag)
-                .padding(.horizontal, 12)
+                .padding(.horizontal, AppTheme.Space.m)
                 .padding(.vertical, 7)
                 .background(
                     isSelected

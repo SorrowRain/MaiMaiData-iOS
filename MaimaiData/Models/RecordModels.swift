@@ -41,8 +41,6 @@ struct ChartStatEntry: Codable {
 
 struct ProberRecordsResponse: Codable {
     let nickname: String?
-    let username: String?
-    let rating: Int?
     let records: [ProberRecord]?
     let status: String?
     let message: String?
@@ -53,12 +51,10 @@ struct ProberRecord: Codable, Identifiable, Hashable {
 
     let achievements: Double
     let ds: Double
-    let dxScore: Int
     let fc: String
     let fs: String
     let level: String
     let levelIndex: Int
-    let levelLabel: String
     let ra: Int
     let rate: String
     let songId: Int
@@ -67,10 +63,8 @@ struct ProberRecord: Codable, Identifiable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case achievements, ds
-        case dxScore
         case fc, fs, level
         case levelIndex = "level_index"
-        case levelLabel = "level_label"
         case ra, rate
         case songId = "song_id"
         case title, type

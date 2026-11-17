@@ -48,10 +48,10 @@ struct ProberView: View {
                 } else {
                     ForEach(Array(targetList.enumerated()), id: \.element.id) { idx, record in
                         if idx == cutoff {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Space.s) {
                                 VStack { Divider() }
                                 Text("以下不计入 Best\(cutoff)")
-                                    .font(.caption.weight(.semibold))
+                                    .font(AppTheme.Typography.captionSemibold)
                                     .foregroundStyle(.secondary)
                                 VStack { Divider() }
                             }
@@ -71,7 +71,7 @@ struct ProberView: View {
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Space.m)
         }
         .refreshable {
             await refreshRecords()
@@ -89,7 +89,7 @@ struct ProberView: View {
                             ProgressView()
                                 .controlSize(.small)
                             Text("生成中…")
-                                .font(.caption)
+                                .font(AppTheme.Typography.caption)
                         }
                     } else {
                         Label("生成 B50", systemImage: "photo.on.rectangle.angled")
@@ -123,7 +123,7 @@ struct ProberView: View {
 
                 if !isMatching && !store.records.isEmpty {
                     Label("部分成绩未匹配到当前曲库，建议在「设置与数据」中更新曲库", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
+                        .font(AppTheme.Typography.caption)
                         .foregroundStyle(.orange)
                 }
             }
@@ -171,7 +171,7 @@ private struct ProberRecordRow: View {
     var body: some View {
         let diff = record.difficulty
         AppCard(padding: 12, tint: diff.color) {
-            HStack(spacing: 12) {
+            HStack(spacing: AppTheme.Space.m) {
                 SongCoverBadgeView(
                     song: song,
                     size: .compact,
@@ -207,7 +207,7 @@ private struct ProberRecordRow: View {
                         )
 
                         Text(String(format: "%.4f%%", record.achievements))
-                            .font(.caption.weight(.bold).monospacedDigit())
+                            .font(AppTheme.Typography.captionMetaBold)
                             .foregroundStyle(.primary)
 
                         Image(record.rankAssetName)
@@ -231,7 +231,7 @@ private struct ProberRecordRow: View {
                         Spacer(minLength: 0)
 
                         Text("Ra \(record.computedRating)")
-                            .font(.caption.weight(.bold).monospacedDigit())
+                            .font(AppTheme.Typography.captionMetaBold)
                             .foregroundStyle(AppTheme.accent)
                     }
                 }
@@ -253,7 +253,7 @@ private struct B50PreviewSheet: View {
                 Color.black.ignoresSafeArea()
 
                 ZoomableImageScrollView(image: image)
-                    .padding(12)
+                    .padding(AppTheme.Space.m)
                     .accessibilityLabel("Best50 成绩图，可双击或双指缩放预览")
             }
             .navigationTitle("Best 50 预览")

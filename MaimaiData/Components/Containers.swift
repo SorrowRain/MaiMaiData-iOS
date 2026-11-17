@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct FlowLayout: Layout {
-    var spacing: CGFloat = 8
-    var lineSpacing: CGFloat = 8
+    var spacing: CGFloat = AppTheme.Space.s
+    var lineSpacing: CGFloat = AppTheme.Space.s
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let maxWidth = proposal.width ?? .infinity
@@ -107,10 +107,19 @@ struct AppSectionCard<Trailing: View, Content: View>: View {
         self.content = content
     }
 
+    init(
+        title: String,
+        subtitle: String? = nil,
+        padding: CGFloat = AppTheme.cardPadding,
+        @ViewBuilder content: @escaping () -> Content
+    ) where Trailing == EmptyView {
+        self.init(title: title, subtitle: subtitle, padding: padding, trailing: { EmptyView() }, content: content)
+    }
+
     var body: some View {
         AppCard(padding: padding) {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack(alignment: .center, spacing: 8) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.m) {
+                HStack(alignment: .center, spacing: AppTheme.Space.s) {
                     Capsule()
                         .fill(AppTheme.accent.gradient)
                         .frame(width: 4, height: 16)

@@ -8,7 +8,6 @@ struct AppPrimaryButton: View {
     var isLoading = false
     var isDisabled = false
     var fullWidth = true
-    var horizontalPadding: CGFloat = 18
     var verticalPadding: CGFloat = 12
     var minHeight: CGFloat = 46
     var radius: CGFloat = AppTheme.Radius.button
@@ -16,20 +15,20 @@ struct AppPrimaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Space.s) {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
                         .tint(.white)
                 } else if let icon {
                     Image(systemName: icon)
-                        .font(.subheadline.weight(.semibold))
+                        .font(AppTheme.Typography.songTitle)
                 }
                 Text(title)
-                    .font(.subheadline.weight(.semibold))
+                    .font(AppTheme.Typography.songTitle)
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, horizontalPadding)
+            .padding(.horizontal, 18)
             .padding(.vertical, verticalPadding)
             .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: minHeight)
             .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
@@ -51,13 +50,13 @@ struct AppInlineButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: AppTheme.Space.xs) {
                 if isLoading {
                     ProgressView()
                         .controlSize(.mini)
                 } else if let icon {
                     Image(systemName: icon)
-                        .font(.caption2.weight(.bold))
+                        .font(AppTheme.Typography.caption2Bold)
                 }
                 Text(title)
                     .font(AppTheme.Typography.inlineAction)
@@ -99,11 +98,11 @@ struct AppMenuCapsule: View {
     var tint: Color = AppTheme.accent
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: AppTheme.Space.xs) {
             Text(title)
                 .font(AppTheme.Typography.inlineAction)
             Image(systemName: "chevron.up.chevron.down")
-                .font(.caption2.weight(.bold))
+                .font(AppTheme.Typography.caption2Bold)
         }
         .foregroundStyle(tint)
         .padding(.horizontal, 11)
@@ -123,7 +122,7 @@ struct AppCircleIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage)
-                .font(.subheadline.weight(.bold))
+                .font(AppTheme.Typography.subheadlineBold)
                 .frame(width: 34, height: 34)
         }
         .buttonStyle(.plain)

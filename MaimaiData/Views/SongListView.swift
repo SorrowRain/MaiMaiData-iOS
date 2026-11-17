@@ -132,14 +132,14 @@ struct SongListView: View {
     }
 
     private var searchInputBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: AppTheme.Space.s) {
             Image(systemName: "magnifyingglass")
-                .font(.subheadline.weight(.medium))
+                .font(AppTheme.Typography.rowTitle)
                 .foregroundStyle(.secondary)
 
             TextField("搜索曲名、别名、谱师或 ID", text: $criteria.keyword)
                 .textFieldStyle(.plain)
-                .font(.subheadline)
+                .font(AppTheme.Typography.body)
                 .focused($isSearchFocused)
                 .submitLabel(.search)
                 .onSubmit {
@@ -152,9 +152,9 @@ struct SongListView: View {
                     criteria.keyword = ""
                 } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.subheadline)
+                        .font(AppTheme.Typography.body)
                         .foregroundStyle(.secondary)
-                        .padding(4)
+                        .padding(AppTheme.Space.xs)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("清除搜索词")
@@ -174,10 +174,10 @@ struct SongListView: View {
 
     private var searchHistoryCard: some View {
         AppCard(padding: 12, tint: AppTheme.accent) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("最近搜索")
-                        .font(.caption.weight(.semibold))
+                        .font(AppTheme.Typography.captionSemibold)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button("清空") {
@@ -185,7 +185,7 @@ struct SongListView: View {
                             store.clearSearchHistory()
                         }
                     }
-                    .font(.caption.weight(.medium))
+                    .font(AppTheme.Typography.tag)
                     .foregroundStyle(.secondary)
                 }
 
@@ -207,10 +207,10 @@ struct SongListView: View {
 
     private var activeFilterSummaryCard: some View {
         AppCard(padding: 12, tint: AppTheme.accent) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("已筛选 \(displayedSongs.count) 首曲目")
-                        .font(.caption.weight(.semibold))
+                        .font(AppTheme.Typography.captionSemibold)
                         .foregroundStyle(.secondary)
                     Spacer()
                     AppInlineButton(title: "重置", icon: "arrow.counterclockwise") {
@@ -266,7 +266,7 @@ private struct SongRowView: View {
     var body: some View {
         let colors = MaimaiConstants.genreColors(for: song.basicInfo.genre)
         AppCard(padding: 12, tint: colors.bg) {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: AppTheme.Space.m) {
                 SongCoverBadgeView(
                     song: song,
                     size: .list,
@@ -283,7 +283,7 @@ private struct SongRowView: View {
 
                         if isFavorite {
                             Image(systemName: "heart.fill")
-                                .font(.caption2)
+                                .font(AppTheme.Typography.caption2)
                                 .foregroundStyle(AppTheme.favoritePink)
                                 .padding(.top, 3)
                         }
@@ -298,7 +298,7 @@ private struct SongRowView: View {
                         GenreCapsuleTag(genre: song.basicInfo.genre)
 
                         Text("BPM \(song.basicInfo.bpm)")
-                            .font(.caption2.monospacedDigit())
+                            .font(AppTheme.Typography.caption2Monospaced)
                             .foregroundStyle(.secondary)
 
                         Spacer(minLength: 0)

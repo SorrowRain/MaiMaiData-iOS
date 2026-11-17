@@ -28,11 +28,11 @@ struct AppTextField: View {
             HStack(spacing: 0) {
                 TextField(placeholder, text: $text)
                     .keyboardType(keyboardType)
-                    .font(.subheadline.weight(.medium).monospacedDigit())
+                    .font(AppTheme.Typography.subheadlineMediumMeta)
                     .focused($isFocused)
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, AppTheme.Space.m)
             .frame(minHeight: AppTheme.rowMinHeight)
             .background(
                 colorScheme == .dark
@@ -79,7 +79,7 @@ struct AppSecureField: View {
                     .foregroundStyle(.secondary)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Space.s) {
                 Group {
                     if showPassword {
                         TextField(placeholder, text: $text)
@@ -93,20 +93,20 @@ struct AppSecureField: View {
                             .focused($isFocused)
                     }
                 }
-                .font(.subheadline.weight(.medium))
+                .font(AppTheme.Typography.rowTitle)
 
                 Button {
                     showPassword.toggle()
                 } label: {
                     Image(systemName: showPassword ? "eye.slash.fill" : "eye.fill")
-                        .font(.subheadline)
+                        .font(AppTheme.Typography.body)
                         .foregroundStyle(.secondary)
                         .frame(width: 32, height: 32)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(showPassword ? "隐藏密码" : "显示密码")
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, AppTheme.Space.m)
             .frame(minHeight: AppTheme.rowMinHeight)
             .background(
                 colorScheme == .dark

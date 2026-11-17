@@ -41,11 +41,11 @@ struct SearchFilterSheet: View {
                         }
                     } content: {
                         AppInsetGroup(padding: 12) {
-                            VStack(spacing: 12) {
+                            VStack(spacing: AppTheme.Space.m) {
                                 // 第一条：等级 / 整数
                                 HStack(spacing: 10) {
                                     Text("等级")
-                                        .font(.caption.weight(.semibold))
+                                        .font(AppTheme.Typography.captionSemibold)
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 
@@ -68,7 +68,7 @@ struct SearchFilterSheet: View {
                                 // 第二条：小数（最左关闭，往右 .0 ~ .9）
                                 HStack(spacing: 10) {
                                     Text("小数")
-                                        .font(.caption.weight(.semibold))
+                                        .font(AppTheme.Typography.captionSemibold)
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 
@@ -102,7 +102,7 @@ struct SearchFilterSheet: View {
                             }
                         }
                     } content: {
-                        FlowLayout(spacing: 8, lineSpacing: 8) {
+                        FlowLayout(spacing: AppTheme.Space.s, lineSpacing: AppTheme.Space.s) {
                             ForEach(MaimaiConstants.allGenres, id: \.self) { genre in
                                 FilterCapsuleChip(
                                     title: genre,
@@ -126,7 +126,7 @@ struct SearchFilterSheet: View {
                             }
                         }
                     } content: {
-                        FlowLayout(spacing: 8, lineSpacing: 8) {
+                        FlowLayout(spacing: AppTheme.Space.s, lineSpacing: AppTheme.Space.s) {
                             ForEach(MaimaiConstants.searchVersions, id: \.self) { ver in
                                 FilterCapsuleChip(
                                     title: ver,
@@ -140,7 +140,7 @@ struct SearchFilterSheet: View {
                     }
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, 12)
+                .padding(.vertical, AppTheme.Space.m)
             }
             .appPageBackground()
             .navigationTitle("筛选与排序")
@@ -151,7 +151,7 @@ struct SearchFilterSheet: View {
                 }
             }
             .safeAreaInset(edge: .bottom) {
-                HStack(spacing: 12) {
+                HStack(spacing: AppTheme.Space.m) {
                     AppSecondaryButton(title: "重置选项", action: resetDraft)
 
                     AppPrimaryButton(title: "应用筛选", icon: "checkmark") {
@@ -161,7 +161,7 @@ struct SearchFilterSheet: View {
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
                 .padding(.top, 10)
-                .padding(.bottom, 8)
+                .padding(.bottom, AppTheme.Space.s)
             }
             .onAppear {
                 draft = criteria
@@ -181,7 +181,7 @@ struct SearchFilterSheet: View {
 
     private func sliderValueBadge(text: String, isActive: Bool) -> some View {
         Text(text)
-            .font(.caption.weight(.bold).monospacedDigit())
+            .font(AppTheme.Typography.captionMetaBold)
             .foregroundStyle(isActive ? AppTheme.accent : .secondary)
             .frame(width: 44, height: 24)
             .background(

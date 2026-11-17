@@ -114,14 +114,36 @@ enum AppTheme {
         static let cardTitle = Font.headline
         static let rowTitle = Font.subheadline.weight(.medium)
         static let songTitle = Font.subheadline.weight(.semibold)
-        static let caption = Font.caption
+        static let body = Font.subheadline
         static let inlineAction = Font.caption.weight(.semibold)
         static let badge = Font.caption2.weight(.bold).monospacedDigit()
         static let tag = Font.caption.weight(.medium)
-        static let sectionHeader = Font.subheadline.weight(.semibold)
-        static let stat = Font.title3.weight(.semibold).monospacedDigit()
-        static let footnote = Font.footnote
+
+        static let caption = Font.caption
         static let captionSemibold = Font.caption.weight(.semibold)
+        static let captionBold = Font.caption.weight(.bold)
+        static let captionMonospaced = Font.caption.monospacedDigit()
+        static let captionMeta = Font.caption.weight(.semibold).monospacedDigit()
+        static let captionMetaBold = Font.caption.weight(.bold).monospacedDigit()
+        static let captionSemiboldMonospaced = Font.caption.weight(.semibold).monospaced()
+
+        static let caption2 = Font.caption2
+        static let caption2Semibold = Font.caption2.weight(.semibold)
+        static let caption2Bold = Font.caption2.weight(.bold)
+        static let caption2Medium = Font.caption2.weight(.medium)
+        static let caption2Monospaced = Font.caption2.monospacedDigit()
+        static let caption2Meta = Font.caption2.weight(.semibold).monospacedDigit()
+
+        static let subheadlineBold = Font.subheadline.weight(.bold)
+        static let subheadlineMediumMeta = Font.subheadline.weight(.medium).monospacedDigit()
+        static let subheadlineSemiboldMeta = Font.subheadline.weight(.semibold).monospacedDigit()
+        static let subheadlineBoldMeta = Font.subheadline.weight(.bold).monospacedDigit()
+
+        static let headlineBold = Font.headline.weight(.bold)
+        static let headlineBoldMonospaced = Font.headline.weight(.bold).monospacedDigit()
+        static let title3Bold = Font.title3.weight(.bold)
+        static let title3BoldMonospaced = Font.title3.weight(.bold).monospacedDigit()
+        static let calloutBoldMonospaced = Font.callout.weight(.bold).monospacedDigit()
     }
 }
 

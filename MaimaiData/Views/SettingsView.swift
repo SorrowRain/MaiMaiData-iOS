@@ -13,13 +13,11 @@ struct SettingsView: View {
                 VStack(spacing: AppTheme.cardSpacing) {
                     // 1. 水鱼查分器账号（Push 进入二级页面 AccountManagementView）
                     AppSectionCard(title: "水鱼查分器账号") {
-                        EmptyView()
-                    } content: {
                         NavigationLink {
                             AccountManagementView()
                         } label: {
                             AppInsetGroup {
-                                HStack(spacing: 12) {
+                                HStack(spacing: AppTheme.Space.m) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(store.currentUsername.isEmpty ? "当前未登录" : store.displayPlayerName)
                                             .font(AppTheme.Typography.rowTitle)
@@ -31,16 +29,16 @@ struct SettingsView: View {
                                         }
                                     }
                                     Spacer(minLength: 8)
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: AppTheme.Space.xs) {
                                         Text(store.currentUsername.isEmpty ? "登录 / 管理" : "切换账号")
                                             .font(AppTheme.Typography.inlineAction)
                                             .foregroundStyle(AppTheme.accent)
                                         Image(systemName: "chevron.right")
-                                            .font(.caption.weight(.bold))
+                                            .font(AppTheme.Typography.captionBold)
                                             .foregroundStyle(.tertiary)
                                     }
                                 }
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, AppTheme.Space.m)
                                 .frame(minHeight: AppTheme.rowMinHeight)
                                 .contentShape(Rectangle())
                             }
@@ -50,20 +48,18 @@ struct SettingsView: View {
 
                     // 2. 曲库与搜索
                     AppSectionCard(title: "曲库与搜索") {
-                        EmptyView()
-                    } content: {
                         AppInsetGroup {
                             VStack(spacing: 0) {
                                 settingToggleRow(
                                     title: "曲目详情页显示别名",
                                     isOn: $storeBindable.enableShowAlias
                                 )
-                                Divider().padding(.leading, 12)
+                                Divider().padding(.leading, AppTheme.Space.m)
                                 settingToggleRow(
                                     title: "搜索时匹配曲目别名",
                                     isOn: $storeBindable.enableAliasSearch
                                 )
-                                Divider().padding(.leading, 12)
+                                Divider().padding(.leading, AppTheme.Space.m)
                                 settingToggleRow(
                                     title: "搜索时匹配谱师名称",
                                     isOn: $storeBindable.enableCharterSearch
@@ -74,8 +70,6 @@ struct SettingsView: View {
 
                     // 3. Best50 图片设置（关闭水鱼昵称时才展示自定义昵称输入框）
                     AppSectionCard(title: "Best50 图片设置") {
-                        EmptyView()
-                    } content: {
                         VStack(spacing: 10) {
                             AppInsetGroup {
                                 settingToggleRow(
@@ -97,11 +91,9 @@ struct SettingsView: View {
 
                     // 4. 数据与同步
                     AppSectionCard(title: "数据与同步") {
-                        EmptyView()
-                    } content: {
                         AppInsetGroup {
                             VStack(spacing: 0) {
-                                HStack(spacing: 12) {
+                                HStack(spacing: AppTheme.Space.m) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("本地曲库")
                                             .font(AppTheme.Typography.rowTitle)
@@ -118,12 +110,12 @@ struct SettingsView: View {
                                         Task { await store.checkSongDataUpdateIfNeeded(force: true) }
                                     }
                                 }
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, AppTheme.Space.m)
                                 .padding(.vertical, 11)
 
-                                Divider().padding(.leading, 12)
+                                Divider().padding(.leading, AppTheme.Space.m)
 
-                                HStack(spacing: 12) {
+                                HStack(spacing: AppTheme.Space.m) {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("水鱼拟合定数")
                                             .font(AppTheme.Typography.rowTitle)
@@ -140,7 +132,7 @@ struct SettingsView: View {
                                         Task { await store.refreshChartStatsIfStale(force: true) }
                                     }
                                 }
-                                .padding(.horizontal, 12)
+                                .padding(.horizontal, AppTheme.Space.m)
                                 .padding(.vertical, 11)
                             }
                         }
@@ -148,10 +140,8 @@ struct SettingsView: View {
 
                     // 5. 存储与缓存
                     AppSectionCard(title: "存储与缓存") {
-                        EmptyView()
-                    } content: {
                         AppInsetGroup {
-                            HStack(spacing: 12) {
+                            HStack(spacing: AppTheme.Space.m) {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("封面磁盘缓存")
                                         .font(AppTheme.Typography.rowTitle)
@@ -170,26 +160,24 @@ struct SettingsView: View {
                                     refreshCacheSize()
                                 }
                             }
-                            .padding(.horizontal, 12)
+                            .padding(.horizontal, AppTheme.Space.m)
                             .padding(.vertical, 11)
                         }
                     }
 
                     // 6. 关于
                     AppSectionCard(title: "关于 MaimaiData") {
-                        EmptyView()
-                    } content: {
                         AppInsetGroup {
                             VStack(spacing: 0) {
                                 aboutRow(title: "版本", value: "v1.0.0")
-                                Divider().padding(.leading, 12)
+                                Divider().padding(.leading, AppTheme.Space.m)
                                 aboutRow(title: "致谢参考", value: "PaperPig / Diving-Fish / LXNS")
                             }
                         }
                     }
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, 12)
+                .padding(.vertical, AppTheme.Space.m)
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)
@@ -214,7 +202,7 @@ struct SettingsView: View {
         Toggle(title, isOn: isOn)
             .font(AppTheme.Typography.rowTitle)
             .tint(AppTheme.accent)
-            .padding(.horizontal, 12)
+            .padding(.horizontal, AppTheme.Space.m)
             .frame(minHeight: AppTheme.rowMinHeight)
     }
 
@@ -225,10 +213,10 @@ struct SettingsView: View {
                 .foregroundStyle(.primary)
             Spacer()
             Text(value)
-                .font(.subheadline)
+                .font(AppTheme.Typography.body)
                 .foregroundStyle(.secondary)
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, AppTheme.Space.m)
         .frame(minHeight: AppTheme.rowMinHeight)
     }
 

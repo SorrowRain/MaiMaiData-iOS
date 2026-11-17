@@ -18,7 +18,7 @@ struct AccountManagementView: View {
     var body: some View {
         List {
             Section {
-                HStack(alignment: .center, spacing: 8) {
+                HStack(alignment: .center, spacing: AppTheme.Space.s) {
                     Capsule()
                         .fill(AppTheme.accent.gradient)
                         .frame(width: 4, height: 16)
@@ -33,19 +33,19 @@ struct AccountManagementView: View {
                     }
                     Spacer(minLength: 0)
                 }
-                .padding(.vertical, 4)
+                .padding(.vertical, AppTheme.Space.xs)
 
                 if store.savedAccounts.isEmpty {
                     Text("暂无已保存账号，点击下方按钮添加")
                         .font(AppTheme.Typography.caption)
                         .foregroundStyle(.secondary)
-                        .padding(.vertical, 8)
+                        .padding(.vertical, AppTheme.Space.s)
                 } else {
                     ForEach(store.savedAccounts) { acct in
                         Button {
                             Task { await switchToSavedAccount(acct) }
                         } label: {
-                            HStack(spacing: 8) {
+                            HStack(spacing: AppTheme.Space.s) {
                                 Text(acct.username)
                                     .font(AppTheme.Typography.rowTitle)
                                     .foregroundStyle(Color(.label))
@@ -61,7 +61,7 @@ struct AccountManagementView: View {
                                         .controlSize(.small)
                                 }
                             }
-                            .padding(.vertical, 4)
+                            .padding(.vertical, AppTheme.Space.xs)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -156,9 +156,7 @@ struct LoginSheet: View {
                         title: "添加水鱼查分器账号",
                         subtitle: "凭据仅安全保存在本机 Keychain"
                     ) {
-                        EmptyView()
-                    } content: {
-                        VStack(spacing: 12) {
+                        VStack(spacing: AppTheme.Space.m) {
                             AppTextField(
                                 title: "用户名",
                                 placeholder: "输入水鱼用户名",
@@ -184,12 +182,12 @@ struct LoginSheet: View {
                                 KeyboardDismiss.hide()
                                 Task { await submitLogin() }
                             }
-                            .padding(.top, 4)
+                            .padding(.top, AppTheme.Space.xs)
                         }
                     }
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, 12)
+                .padding(.vertical, AppTheme.Space.m)
                 .dismissKeyboardOnTap()
             }
             .scrollDismissesKeyboard(.interactively)

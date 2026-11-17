@@ -17,16 +17,14 @@ struct FinaleToDxView: View {
                     title: "换算结果",
                     subtitle: "根据旧框判定换算对应的 DX 达成率区间或精确值"
                 ) {
-                    EmptyView()
-                } content: {
                     AppInsetGroup(padding: 14) {
                         HStack {
                             Text("DX 达成率")
-                                .font(.caption.weight(.semibold))
+                                .font(AppTheme.Typography.captionSemibold)
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text(resultText)
-                                .font(.title3.weight(.bold).monospacedDigit())
+                                .font(AppTheme.Typography.title3BoldMonospaced)
                                 .foregroundStyle(AppTheme.accent)
                         }
                     }
@@ -56,8 +54,6 @@ struct FinaleToDxView: View {
                     title: "Break 绝赞总分（可选）",
                     subtitle: "Break 全 Perfect 时填写旧框绝赞总分可计算精确值"
                 ) {
-                    EmptyView()
-                } content: {
                     AppTextField(
                         placeholder: "Break 总分（可留空或填 0）",
                         text: $breakScore,
@@ -71,7 +67,7 @@ struct FinaleToDxView: View {
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
-            .padding(.vertical, 12)
+            .padding(.vertical, AppTheme.Space.m)
             .dismissKeyboardOnTap()
         }
         .scrollDismissesKeyboard(.interactively)
@@ -89,17 +85,17 @@ struct FinaleToDxView: View {
         gd: Binding<String>,
         m: Binding<String>
     ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: AppTheme.Space.s) {
             HStack(spacing: 6) {
                 Circle()
                     .fill(color)
                     .frame(width: 8, height: 8)
                 Text(title)
-                    .font(.subheadline.weight(.bold))
+                    .font(AppTheme.Typography.subheadlineBold)
                     .foregroundStyle(.primary)
             }
 
-            HStack(spacing: 8) {
+            HStack(spacing: AppTheme.Space.s) {
                 AppTextField(title: "Perfect", placeholder: "0", text: p, keyboardType: .numberPad)
                 AppTextField(title: "Great", placeholder: "0", text: gr, keyboardType: .numberPad)
                 AppTextField(title: "Good", placeholder: "0", text: gd, keyboardType: .numberPad)

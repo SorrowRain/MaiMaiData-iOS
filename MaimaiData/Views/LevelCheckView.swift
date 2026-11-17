@@ -66,9 +66,9 @@ struct LevelCheckView: View {
                             Spacer()
                             VStack(spacing: 2) {
                                 Text("LEVEL \(selectedLevel)")
-                                    .font(.headline.weight(.bold).monospacedDigit())
+                                    .font(AppTheme.Typography.headlineBoldMonospaced)
                                 Text("共 \(chartItems.count) 张谱面")
-                                    .font(.caption)
+                                    .font(AppTheme.Typography.caption)
                                     .foregroundStyle(.secondary)
                             }
                             Spacer()
