@@ -41,8 +41,8 @@ struct ChecklistStatsHeader: View {
         AppSectionCard(
             title: "完成度统计",
             subtitle: onlyUnfinished
-                ? "当前：\(displayMode.title) · 仅显示未达成"
-                : "当前：\(displayMode.title) · 点击统计块切换角标"
+                ? "\(displayMode.title) · 仅未达成"
+                : "当前：\(displayMode.title)"
         ) {
             AppInlineButton(
                 title: "仅看未达成",

@@ -61,8 +61,6 @@ struct SongDetailView: View {
                     let currentIndex = min(selectedChartIndex, chartsDesc.count - 1)
                     let chart = chartsDesc[currentIndex]
                     tabContent(chart: chart, genreColors: genreColors)
-                } else {
-                    songMetadataCard
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
@@ -290,11 +288,16 @@ struct SongDetailView: View {
         }
     }
 
-    // MARK: - Tab 1: Overview (Chart Info + Notes + Server Version & Aliases)
+    // MARK: - Tab 1: Overview (Chart Info + Notes + Aliases)
 
     private func overviewSection(chart: ResolvedChart) -> some View {
         let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
         let fitDiff = store.chartStats[currentSong.numericId]?[safe: chart.index]?.fitDiff
+        let versionInfo = MaimaiConstants.activeServerVersionDisplay(for: currentSong.basicInfo)
+        let titleKey = currentSong.title.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        let aliases = store.enableShowAlias
+            ? (currentSong.alias ?? []).filter { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() != titleKey }
+            : []
 
         return VStack(spacing: AppTheme.cardSpacing) {
             AppSectionCard(title: "谱面信息") {
@@ -313,11 +316,27 @@ struct SongDetailView: View {
 
                     AppInsetGroup(padding: AppTheme.Space.m) {
                         VStack(spacing: AppTheme.itemSpacing) {
+                            detailRow("收录版本") {
+                                if let asset = versionInfo.asset {
+                                    Image(asset)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(maxWidth: 116, maxHeight: 28, alignment: .trailing)
+                                        .accessibilityLabel(versionInfo.fallback)
+                                } else {
+                                    Text(versionInfo.fallback)
+                                        .font(AppTheme.Typography.rowTitle)
+                                        .foregroundStyle(.primary)
+                                }
+                            }
+
+                            Divider()
+
                             detailRow("谱面作者") {
                                 Text(chart.charter.isEmpty ? "—" : chart.charter)
                                     .font(AppTheme.Typography.rowTitle)
+                                    .multilineTextAlignment(.trailing)
                                     .fixedSize(horizontal: false, vertical: true)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             .contentShape(Rectangle())
                             .onLongPressGesture { copyText(chart.charter, label: "谱面作者") }
@@ -326,7 +345,6 @@ struct SongDetailView: View {
 
                             detailRow("我的成绩") {
                                 recordSummary(record)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
                             }
                         }
                     }
@@ -335,36 +353,8 @@ struct SongDetailView: View {
 
             ChartNotesBarCard(chart: chart, maxStats: store.maxNotesStats, barColor: chart.difficulty.color)
 
-            songMetadataCard
-        }
-    }
-
-    private var songMetadataCard: some View {
-        let versionInfo = MaimaiConstants.activeServerVersionDisplay(for: currentSong.basicInfo)
-        let aliases = store.enableShowAlias ? (currentSong.alias ?? []) : []
-
-        return AppSectionCard(title: "收录与别名") {
-            VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-                AppInsetGroup(padding: AppTheme.Space.m) {
-                    detailRow("收录版本") {
-                        HStack(spacing: AppTheme.Space.s) {
-                            if let asset = versionInfo.asset {
-                                Image(asset)
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(maxWidth: 112, maxHeight: 30, alignment: .leading)
-                                    .accessibilityLabel(versionInfo.fallback)
-                            } else {
-                                Text(versionInfo.fallback)
-                                    .font(AppTheme.Typography.rowTitle)
-                                    .foregroundStyle(.primary)
-                            }
-                            Spacer(minLength: 0)
-                        }
-                    }
-                }
-
-                if !aliases.isEmpty {
+            if !aliases.isEmpty {
+                AppSectionCard(title: "歌曲别名") {
                     FlowLayout(spacing: 6, lineSpacing: 6) {
                         ForEach(aliases, id: \.self) { alias in
                             GenreCapsuleTag(
@@ -414,10 +404,10 @@ struct SongDetailView: View {
             Text(title)
                 .font(AppTheme.Typography.inlineAction)
                 .foregroundStyle(.secondary)
-                .frame(width: 60, alignment: .leading)
+            Spacer(minLength: AppTheme.Space.m)
             content()
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -637,7 +627,7 @@ private struct ChartToleranceCard: View {
         tint: Color
     ) -> some View {
         AppInsetGroup(padding: AppTheme.itemSpacing) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+            VStack(alignment: .center, spacing: AppTheme.Space.xs) {
                 HStack(spacing: AppTheme.Space.xs) {
                     Text(label)
                         .font(AppTheme.Typography.caption2Bold)
@@ -653,6 +643,7 @@ private struct ChartToleranceCard: View {
                     .minimumScaleFactor(0.8)
                     .contentTransition(.numericText())
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
         .accessibilityElement(children: .combine)
     }
@@ -662,14 +653,14 @@ private struct ChartToleranceCard: View {
         values: [String],
         isHeader: Bool = false
     ) -> some View {
-        HStack(spacing: AppTheme.itemSpacing) {
+        HStack(spacing: AppTheme.Space.s) {
             Text(label)
                 .foregroundStyle(isHeader ? .secondary : .primary)
-                .frame(width: 48, alignment: .leading)
+                .frame(width: 48, alignment: .center)
             ForEach(values, id: \.self) { value in
                 Text(isHeader ? value : "-\(value)")
                     .foregroundStyle(isHeader ? .secondary : .primary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(maxWidth: .infinity, alignment: .center)
                     .minimumScaleFactor(0.85)
                     .contentTransition(.numericText())
             }

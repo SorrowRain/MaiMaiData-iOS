@@ -126,13 +126,14 @@ struct AppMetricTile<Content: View>: View {
 
     var body: some View {
         AppInsetGroup(padding: AppTheme.itemSpacing) {
-            VStack(alignment: .leading, spacing: AppTheme.Space.xs) {
+            VStack(alignment: .center, spacing: AppTheme.Space.xs) {
                 Text(title)
                     .font(AppTheme.Typography.caption2Semibold)
                     .foregroundStyle(highlight ? AppTheme.accentText : .secondary)
                     .lineLimit(1)
                 content()
             }
+            .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 }

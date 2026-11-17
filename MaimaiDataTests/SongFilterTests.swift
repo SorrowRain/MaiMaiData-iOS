@@ -88,4 +88,58 @@ final class SongFilterTests: XCTestCase {
         XCTAssertEqual(MaimaiConstants.expandVersionFilter(["GreeN"]), ["maimai GreeN", "maimai GreeN PLUS"])
         XCTAssertEqual(MaimaiConstants.expandVersionFilter(["舞萌DX 2021"]), ["舞萌DX 2021"])
     }
+
+    func testCounterpartAliasSyncSharesSongNicknamesWhileKeepingTypeSpecificOnes() throws {
+        let sd = try makeSong(
+            id: "835",
+            title: "Believe the Rainbow",
+            ds: [3, 6, 9, 13.0],
+            level: ["3", "6", "9", "13"],
+            alias: ["believe the rainbow", "相信彩虹", "btr", "标彩虹"]
+        )
+        let dxDict: [String: Any] = [
+            "basic_info": [
+                "artist": "A", "bpm": 180, "from": "舞萌DX 2025", "genre": "舞萌",
+                "is_new": true, "title": "Believe the Rainbow", "version": "25000"
+            ],
+            "charts": [[10, 10, 10, 10, 10], [10, 10, 10, 10, 10]].map { ["charter": "-", "notes": $0] },
+            "ds": [4.0, 13.5], "id": "10835", "level": ["4", "13+"],
+            "title": "Believe the Rainbow", "type": "DX",
+            "alias": ["believe the rainbow", "dx彩虹"]
+        ]
+        var sdFixed = sd
+        // Ensure SD fixture has type SD
+        let sdDict: [String: Any] = [
+            "basic_info": [
+                "artist": "A", "bpm": 180, "from": "maimai FiNALE", "genre": "舞萌",
+                "is_new": false, "title": "Believe the Rainbow", "version": "19900"
+            ],
+            "charts": [[10, 10, 10, 10], [10, 10, 10, 10]].map { ["charter": "-", "notes": $0] },
+            "ds": [3.0, 13.0], "id": "835", "level": ["3", "13"],
+            "title": "Believe the Rainbow", "type": "SD",
+            "alias": ["believe the rainbow", "相信彩虹", "btr", "标彩虹"]
+        ]
+        sdFixed = try JSONDecoder().decode(SongData.self, from: JSONSerialization.data(withJSONObject: sdDict))
+        let dx = try JSONDecoder().decode(SongData.self, from: JSONSerialization.data(withJSONObject: dxDict))
+
+        let merged = SongData.mergingCounterpartAliases([sdFixed, dx])
+        let mergedSD = try XCTUnwrap(merged.first { $0.id == "835" })
+        let mergedDX = try XCTUnwrap(merged.first { $0.id == "10835" })
+
+        XCTAssertTrue(mergedDX.alias?.contains("相信彩虹") == true)
+        XCTAssertTrue(mergedDX.alias?.contains("btr") == true)
+        XCTAssertFalse(mergedDX.alias?.contains("标彩虹") == true)
+        XCTAssertFalse(mergedSD.alias?.contains("dx彩虹") == true)
+
+        var criteria = SongFilterCriteria()
+        criteria.keyword = "相信彩虹"
+        let matchedIds = SongFilter.apply(
+            criteria,
+            to: merged,
+            favoriteIds: [],
+            enableAliasSearch: true,
+            enableCharterSearch: false
+        ).map(\.id)
+        XCTAssertEqual(matchedIds, ["10835", "835"])
+    }
 }

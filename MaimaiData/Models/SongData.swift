@@ -9,7 +9,7 @@ struct SongData: Codable, Identifiable, Hashable {
     let level: [String]
     let title: String
     let type: String
-    let alias: [String]?
+    var alias: [String]?
 
     enum CodingKeys: String, CodingKey {
         case basicInfo = "basic_info"
@@ -100,6 +100,62 @@ struct SongData: Codable, Identifiable, Hashable {
     struct RawChart: Codable, Hashable {
         let charter: String
         let notes: [Int]
+    }
+
+    /// Synchronizes song-level community aliases across SD <-> DX counterpart pairs (`id ± 10000`),
+    /// while keeping explicit chart-type prefixes (`标...` vs `dx...`) on their respective side.
+    static func mergingCounterpartAliases(_ songs: [SongData]) -> [SongData] {
+        var indexByNumericId: [Int: Int] = [:]
+        indexByNumericId.reserveCapacity(songs.count)
+        for (idx, song) in songs.enumerated() where !song.isUtage && song.numericId > 0 {
+            indexByNumericId[song.numericId] = idx
+        }
+
+        var result = songs
+        for idx in result.indices {
+            let song = result[idx]
+            guard !song.isUtage, song.numericId > 0, song.numericId < 10_000 else { continue }
+            guard let dxIdx = indexByNumericId[song.numericId + 10_000] else { continue }
+            let dxSong = result[dxIdx]
+            guard !dxSong.isUtage, dxSong.title == song.title, dxSong.isDX != song.isDX else { continue }
+
+            let sdOwn = song.alias ?? []
+            let dxOwn = dxSong.alias ?? []
+
+            let sdShareable = sdOwn.filter { !Self.isStandardOnlyAlias($0) }
+            let dxShareable = dxOwn.filter { !Self.isDXOnlyAlias($0) }
+
+            let mergedSD = Self.mergeUniqueAliases(primary: sdOwn, secondary: dxShareable)
+            let mergedDX = Self.mergeUniqueAliases(primary: dxOwn, secondary: sdShareable)
+
+            if !mergedSD.isEmpty { result[idx].alias = mergedSD }
+            if !mergedDX.isEmpty { result[dxIdx].alias = mergedDX }
+        }
+        return result
+    }
+
+    private static func isStandardOnlyAlias(_ raw: String) -> Bool {
+        let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return lower.hasPrefix("标") || lower.hasPrefix("sd")
+    }
+
+    private static func isDXOnlyAlias(_ raw: String) -> Bool {
+        let lower = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return lower.hasPrefix("dx")
+    }
+
+    private static func mergeUniqueAliases(primary: [String], secondary: [String]) -> [String] {
+        var seen = Set<String>()
+        var merged: [String] = []
+        for item in primary + secondary {
+            let trimmed = item.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty else { continue }
+            let key = trimmed.lowercased()
+            if seen.insert(key).inserted {
+                merged.append(trimmed)
+            }
+        }
+        return merged
     }
 }
 

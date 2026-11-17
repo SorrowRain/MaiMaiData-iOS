@@ -194,7 +194,8 @@ final class DataStore {
 
     private func applySongs(_ list: [SongData]) async {
         let snapshot = await Task.detached(priority: .userInitiated) { () -> SongSnapshot in
-            let ordered = list.sorted {
+            let enriched = SongData.mergingCounterpartAliases(list)
+            let ordered = enriched.sorted {
                 if $0.numericId != $1.numericId { return $0.numericId > $1.numericId }
                 return $0.id > $1.id
             }
