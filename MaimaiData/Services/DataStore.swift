@@ -19,6 +19,8 @@ final class DataStore {
         }
     }
     private var recordsByKey: [String: ProberRecord] = [:]
+    /// Monotonic token distinguishing network-fetched records from a slower cache backfill.
+    private var recordsEpoch = 0
     private(set) var maxNotesStats: MaxNotesStats = .fallback
 
     // MARK: - Loading & Status
@@ -329,6 +331,8 @@ final class DataStore {
             divingFishNickname = resp.nickname ?? ""
         }
         let fetched = resp.records ?? []
+        // Invalidate any in-flight restoreCachedRecords() before installing fresher data.
+        recordsEpoch += 1
         self.records = fetched
         if let encoded = try? JSONEncoder().encode(fetched) {
             try? encoded.write(to: cachedRecordsURL, options: .atomic)
@@ -378,6 +382,9 @@ final class DataStore {
 
     private func restoreCachedRecords() {
         let username = currentUsername
+        // Any older pending restore belongs to a previous account/data generation.
+        recordsEpoch += 1
+        let epoch = recordsEpoch
         records = []
         guard !username.isEmpty else { return }
         let url = cachedRecordsURL
@@ -386,8 +393,10 @@ final class DataStore {
                 guard let data = try? Data(contentsOf: url) else { return nil }
                 return try? JSONDecoder().decode([ProberRecord].self, from: data)
             }.value
-            // 快速连续切换账号时，旧账号的读取不得覆盖当前账号。
-            guard currentUsername == username else { return }
+            // Never let an older cache read replace fresher network data or another account.
+            guard currentUsername == username,
+                  recordsEpoch == epoch,
+                  !isSyncingRecords else { return }
             records = cached ?? []
         }
     }
