@@ -77,7 +77,7 @@ struct StatusToast: View {
             Image(systemName: "checkmark.circle.fill")
                 .foregroundStyle(AppTheme.accentBright)
             Text(text)
-                .font(AppTheme.Typography.captionSemibold)
+                .font(AppTheme.Typography.inlineAction)
                 .multilineTextAlignment(.center)
         }
         .padding(.horizontal, AppTheme.Space.l)

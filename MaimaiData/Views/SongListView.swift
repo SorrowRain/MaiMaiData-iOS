@@ -177,7 +177,7 @@ struct SongListView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("最近搜索")
-                        .font(AppTheme.Typography.captionSemibold)
+                        .font(AppTheme.Typography.inlineAction)
                         .foregroundStyle(.secondary)
                     Spacer()
                     Button("清空") {
@@ -210,7 +210,7 @@ struct SongListView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.s) {
                 HStack {
                     Text("已筛选 \(displayedSongs.count) 首曲目")
-                        .font(AppTheme.Typography.captionSemibold)
+                        .font(AppTheme.Typography.inlineAction)
                         .foregroundStyle(.secondary)
                     Spacer()
                     AppInlineButton(title: "重置", icon: "arrow.counterclockwise") {
@@ -247,15 +247,7 @@ struct SongListView: View {
     }
 
     private func filterBadge(_ text: String, tint: Color = AppTheme.accent) -> some View {
-        AppCapsuleLabel(
-            text: text,
-            tint: tint,
-            font: .caption2.weight(.semibold),
-            backgroundOpacity: 0.14,
-            strokeOpacity: 0.28,
-            horizontalPadding: 9,
-            verticalPadding: 4
-        )
+        AppCapsuleLabel(text: text, tint: tint, style: .filter)
     }
 }
 
@@ -298,7 +290,7 @@ private struct SongRowView: View {
                         GenreCapsuleTag(genre: song.basicInfo.genre)
 
                         Text("BPM \(song.basicInfo.bpm)")
-                            .font(AppTheme.Typography.caption2Monospaced)
+                            .font(AppTheme.Typography.captionMono)
                             .foregroundStyle(.secondary)
 
                         Spacer(minLength: 0)

@@ -74,7 +74,7 @@ struct RatingToolsView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center) {
                     Text(store.currentUsername.isEmpty ? "水鱼查分器（未登录）" : store.displayPlayerName)
-                        .font(AppTheme.Typography.headlineBold)
+                        .font(AppTheme.Typography.cardTitle)
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
@@ -137,7 +137,7 @@ struct RatingToolsView: View {
                     .foregroundStyle(highlight ? AppTheme.accent : .secondary)
                     .lineLimit(1)
                 Text(value)
-                    .font(AppTheme.Typography.headlineBoldMonospaced)
+                    .font(AppTheme.Typography.sectionMetric)
                     .foregroundStyle(highlight ? AppTheme.accent : .primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
@@ -238,12 +238,7 @@ struct RatingToolsView: View {
         ) {
             AppCapsuleLabel(
                 text: "\(computedSingleRating)",
-                tint: AppTheme.accent,
-                font: .title3.weight(.bold).monospacedDigit(),
-                backgroundOpacity: 0.12,
-                horizontalPadding: 10,
-                verticalPadding: 4,
-                prefix: "Ra"
+                style: .metric(prefix: "Ra")
             )
         } content: {
             VStack(alignment: .leading, spacing: 10) {
@@ -302,10 +297,7 @@ struct RatingToolsView: View {
 
                     AppPrimaryButton(
                         title: "推算",
-                        fullWidth: false,
-                        verticalPadding: 0,
-                        minHeight: AppTheme.rowMinHeight,
-                        radius: AppTheme.Radius.input
+                        style: .inputCompanion
                     ) {
                         KeyboardDismiss.hide()
                         let val = Int(targetRatingInput.trimmingCharacters(in: .whitespaces)) ?? 0
@@ -360,7 +352,7 @@ struct RatingToolsView: View {
                                         .foregroundStyle(.secondary)
                                         .frame(width: 72, alignment: .trailing)
                                 }
-                                .font(AppTheme.Typography.captionMonospaced)
+                                .font(AppTheme.Typography.captionMono)
                                 .padding(.horizontal, AppTheme.Space.m)
                                 .padding(.vertical, AppTheme.Space.s)
                             }

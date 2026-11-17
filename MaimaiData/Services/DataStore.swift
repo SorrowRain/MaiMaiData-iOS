@@ -288,8 +288,12 @@ final class DataStore {
         currentUsername = username
         currentPassword = password
         saveOrUpdateAccount(username: username, password: password)
-        isSyncingRecords = false
-        try await fetchRecordsWithCurrentCookie()
+
+        do {
+            try await performFetchRecordsWithCurrentCookie()
+        } catch {
+            throw MaimaiAPIError.recordSyncFailedAfterLogin(error.localizedDescription)
+        }
     }
 
     func fetchRecordsWithCurrentCookie() async throws {
@@ -300,6 +304,10 @@ final class DataStore {
         isSyncingRecords = true
         defer { isSyncingRecords = false }
 
+        try await performFetchRecordsWithCurrentCookie()
+    }
+
+    private func performFetchRecordsWithCurrentCookie() async throws {
         let username = currentUsername
         let password = currentPassword
         var cookie = currentCookie
@@ -327,9 +335,8 @@ final class DataStore {
         if usedCookie != currentCookie {
             currentCookie = usedCookie
         }
-        if useDivingFishNickname {
-            divingFishNickname = resp.nickname ?? ""
-        }
+        // 始终缓存水鱼返回的昵称，由 displayPlayerName 根据 useDivingFishNickname 开关决定展示哪一个。
+        divingFishNickname = resp.nickname ?? ""
         let fetched = resp.records ?? []
         // Invalidate any in-flight restoreCachedRecords() before installing fresher data.
         recordsEpoch += 1
@@ -395,8 +402,7 @@ final class DataStore {
             }.value
             // Never let an older cache read replace fresher network data or another account.
             guard currentUsername == username,
-                  recordsEpoch == epoch,
-                  !isSyncingRecords else { return }
+                  recordsEpoch == epoch else { return }
             records = cached ?? []
         }
     }

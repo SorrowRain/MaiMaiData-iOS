@@ -62,7 +62,7 @@ struct VersionCheckView: View {
 
                 ForEach(groupedSongs, id: \.level) { group in
                     AppSectionCard(title: "Level \(group.level)") {
-                        AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color, backgroundOpacity: 0.14)
+                        AppCapsuleLabel(text: "\(group.songs.count) 首", tint: DifficultyType.master.color)
                     } content: {
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: 10)], spacing: 10) {
                             ForEach(group.songs) { song in

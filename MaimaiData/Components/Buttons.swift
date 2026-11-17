@@ -1,19 +1,28 @@
 import SwiftUI
 
-/// Full-width primary action button.
+/// Primary action button with semantic layout presets.
 struct AppPrimaryButton: View {
+    enum Style {
+        /// Standard full-width primary button (`minHeight = 46pt`, button radius).
+        case standard
+        /// Compact button placed side-by-side with `AppTextField` (`minHeight = 50pt`, input radius).
+        case inputCompanion
+    }
+
     let title: String
     var icon: String? = nil
     var tint: Color = AppTheme.accent
+    var style: Style = .standard
     var isLoading = false
     var isDisabled = false
-    var fullWidth = true
-    var verticalPadding: CGFloat = 12
-    var minHeight: CGFloat = 46
-    var radius: CGFloat = AppTheme.Radius.button
     let action: () -> Void
 
     var body: some View {
+        let isInputCompanion = style == .inputCompanion
+        let radius = isInputCompanion ? AppTheme.Radius.input : AppTheme.Radius.button
+        let minHeight = isInputCompanion ? AppTheme.rowMinHeight : 46
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+
         Button(action: action) {
             HStack(spacing: AppTheme.Space.s) {
                 if isLoading {
@@ -29,18 +38,17 @@ struct AppPrimaryButton: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 18)
-            .padding(.vertical, verticalPadding)
-            .frame(maxWidth: fullWidth ? .infinity : nil, minHeight: minHeight)
-            .contentShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .frame(maxWidth: isInputCompanion ? nil : .infinity, minHeight: minHeight)
+            .contentShape(shape)
         }
         .buttonStyle(.plain)
-        .appGlass(in: RoundedRectangle(cornerRadius: radius, style: .continuous), tint: tint)
+        .appGlass(in: shape, tint: tint)
         .opacity(isLoading || isDisabled ? 0.5 : 1)
         .disabled(isLoading || isDisabled)
     }
 }
 
-/// Compact inline action button for rows and card headers (Guaranteed smaller than 17pt row titles).
+/// Compact inline action button for rows and card headers (12pt, smaller than 15pt row titles).
 struct AppInlineButton: View {
     let title: String
     var icon: String? = nil
@@ -61,12 +69,7 @@ struct AppInlineButton: View {
                 Text(title)
                     .font(AppTheme.Typography.inlineAction)
             }
-            .foregroundStyle(tint)
-            .padding(.horizontal, 11)
-            .padding(.vertical, 6)
-            .background(tint.opacity(0.11), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(0.22), lineWidth: 0.8))
-            .contentShape(Capsule())
+            .modifier(TintedActionCapsuleChrome(tint: tint))
         }
         .buttonStyle(.plain)
         .disabled(isLoading)
@@ -104,11 +107,29 @@ struct AppMenuCapsule: View {
             Image(systemName: "chevron.up.chevron.down")
                 .font(AppTheme.Typography.caption2Bold)
         }
-        .foregroundStyle(tint)
-        .padding(.horizontal, 11)
-        .padding(.vertical, 6)
-        .background(tint.opacity(0.11), in: Capsule())
-        .overlay(Capsule().strokeBorder(tint.opacity(0.22), lineWidth: 0.8))
+        .modifier(TintedActionCapsuleChrome(tint: tint))
+    }
+}
+
+/// Shared tinted capsule surface used by `AppInlineButton` and `AppMenuCapsule`.
+private struct TintedActionCapsuleChrome: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    let tint: Color
+
+    func body(content: Content) -> some View {
+        let isDark = colorScheme == .dark
+        let isNeutral = tint == .secondary
+        content
+            .foregroundStyle(
+                isNeutral
+                    ? Color.secondary
+                    : (isDark ? tint.brightened(toAtLeast: 0.92, maxSaturation: 0.65) : tint)
+            )
+            .padding(.horizontal, 11)
+            .padding(.vertical, 6)
+            .background(tint.opacity(isDark && !isNeutral ? 0.18 : 0.11), in: Capsule())
+            .overlay(Capsule().strokeBorder(tint.opacity(isDark && !isNeutral ? 0.35 : 0.22), lineWidth: 0.8))
+            .contentShape(Capsule())
     }
 }
 

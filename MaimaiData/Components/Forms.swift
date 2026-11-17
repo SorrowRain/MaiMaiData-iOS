@@ -8,8 +8,51 @@ enum KeyboardDismiss {
     }
 }
 
-struct AppTextField: View {
+/// Shared container chrome for `AppTextField` and `AppSecureField`.
+/// Enforces full-box tap hit-testing (`minHeight = 50pt`) and focus border highlight.
+private struct AppInputFieldBox<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
+    let title: String?
+    let isFocused: Bool
+    let onTap: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.input, style: .continuous)
+        VStack(alignment: .leading, spacing: 5) {
+            if let title {
+                Text(title)
+                    .font(AppTheme.Typography.tag)
+                    .foregroundStyle(.secondary)
+            }
+            content()
+                .padding(.horizontal, AppTheme.Space.m)
+                .frame(minHeight: AppTheme.rowMinHeight)
+                .background(
+                    colorScheme == .dark
+                        ? Color.white.opacity(0.06)
+                        : AppTheme.Palette.hairline.opacity(0.045),
+                    in: shape
+                )
+                .overlay(
+                    shape.strokeBorder(
+                        isFocused
+                            ? AppTheme.accent.opacity(0.6)
+                            : (colorScheme == .dark
+                                ? Color.white.opacity(0.12)
+                                : AppTheme.Palette.hairline.opacity(0.10)),
+                        lineWidth: isFocused ? 1.2 : 1
+                    )
+                )
+                .contentShape(shape)
+                .onTapGesture(perform: onTap)
+        }
+    }
+}
+
+/// Standard single-line text input box.
+/// Use this instead of raw `TextField` in forms/tools so edge taps and focus borders behave consistently.
+struct AppTextField: View {
     var title: String? = nil
     let placeholder: String
     @Binding var text: String
@@ -19,41 +62,13 @@ struct AppTextField: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.input, style: .continuous)
-        VStack(alignment: .leading, spacing: 5) {
-            if let title {
-                Text(title)
-                    .font(AppTheme.Typography.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
+        AppInputFieldBox(title: title, isFocused: isFocused, onTap: { isFocused = true }) {
             HStack(spacing: 0) {
                 TextField(placeholder, text: $text)
                     .keyboardType(keyboardType)
-                    .font(AppTheme.Typography.subheadlineMediumMeta)
+                    .font(AppTheme.Typography.input)
                     .focused($isFocused)
                 Spacer(minLength: 0)
-            }
-            .padding(.horizontal, AppTheme.Space.m)
-            .frame(minHeight: AppTheme.rowMinHeight)
-            .background(
-                colorScheme == .dark
-                    ? Color.white.opacity(0.06)
-                    : AppTheme.Palette.hairline.opacity(0.045),
-                in: shape
-            )
-            .overlay(
-                shape.strokeBorder(
-                    isFocused
-                        ? AppTheme.accent.opacity(0.6)
-                        : (colorScheme == .dark
-                            ? Color.white.opacity(0.12)
-                            : AppTheme.Palette.hairline.opacity(0.10)),
-                    lineWidth: isFocused ? 1.2 : 1
-                )
-            )
-            .contentShape(shape)
-            .onTapGesture {
-                isFocused = true
             }
         }
         .onChange(of: isFocused) { _, focused in
@@ -62,8 +77,8 @@ struct AppTextField: View {
     }
 }
 
+/// Standard password input box with show/hide toggle.
 struct AppSecureField: View {
-    @Environment(\.colorScheme) private var colorScheme
     var title: String? = nil
     let placeholder: String
     @Binding var text: String
@@ -72,14 +87,7 @@ struct AppSecureField: View {
     @FocusState private var isFocused: Bool
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.input, style: .continuous)
-        VStack(alignment: .leading, spacing: 5) {
-            if let title {
-                Text(title)
-                    .font(AppTheme.Typography.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-
+        AppInputFieldBox(title: title, isFocused: isFocused, onTap: { isFocused = true }) {
             HStack(spacing: AppTheme.Space.s) {
                 Group {
                     if showPassword {
@@ -94,7 +102,7 @@ struct AppSecureField: View {
                             .focused($isFocused)
                     }
                 }
-                .font(AppTheme.Typography.rowTitle)
+                .font(AppTheme.Typography.input)
 
                 Button {
                     showPassword.toggle()
@@ -106,28 +114,6 @@ struct AppSecureField: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(showPassword ? "隐藏密码" : "显示密码")
-            }
-            .padding(.horizontal, AppTheme.Space.m)
-            .frame(minHeight: AppTheme.rowMinHeight)
-            .background(
-                colorScheme == .dark
-                    ? Color.white.opacity(0.06)
-                    : AppTheme.Palette.hairline.opacity(0.045),
-                in: shape
-            )
-            .overlay(
-                shape.strokeBorder(
-                    isFocused
-                        ? AppTheme.accent.opacity(0.6)
-                        : (colorScheme == .dark
-                            ? Color.white.opacity(0.12)
-                            : AppTheme.Palette.hairline.opacity(0.10)),
-                    lineWidth: isFocused ? 1.2 : 1
-                )
-            )
-            .contentShape(shape)
-            .onTapGesture {
-                isFocused = true
             }
         }
     }

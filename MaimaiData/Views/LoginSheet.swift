@@ -41,7 +41,7 @@ struct AccountManagementView: View {
                                     .foregroundStyle(Color(.label))
 
                                 if !store.currentUsername.isEmpty && acct.username == store.currentUsername {
-                                    AppCapsuleLabel(text: "当前", font: .caption2.weight(.bold), backgroundOpacity: 0.14, horizontalPadding: 7, verticalPadding: 2)
+                                    AppCapsuleLabel(text: "当前", style: .compact)
                                 }
 
                                 Spacer()
@@ -122,7 +122,7 @@ struct AccountManagementView: View {
         } catch let error as MaimaiAPIError {
             errorMessage = error.recoveryMessage
         } catch {
-            errorMessage = "登录已成功，但成绩同步失败：\(error.localizedDescription)\n请稍后重试。"
+            errorMessage = "登录失败：\(error.localizedDescription)\n请检查网络连接后重试。"
         }
     }
 }
@@ -137,6 +137,7 @@ struct LoginSheet: View {
     @State private var password: String = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    @State private var shouldDismissAfterAlert = false
 
     var body: some View {
         NavigationStack {
@@ -190,7 +191,12 @@ struct LoginSheet: View {
                     Button("关闭") { dismiss() }
                 }
             }
-            .errorAlert("登录或同步失败", message: $errorMessage)
+            .errorAlert("登录或同步提示", message: $errorMessage)
+            .onChange(of: errorMessage) { oldVal, newVal in
+                if oldVal != nil && newVal == nil && shouldDismissAfterAlert {
+                    dismiss()
+                }
+            }
         }
     }
 
@@ -201,9 +207,12 @@ struct LoginSheet: View {
             try await store.loginAndSyncRecords(username: username, password: password)
             dismiss()
         } catch let error as MaimaiAPIError {
+            if case .recordSyncFailedAfterLogin = error {
+                shouldDismissAfterAlert = true
+            }
             errorMessage = error.recoveryMessage
         } catch {
-            errorMessage = "登录已成功，但成绩同步失败：\(error.localizedDescription)\n请稍后重试，或检查水鱼查分器是否可访问。"
+            errorMessage = "登录失败：\(error.localizedDescription)\n请检查网络连接或水鱼查分器是否可访问。"
         }
     }
 }

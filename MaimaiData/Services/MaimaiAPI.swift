@@ -6,6 +6,7 @@ enum MaimaiAPIError: LocalizedError {
     case missingCookie
     case unauthorized(String)
     case syncInProgress
+    case recordSyncFailedAfterLogin(String)
 
     var errorDescription: String? {
         switch self {
@@ -19,22 +20,13 @@ enum MaimaiAPIError: LocalizedError {
             return message
         case .syncInProgress:
             return "正在同步成绩，请稍后再试。"
+        case .recordSyncFailedAfterLogin(let detail):
+            return "登录已成功，但成绩同步失败：\(detail)\n请稍后下拉刷新或重试。"
         }
     }
+
     var recoveryMessage: String {
-        switch self {
-        case .invalidURL:
-            return "服务地址无效，请检查应用配置。"
-        case .httpError(let code, let message):
-            if let message, !message.isEmpty { return message }
-            return "登录或同步失败（HTTP \(code)），请检查网络后重试。"
-        case .missingCookie:
-            return "水鱼未返回登录凭证，请稍后重试。"
-        case .unauthorized(let message):
-            return message
-        case .syncInProgress:
-            return "正在同步成绩，请等待当前同步结束后再登录。"
-        }
+        errorDescription ?? "请求失败，请检查网络后重试。"
     }
 }
 

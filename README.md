@@ -9,10 +9,26 @@
 - **水鱼查分器与 Best 50**：支持水鱼查分器账号登录（凭据安全存储于本机 Keychain）、B35 / B15 成绩列表查看与 Best 50 成绩图一键生成导出
 - **进度表与实用工具**：内置按版本（牌子进度）与按定数等级分组的完成度统计表、单曲 Rating 计算器、目标 Rating 反推及旧框（FiNALE）分数换算 DX 工具
 
+## 项目结构
+
+```text
+MaimaiData/
+├── Theme/           # 全局设计令牌（AppTheme：色彩、间距、圆角、语义字阶、背景）
+├── Components/      # 标准复用 UI 组件（Badges、Buttons、Checklist、Containers、Feedback、Forms）
+├── Bridges/         # UIKit 桥接组件（相册保存、系统分享、双指/双击缩放图片视图）
+├── Models/          # 曲目、谱面、难度、水鱼成绩、Rating 算法与通用扩展
+├── Services/        # 全局状态 DataStore、网络接口 MaimaiAPI、Keychain 凭据、曲绘缓存、B50 渲染与纯函数筛选
+├── Views/           # 各业务页面视图
+└── Resources/       # 贴图素材 Assets.xcassets 与离线曲库种子数据 songdata_seed.json
+MaimaiDataTests/     # 单元测试（Rating 计算与曲库多维筛选）
+```
+
+详细的架构分层、标准组件清单与防回归约束请参见 [AGENTS.md](./AGENTS.md)。
+
 ## 构建环境
 
-- iOS 17.0+（iOS 26+ 使用 Liquid Glass，更低版本回退为 Material）
-- Xcode 26 / 27+（Swift 5.10+）
+- iOS 17.0+（iOS 26+ 使用原生 Liquid Glass，iOS 17/18 自动回退为 Material）
+- Xcode 26 / 27+（Swift 5.10+），仅支持 iPhone 竖屏
 
 ## 致谢与参考
 

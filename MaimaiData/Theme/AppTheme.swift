@@ -1,12 +1,19 @@
 import SwiftUI
 
+/// Global design tokens for MaimaiData.
+///
+/// Architectural rules:
+/// 1. All colors, corner radii, spacing scales, and font styles must come from `AppTheme`.
+/// 2. Game-domain colors in `Palette` (difficulty, genre, note types, judgments) match the
+///    maimai DX visual identity and must not be altered arbitrarily.
+/// 3. `Typography` defines semantic text roles rather than one-off view-specific font literals.
 enum AppTheme {
-    // Brand & Accent Colors
+    // MARK: - Brand & Accent Colors
     static let accent = Color(hex: 0x1668DC)
     static let accentBright = Color(hex: 0x2B88FF)
     static let favoritePink = Palette.noteBreak
 
-    // Semantic Palette (game terms + shared accents; values must not change)
+    // MARK: - Semantic Palette (game terms + shared surfaces; values are locked)
     enum Palette {
         // Notes
         static let noteTap = Color(hex: 0x12B4FF)
@@ -25,12 +32,12 @@ enum AppTheme {
         static let judgeGood = Color(hex: 0x176523)
         static let judgeMiss = Color(.secondaryLabel)
 
-        // Rating tool row icons (same values as note / difficulty colors)
+        // Rating tool row icons (shared with note / difficulty colors)
         static let ratingPurple = Color(hex: 0x9F51DC)
         static let ratingOrange = noteHold
         static let ratingBlue = noteTap
 
-        // Difficulty
+        // Difficulty fills & readable text
         static let diffBasic = Color(hex: 0x6FD43D)
         static let diffAdvanced = Color(hex: 0xF8B709)
         static let diffExpert = Color(hex: 0xFF818D)
@@ -47,14 +54,14 @@ enum AppTheme {
         static let diffRemasterDark = Color(hex: 0x8C2DD5)
         static let diffOtherDark = Color(hex: 0x053264)
 
-        // Brightened difficulty colors for text/board on dark tinted backgrounds.
+        // Brightened difficulty colors for text/board on dark tinted backgrounds
         static let boardMainBasic = Color(hex: 0x6FE163)
         static let boardMainAdvanced = Color(hex: 0xF8DF3B)
         static let boardMainExpert = Color(hex: 0xFFA0AE)
         static let boardMainMaster = Color(hex: 0xC27FF4)
         static let boardMainRemaster = Color(hex: 0xE5DDEA)
 
-        // Genres: (fill, stroke) and text
+        // Genres: (fill, stroke) and light-mode text
         static let genrePop: (bg: Color, stroke: Color) = (bg: Color(hex: 0xFF9C24), stroke: Color(hex: 0xFFD21F))
         static let genreNico: (bg: Color, stroke: Color) = (bg: Color(hex: 0x12B4FF), stroke: Color(hex: 0x7ED6FF))
         static let genreTouhou: (bg: Color, stroke: Color) = (bg: Color(hex: 0xCA6FEB), stroke: Color(hex: 0xE8A7FF))
@@ -76,23 +83,23 @@ enum AppTheme {
         static let statAP = Color(hex: 0xC85A00)
         static let statFSD = Color(hex: 0x0A6BA1)
 
-        // Level progress header (reuses the note-orange value with an explicit semantic name)
+        // Level progress header tint
         static let progressAccent = noteHold
 
-        // Shared surfaces & hairlines (light-mode chrome over the page gradient)
+        // Shared surfaces & hairlines
         static let surfaceDark = Color(hex: 0x172135)
         static let hairline = Color(hex: 0x0F2952)
         static let genreGameCardFill = Color(hex: 0x398428)
     }
 
-    // Spacing & Sizing
+    // MARK: - Spacing & Sizing
     static let pagePadding: CGFloat = 16
     static let cardPadding: CGFloat = 16
     static let cardSpacing: CGFloat = 12
     static let itemSpacing: CGFloat = 10
     static let rowMinHeight: CGFloat = 50
 
-    // Corner Radii (Always use .continuous)
+    // MARK: - Corner Radii (Always use .continuous)
     enum Radius {
         static let card: CGFloat = 16
         static let inset: CGFloat = 12
@@ -103,7 +110,7 @@ enum AppTheme {
         static let chip: CGFloat = 12
     }
 
-    // Spacing scale
+    // MARK: - Spacing Scale
     enum Space {
         static let xs: CGFloat = 4
         static let s: CGFloat = 8
@@ -112,41 +119,37 @@ enum AppTheme {
         static let xl: CGFloat = 24
     }
 
-    // Typography Hierarchy (17pt Card Title > 15pt Row Title > 12pt Subtitle / Inline Button)
+    // MARK: - Semantic Typography Hierarchy
+    // Visual hierarchy: 20pt Hero > 17pt Card Title > 15pt Row / Input > 12pt Caption / Inline Action > 11pt Badge
     enum Typography {
+        // 1. Hero & Section Headers (20pt / 17pt / 16pt)
+        static let heroTitle = Font.title3.weight(.bold).monospacedDigit()
+        static let sectionMetric = Font.headline.weight(.bold).monospacedDigit()
         static let cardTitle = Font.headline
-        static let rowTitle = Font.subheadline.weight(.medium)
-        static let songTitle = Font.subheadline.weight(.semibold)
-        static let body = Font.subheadline
-        static let inlineAction = Font.caption.weight(.semibold)
-        static let badge = Font.caption2.weight(.bold).monospacedDigit()
-        static let tag = Font.caption.weight(.medium)
+        static let statValue = Font.callout.weight(.bold).monospacedDigit()
 
-        static let caption = Font.caption
-        static let captionSemibold = Font.caption.weight(.semibold)
+        // 2. Row, Button & Input Content (15pt)
+        static let songTitle = Font.subheadline.weight(.semibold)
+        static let subheadlineBold = Font.subheadline.weight(.bold)
+        static let rowTitle = Font.subheadline.weight(.medium)
+        static let input = Font.subheadline.weight(.medium).monospacedDigit()
+        static let rowMetric = Font.subheadline.weight(.bold).monospacedDigit()
+        static let body = Font.subheadline
+
+        // 3. Captions, Tags & Inline Actions (12pt)
+        static let inlineAction = Font.caption.weight(.semibold)
         static let captionBold = Font.caption.weight(.bold)
-        static let captionMonospaced = Font.caption.monospacedDigit()
+        static let tag = Font.caption.weight(.medium)
+        static let caption = Font.caption
+        static let captionMono = Font.caption.monospacedDigit()
         static let captionMeta = Font.caption.weight(.semibold).monospacedDigit()
         static let captionMetaBold = Font.caption.weight(.bold).monospacedDigit()
-        static let captionSemiboldMonospaced = Font.caption.weight(.semibold).monospaced()
 
-        static let caption2 = Font.caption2
-        static let caption2Semibold = Font.caption2.weight(.semibold)
+        // 4. Compact Badges & Micro Labels (11pt)
+        static let badge = Font.caption2.weight(.bold).monospacedDigit()
         static let caption2Bold = Font.caption2.weight(.bold)
-        static let caption2Medium = Font.caption2.weight(.medium)
-        static let caption2Monospaced = Font.caption2.monospacedDigit()
-        static let caption2Meta = Font.caption2.weight(.semibold).monospacedDigit()
-
-        static let subheadlineBold = Font.subheadline.weight(.bold)
-        static let subheadlineMediumMeta = Font.subheadline.weight(.medium).monospacedDigit()
-        static let subheadlineSemiboldMeta = Font.subheadline.weight(.semibold).monospacedDigit()
-        static let subheadlineBoldMeta = Font.subheadline.weight(.bold).monospacedDigit()
-
-        static let headlineBold = Font.headline.weight(.bold)
-        static let headlineBoldMonospaced = Font.headline.weight(.bold).monospacedDigit()
-        static let title3Bold = Font.title3.weight(.bold)
-        static let title3BoldMonospaced = Font.title3.weight(.bold).monospacedDigit()
-        static let calloutBoldMonospaced = Font.callout.weight(.bold).monospacedDigit()
+        static let caption2Semibold = Font.caption2.weight(.semibold)
+        static let caption2 = Font.caption2
     }
 }
 

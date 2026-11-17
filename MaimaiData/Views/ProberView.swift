@@ -51,7 +51,7 @@ struct ProberView: View {
                             HStack(spacing: AppTheme.Space.s) {
                                 VStack { Divider() }
                                 Text("以下不计入 Best\(cutoff)")
-                                    .font(AppTheme.Typography.captionSemibold)
+                                    .font(AppTheme.Typography.inlineAction)
                                     .foregroundStyle(.secondary)
                                 VStack { Divider() }
                             }
@@ -183,11 +183,7 @@ private struct ProberRecordRow: View {
                         AppCapsuleLabel(
                             text: "#\(rank)",
                             tint: .secondary,
-                            font: .caption.weight(.bold).monospacedDigit(),
-                            backgroundOpacity: 0.07,
-                            horizontalPadding: 6,
-                            verticalPadding: 2,
-                            foreground: .secondary
+                            style: .compact
                         )
 
                         Text(record.title)

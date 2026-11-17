@@ -204,3 +204,107 @@ struct AppInsetGroup<Content: View>: View {
             )
     }
 }
+
+/// Shared full-screen photo preview scaffold used by `CoverZoomView` and `B50PreviewSheet`.
+/// Owns the black backdrop, dark navigation bar, pinch-to-zoom scroll view, share sheet, and save toast.
+struct PhotoPreviewScaffold<Placeholder: View>: View {
+    @Environment(\.dismiss) private var dismiss
+
+    let title: String
+    let image: UIImage?
+    var imagePadding: CGFloat = AppTheme.Space.m
+    var accessibilityLabel: String?
+    var shareAccessibilityLabel: String = "分享图片"
+    var saveAccessibilityLabel: String?
+
+    @ViewBuilder let placeholder: () -> Placeholder
+
+    @State private var saveStatus: String?
+    @State private var showShare = false
+
+    init(
+        title: String,
+        image: UIImage?,
+        imagePadding: CGFloat = AppTheme.Space.m,
+        accessibilityLabel: String? = nil,
+        shareAccessibilityLabel: String = "分享图片",
+        saveAccessibilityLabel: String? = nil,
+        @ViewBuilder placeholder: @escaping () -> Placeholder
+    ) {
+        self.title = title
+        self.image = image
+        self.imagePadding = imagePadding
+        self.accessibilityLabel = accessibilityLabel
+        self.shareAccessibilityLabel = shareAccessibilityLabel
+        self.saveAccessibilityLabel = saveAccessibilityLabel
+        self.placeholder = placeholder
+    }
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.black.ignoresSafeArea()
+
+                if let image {
+                    ZoomableImageScrollView(image: image)
+                        .padding(imagePadding)
+                        .accessibilityLabel(accessibilityLabel ?? title)
+                } else {
+                    placeholder()
+                }
+            }
+            .navigationTitle(title)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("关闭") { dismiss() }
+                        .foregroundStyle(.white)
+                }
+                ToolbarItemGroup(placement: .topBarTrailing) {
+                    if let image {
+                        Button {
+                            showShare = true
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundStyle(.white)
+                        }
+                        .accessibilityLabel(shareAccessibilityLabel)
+
+                        Button("保存") {
+                            Task { await saveToPhotos(image) }
+                        }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                        .accessibilityLabel(saveAccessibilityLabel ?? "保存")
+                    }
+                }
+            }
+            .overlay(alignment: .bottom) {
+                if let saveStatus {
+                    StatusToast(text: saveStatus)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .sheet(isPresented: $showShare) {
+                if let image {
+                    ShareSheet(items: [image])
+                }
+            }
+        }
+    }
+
+    private func saveToPhotos(_ image: UIImage) async {
+        let message: String
+        do {
+            try await PhotoLibrarySaver.save(image)
+            message = "已保存到系统相册"
+        } catch {
+            message = error.localizedDescription
+        }
+        withAnimation {
+            saveStatus = message
+        }
+        await dismissToast($saveStatus, after: 2.2, animated: true, ifContains: message)
+    }
+}

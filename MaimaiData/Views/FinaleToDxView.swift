@@ -20,11 +20,11 @@ struct FinaleToDxView: View {
                     AppInsetGroup(padding: 14) {
                         HStack {
                             Text("DX 达成率")
-                                .font(AppTheme.Typography.captionSemibold)
+                                .font(AppTheme.Typography.inlineAction)
                                 .foregroundStyle(.secondary)
                             Spacer()
                             Text(resultText)
-                                .font(AppTheme.Typography.title3BoldMonospaced)
+                                .font(AppTheme.Typography.heroTitle)
                                 .foregroundStyle(AppTheme.accent)
                         }
                     }

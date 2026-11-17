@@ -45,7 +45,7 @@ struct SearchFilterSheet: View {
                                 // 第一条：等级 / 整数
                                 HStack(spacing: 10) {
                                     Text("等级")
-                                        .font(AppTheme.Typography.captionSemibold)
+                                        .font(AppTheme.Typography.inlineAction)
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 
@@ -68,7 +68,7 @@ struct SearchFilterSheet: View {
                                 // 第二条：小数（最左关闭，往右 .0 ~ .9）
                                 HStack(spacing: 10) {
                                     Text("小数")
-                                        .font(AppTheme.Typography.captionSemibold)
+                                        .font(AppTheme.Typography.inlineAction)
                                         .foregroundStyle(.secondary)
                                         .frame(width: 30, alignment: .leading)
 

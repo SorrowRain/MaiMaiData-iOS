@@ -84,7 +84,7 @@ struct SongDetailView: View {
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(song.title)
-                        .font(AppTheme.Typography.title3Bold)
+                        .font(AppTheme.Typography.heroTitle)
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
                         .onLongPressGesture { copyText(song.title, label: "歌曲名") }
@@ -122,10 +122,10 @@ struct SongDetailView: View {
     private func factPill(label: String, value: String) -> some View {
         VStack(spacing: 3) {
             Text(label)
-                .font(AppTheme.Typography.caption2Medium)
+                .font(AppTheme.Typography.caption2)
                 .foregroundStyle(.white.opacity(0.8))
             Text(value)
-                .font(AppTheme.Typography.subheadlineSemiboldMeta)
+                .font(AppTheme.Typography.rowMetric)
                 .foregroundStyle(.white)
                 .lineLimit(1)
                 .minimumScaleFactor(0.72)
@@ -152,7 +152,7 @@ struct SongDetailView: View {
                         .font(AppTheme.Typography.tag)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
-                        .modifier(GenreTagChrome(genre: genre, lightFill: 0.13, lightStroke: 0.28))
+                        .modifier(GenreTagChrome(genre: genre))
                         .onLongPressGesture { copyText(alias, label: "别名") }
                 }
             }
@@ -193,7 +193,7 @@ struct SongDetailView: View {
                             .accessibilityLabel(fallback)
                     } else {
                         Text(fallback)
-                            .font(AppTheme.Typography.captionSemibold)
+                            .font(AppTheme.Typography.inlineAction)
                             .foregroundStyle(.primary)
                             .multilineTextAlignment(.center)
                     }
@@ -218,7 +218,7 @@ struct SongDetailView: View {
                         Text(chart.difficulty.shortName)
                             .font(AppTheme.Typography.captionBold)
                         Text(chart.level)
-                            .font(AppTheme.Typography.caption2Meta)
+                            .font(AppTheme.Typography.badge)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
@@ -271,7 +271,7 @@ struct SongDetailView: View {
                         }
                         metricBox(title: "水鱼拟合定数") {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
-                                .font(AppTheme.Typography.calloutBoldMonospaced)
+                                .font(AppTheme.Typography.statValue)
                                 .foregroundStyle(.primary)
                         }
                     }
@@ -320,7 +320,7 @@ struct SongDetailView: View {
     private func detailRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.m) {
             Text(title)
-                .font(AppTheme.Typography.captionSemibold)
+                .font(AppTheme.Typography.inlineAction)
                 .foregroundStyle(.secondary)
                 .frame(width: 60, alignment: .leading)
             content()
@@ -333,7 +333,7 @@ struct SongDetailView: View {
         if let record {
             HStack(spacing: AppTheme.Space.s) {
                 Text(String(format: "%.4f%%", record.achievements))
-                    .font(AppTheme.Typography.subheadlineBoldMeta)
+                    .font(AppTheme.Typography.rowMetric)
                 Image(record.rankAssetName)
                     .resizable().scaledToFit().frame(height: 20)
                     .accessibilityLabel("评级 \(record.rate)")
@@ -362,15 +362,15 @@ struct SongDetailView: View {
             let arrow = old < chart.ds ? "↑" : (old > chart.ds ? "↓" : "")
             HStack(spacing: AppTheme.Space.xs) {
                 Text(String(format: "%.1f%@", chart.ds, arrow))
-                    .font(AppTheme.Typography.calloutBoldMonospaced)
+                    .font(AppTheme.Typography.statValue)
                     .foregroundStyle(deltaColor)
                 Text(String(format: "(旧 %.1f)", old))
-                    .font(AppTheme.Typography.captionMonospaced)
+                    .font(AppTheme.Typography.captionMono)
                     .foregroundStyle(.secondary)
             }
         } else {
             Text(String(format: "%.1f", chart.ds))
-                .font(AppTheme.Typography.calloutBoldMonospaced)
+                .font(AppTheme.Typography.statValue)
                 .foregroundStyle(.primary)
         }
     }
@@ -410,7 +410,7 @@ private struct ChartNotesBarCard: View {
                 ForEach(rows, id: \.0) { label, value, maxValue in
                     HStack(spacing: 10) {
                         Text(label)
-                            .font(AppTheme.Typography.captionSemiboldMonospaced)
+                            .font(AppTheme.Typography.captionMeta)
                             .foregroundStyle(.secondary)
                             .frame(width: 44, alignment: .trailing)
 
@@ -464,7 +464,7 @@ private struct ChartToleranceCard: View {
 
                 if brk > 0 {
                     Text("Break（绝赞）单项扣分")
-                        .font(AppTheme.Typography.captionSemibold)
+                        .font(AppTheme.Typography.inlineAction)
                         .foregroundStyle(.secondary)
                         .padding(.top, 2)
 
@@ -516,7 +516,7 @@ private struct ChartToleranceCard: View {
                 .fontWeight(.medium)
                 .foregroundStyle(.primary)
             if !detail.isEmpty {
-                AppCapsuleLabel(text: detail, tint: color, font: .caption2.weight(.bold), backgroundOpacity: 0.14, horizontalPadding: 6, verticalPadding: 2)
+                AppCapsuleLabel(text: detail, tint: color, style: .compact)
             }
             Spacer(minLength: 0)
             Text(value)
@@ -545,7 +545,7 @@ private struct ChartToleranceCard: View {
                     .minimumScaleFactor(0.85)
             }
         }
-        .font(isHeader ? .caption.weight(.bold) : .caption.monospacedDigit())
+        .font(isHeader ? AppTheme.Typography.captionBold : AppTheme.Typography.captionMono)
         .padding(.horizontal, AppTheme.Space.m)
         .padding(.vertical, 9)
         .accessibilityElement(children: .combine)

@@ -1,33 +1,78 @@
 import SwiftUI
 
-/// Small tinted capsule used for counts and inline tags.
+/// Standardized tinted capsule label with semantic presets.
+///
+/// Do not add ad-hoc padding/opacity/font parameters here; use one of the defined `Style` cases
+/// so all pills across the app share consistent sizing and dark-mode contrast.
 struct AppCapsuleLabel: View {
+    enum Style {
+        /// Section header count pill (e.g. "24 首").
+        case count
+        /// Active filter summary pill with subtle border.
+        case filter
+        /// Compact inline status/rank badge (e.g. "#1", "当前", "4x").
+        case compact
+        /// Prominent metric pill with a prefix label (e.g. "Ra 333").
+        case metric(prefix: String)
+    }
+
     @Environment(\.colorScheme) private var colorScheme
     let text: String
     var tint: Color = AppTheme.accent
-    var font: Font = .caption.weight(.semibold).monospacedDigit()
-    var backgroundOpacity: Double = 0.12
-    var strokeOpacity: Double = 0
-    var horizontalPadding: CGFloat = 8
-    var verticalPadding: CGFloat = 3
-    var foreground: Color? = nil
-    var prefix: String? = nil
-    var prefixFont: Font = .caption.weight(.bold)
+    var style: Style = .count
 
     var body: some View {
+        let isDark = colorScheme == .dark
+        let spec = resolvedSpec
+        let isNeutral = tint == .secondary
+
         HStack(spacing: AppTheme.Space.xs) {
-            if let prefix {
+            if let prefix = spec.prefix {
                 Text(prefix)
-                    .font(prefixFont)
+                    .font(AppTheme.Typography.captionBold)
             }
             Text(text)
-                .font(font)
+                .font(spec.font)
         }
-            .padding(.horizontal, horizontalPadding)
-            .padding(.vertical, verticalPadding)
-            .background(tint.opacity(colorScheme == .dark ? max(backgroundOpacity, 0.22) : backgroundOpacity), in: Capsule())
-            .overlay(Capsule().strokeBorder(tint.opacity(strokeOpacity), lineWidth: strokeOpacity > 0 ? 0.8 : 0))
-            .foregroundStyle(foreground ?? (colorScheme == .dark ? tint.brightened(toAtLeast: 1.0, maxSaturation: 0.5) : tint))
+        .padding(.horizontal, spec.hPadding)
+        .padding(.vertical, spec.vPadding)
+        .background(
+            tint.opacity(isNeutral ? 0.10 : (isDark ? max(spec.bgOpacity, 0.22) : spec.bgOpacity)),
+            in: Capsule()
+        )
+        .overlay(
+            Capsule().strokeBorder(
+                tint.opacity(isDark && spec.strokeOpacity > 0 ? max(spec.strokeOpacity, 0.42) : spec.strokeOpacity),
+                lineWidth: spec.strokeOpacity > 0 ? 0.8 : 0
+            )
+        )
+        .foregroundStyle(
+            isNeutral
+                ? Color.secondary
+                : (isDark ? tint.brightened(toAtLeast: 1.0, maxSaturation: 0.5) : tint)
+        )
+    }
+
+    private struct Spec {
+        let font: Font
+        let hPadding: CGFloat
+        let vPadding: CGFloat
+        let bgOpacity: Double
+        let strokeOpacity: Double
+        var prefix: String? = nil
+    }
+
+    private var resolvedSpec: Spec {
+        switch style {
+        case .count:
+            return Spec(font: AppTheme.Typography.captionMeta, hPadding: 8, vPadding: 3, bgOpacity: 0.12, strokeOpacity: 0)
+        case .filter:
+            return Spec(font: AppTheme.Typography.caption2Semibold, hPadding: 9, vPadding: 4, bgOpacity: 0.14, strokeOpacity: 0.28)
+        case .compact:
+            return Spec(font: AppTheme.Typography.caption2Bold, hPadding: 6, vPadding: 2, bgOpacity: 0.14, strokeOpacity: 0)
+        case .metric(let prefix):
+            return Spec(font: AppTheme.Typography.heroTitle, hPadding: 10, vPadding: 4, bgOpacity: 0.12, strokeOpacity: 0, prefix: prefix)
+        }
     }
 }
 
@@ -84,19 +129,17 @@ struct DifficultyLevelBadge: View {
     }
 }
 
-/// Genre-tinted capsule chrome: light 0.15/0.30, dark 0.22/0.45 (fill/border).
+/// Unified genre-tinted capsule chrome (light 15% fill / 30% border, dark 22% fill / 45% border).
 struct GenreTagChrome: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
     let genre: String
-    var lightFill: Double = 0.15
-    var lightStroke: Double = 0.30
 
     func body(content: Content) -> some View {
         let bg = MaimaiConstants.genreColors(for: genre).bg
         let dark = colorScheme == .dark
         content
-            .background(bg.opacity(dark ? 0.22 : lightFill), in: Capsule())
-            .overlay(Capsule().strokeBorder(bg.opacity(dark ? 0.45 : lightStroke), lineWidth: 0.8))
+            .background(bg.opacity(dark ? 0.22 : 0.15), in: Capsule())
+            .overlay(Capsule().strokeBorder(bg.opacity(dark ? 0.45 : 0.30), lineWidth: 0.8))
             .foregroundStyle(MaimaiConstants.genreTextColor(for: genre))
     }
 }
