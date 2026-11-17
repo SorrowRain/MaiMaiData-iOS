@@ -301,13 +301,17 @@ struct SongDetailView: View {
             AppSectionCard(title: "谱面信息") {
                 VStack(spacing: AppTheme.itemSpacing) {
                     HStack(spacing: AppTheme.Space.s) {
-                        AppMetricTile(title: "谱面定数", valueSlotHeight: 28) {
+                        AppMetricTile(
+                            title: chart.oldDs.map { String(format: "定数 (旧%.1f)", $0) } ?? "谱面定数",
+                            valueSlotHeight: 28
+                        ) {
                             dsText(chart: chart)
                         }
                         AppMetricTile(title: "水鱼拟合定数", valueSlotHeight: 28) {
                             Text(fitDiff.map { String(format: "%.2f", $0) } ?? "—")
-                                .font(AppTheme.Typography.heroTitle)
+                                .font(AppTheme.Typography.metricDisplay)
                                 .foregroundStyle(.primary)
+                                .multilineTextAlignment(.center)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.8)
                                 .contentTransition(.numericText())
@@ -430,24 +434,26 @@ struct SongDetailView: View {
 
     @ViewBuilder
     private func dsText(chart: ResolvedChart) -> some View {
-        if let old = chart.oldDs, old > 0 {
-            let deltaColor: Color = old < chart.ds ? AppTheme.Palette.deltaUp : (old > chart.ds ? AppTheme.Palette.deltaDown : .primary)
-            let arrow = old < chart.ds ? "↑" : (old > chart.ds ? "↓" : "")
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(String(format: "%.1f%@", chart.ds, arrow))
-                    .font(AppTheme.Typography.heroTitle)
-                    .foregroundStyle(deltaColor)
-                    .contentTransition(.numericText())
-                Text(String(format: "(%.1f)", old))
-                    .font(AppTheme.Typography.caption2)
-                    .foregroundStyle(.secondary)
-            }
-            .lineLimit(1)
-            .minimumScaleFactor(0.72)
+        if let old = chart.oldDs {
+            let isUp = old < chart.ds
+            let deltaColor: Color = isUp ? AppTheme.Palette.deltaUp : AppTheme.Palette.deltaDown
+            Text(String(format: "%.1f", chart.ds))
+                .font(AppTheme.Typography.metricDisplay)
+                .foregroundStyle(deltaColor)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .contentTransition(.numericText())
+                .overlay(alignment: .trailing) {
+                    Text(isUp ? "↑" : "↓")
+                        .font(AppTheme.Typography.captionBold)
+                        .foregroundStyle(deltaColor)
+                        .offset(x: 11)
+                }
         } else {
             Text(String(format: "%.1f", chart.ds))
-                .font(AppTheme.Typography.heroTitle)
+                .font(AppTheme.Typography.metricDisplay)
                 .foregroundStyle(.primary)
+                .multilineTextAlignment(.center)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .contentTransition(.numericText())

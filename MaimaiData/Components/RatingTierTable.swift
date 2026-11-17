@@ -16,9 +16,9 @@ struct RatingTierTable: View {
                         .frame(maxWidth: .infinity, alignment: .center)
                     if showB50Column {
                         Text("单曲 Ra")
-                            .frame(width: 82, alignment: .center)
+                            .frame(width: 76, alignment: .center)
                         Text("B50 可加")
-                            .frame(width: 82, alignment: .center)
+                            .frame(width: 76, alignment: .center)
                     } else {
                         Text("单曲 Ra")
                             .frame(maxWidth: .infinity, alignment: .center)
@@ -53,9 +53,10 @@ struct RatingTierTable: View {
                     .frame(width: 46, height: 18, alignment: .leading)
 
                 Text(row.achievementText)
-                    .font(row.isCurrentTier ? AppTheme.Typography.captionMeta : AppTheme.Typography.captionMono)
+                    .font(AppTheme.Typography.captionMono)
                     .foregroundStyle(.primary)
-                    .frame(width: 68, alignment: .trailing)
+                    .frame(minWidth: 72, alignment: .trailing)
+                    .fixedSize(horizontal: true, vertical: false)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -65,7 +66,7 @@ struct RatingTierTable: View {
                     .font(AppTheme.Typography.captionMeta)
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
-                    .frame(width: 82, alignment: .center)
+                    .frame(width: 76, alignment: .center)
 
                 let gain = row.b50Gain ?? 0
                 Group {
@@ -80,7 +81,7 @@ struct RatingTierTable: View {
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .frame(width: 82, alignment: .center)
+                .frame(width: 76, alignment: .center)
             } else {
                 Text("\(row.singleRating)")
                     .font(AppTheme.Typography.captionMeta)

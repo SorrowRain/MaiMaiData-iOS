@@ -44,11 +44,17 @@ struct SongData: Codable, Identifiable, Hashable {
                 ? (notes.indices.contains(3) ? notes[3] : 0)
                 : (notes.indices.contains(4) ? notes[4] : 0)
             let difficulty = DifficultyType.from(genre: basicInfo.genre, index: idx)
+            let currentDs = ds.indices.contains(idx) ? ds[idx] : 0
+            let rawOldDs = (oldDs?.indices.contains(idx) == true) ? oldDs![idx] : nil
+            let meaningfulOldDs: Double? = {
+                guard let old = rawOldDs, old > 0, abs(old - currentDs) >= 0.05 else { return nil }
+                return old
+            }()
             return ResolvedChart(
                 index: idx,
                 difficulty: difficulty,
-                ds: ds.indices.contains(idx) ? ds[idx] : 0,
-                oldDs: (oldDs?.indices.contains(idx) == true) ? oldDs![idx] : nil,
+                ds: currentDs,
+                oldDs: meaningfulOldDs,
                 level: level.indices.contains(idx) ? level[idx] : "-",
                 charter: raw.charter,
                 tap: tap,

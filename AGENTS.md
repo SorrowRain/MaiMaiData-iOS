@@ -102,6 +102,7 @@ MaimaiData/
 | 层级 | 令牌名 | 底层定义 | 标准用途 |
 | :--- | :--- | :--- | :--- |
 | **L1 标题与核心指标** | `heroTitle` | `title3.bold.monospacedDigit` (20pt) | 详情页曲名、核心换算结果、`.metric` 大胶囊数值 |
+| | `metricDisplay` | `title3.bold` (20pt) | 居中指标砖块大数字（比例字宽，避免等宽 `1` 左侧留白偏移） |
 | | `sectionMetric` | `headline.bold.monospacedDigit` (17pt) | 总览卡片大号数字指标、等级进度表标题 |
 | | `cardTitle` | `headline` (17pt) | `AppSectionHeader` 卡片标题、玩家总览标题 |
 | | `statValue` | `callout.bold.monospacedDigit` (16pt) | 详情页定数与拟合定数指标值 |

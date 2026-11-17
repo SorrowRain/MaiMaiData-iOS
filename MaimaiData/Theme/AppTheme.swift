@@ -131,6 +131,8 @@ enum AppTheme {
     enum Typography {
         // 1. Hero & Section Headers (20pt / 17pt / 16pt)
         static let heroTitle = Font.title3.weight(.bold).monospacedDigit()
+        /// Proportional 20pt bold for centered KPI metric tiles (avoids tabular '1' left-sidebearing shift).
+        static let metricDisplay = Font.title3.weight(.bold)
         static let sectionMetric = Font.headline.weight(.bold).monospacedDigit()
         static let cardTitle = Font.headline
         static let statValue = Font.callout.weight(.bold).monospacedDigit()
