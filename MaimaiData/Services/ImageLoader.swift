@@ -39,13 +39,16 @@ final class CoverImageCache: @unchecked Sendable {
     }
 
     private func cacheKey(for song: SongData) -> String {
-        if song.numericId > 0 {
+        if song.numericId > 0, song.preferRemoteCover != true {
             return "jacket_\(song.baseJacketId)"
         }
         if let remote = song.remoteCoverName, !remote.isEmpty {
             let sanitized = remote.replacingOccurrences(of: "/", with: "_")
             let stem = (sanitized as NSString).deletingPathExtension
             return "jacket_remote_\(stem.isEmpty ? sanitized : stem)"
+        }
+        if song.numericId > 0 {
+            return "jacket_\(song.baseJacketId)"
         }
         return "jacket_\(song.id)"
     }

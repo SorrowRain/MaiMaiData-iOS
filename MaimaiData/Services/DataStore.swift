@@ -11,6 +11,7 @@ final class DataStore {
     private var cnSongs: [SongData] = []
     private var cnSongsById: [Int: SongData] = [:]
     private var zetarakuCatalog: ZetarakuCatalog?
+    private var dxDataIdMap: DXDataIdMap?
     private var regionEpoch = 0
     private(set) var chartStats: [Int: [ChartStatEntry]] = [:]
     private(set) var records: [ProberRecord] = [] {
@@ -157,6 +158,7 @@ final class DataStore {
 
     private var cachedSongsURL: URL { appSupportDir.appendingPathComponent("songdata.json") }
     private var cachedZetarakuURL: URL { appSupportDir.appendingPathComponent("zetaraku_data.json") }
+    private var cachedDXDataIdMapURL: URL { appSupportDir.appendingPathComponent("dxdata_id_map.json") }
     private var cachedStatsURL: URL { appSupportDir.appendingPathComponent("chart_stats.json") }
     private var cachedRecordsURL: URL {
         guard !currentUsername.isEmpty else {
@@ -214,6 +216,7 @@ final class DataStore {
     private func loadLocalCaches() async {
         let songsURL = cachedSongsURL
         let zetarakuURL = cachedZetarakuURL
+        let dxIdMapURL = cachedDXDataIdMapURL
         let statsURL = cachedStatsURL
         let recordsURL = cachedRecordsURL
         let caches = await Task.detached(priority: .userInitiated) { () -> LocalCaches in
@@ -232,6 +235,9 @@ final class DataStore {
             if let zData = try? Data(contentsOf: zetarakuURL) {
                 cache.zetaraku = try? JSONDecoder().decode(ZetarakuCatalog.self, from: zData)
             }
+            if let idData = try? Data(contentsOf: dxIdMapURL) {
+                cache.dxIdMap = try? JSONDecoder().decode(DXDataIdMap.self, from: idData)
+            }
             if let data = try? Data(contentsOf: statsURL) {
                 cache.stats = try? JSONDecoder().decode(ChartStatsResponse.self, from: data)
             }
@@ -241,11 +247,12 @@ final class DataStore {
             return cache
         }.value
 
+        zetarakuCatalog = caches.zetaraku
+        dxDataIdMap = caches.dxIdMap
         if let loadedCNSongs = caches.songs {
             await storeCNBaseline(loadedCNSongs)
             if caches.usedSeed { dataVersion = Self.seedDataVersion }
         }
-        zetarakuCatalog = caches.zetaraku
 
         let epoch = regionEpoch
         switch serverRegion {
@@ -272,21 +279,29 @@ final class DataStore {
 
         async let songCheck: Void = checkSongDataUpdateIfNeeded()
         async let statsCheck: Void = refreshChartStatsIfStale()
-        async let regionCheck: Void = bootstrapNonCNRegionIfNeeded()
+        async let regionCheck: Void = bootstrapSupplementalCatalogIfNeeded()
         _ = await (songCheck, statsCheck, regionCheck)
     }
 
-    private func bootstrapNonCNRegionIfNeeded() async {
-        guard serverRegion != .cn else { return }
-        if zetarakuCatalog == nil {
+    private func bootstrapSupplementalCatalogIfNeeded() async {
+        if serverRegion != .cn {
+            if zetarakuCatalog == nil || dxDataIdMap == nil {
+                await syncZetarakuCatalog(force: false)
+            } else {
+                await refreshZetarakuIfStale()
+            }
+        } else if zetarakuCatalog == nil {
+            // Silently cache Utage descriptions ("谱面说明") in background on first CN launch as well.
             await syncZetarakuCatalog(force: false)
-        } else {
-            await refreshZetarakuIfStale()
         }
     }
 
     private func storeCNBaseline(_ rawList: [SongData]) async {
-        let snapshot = await Self.buildSnapshot(from: rawList)
+        let zCatalog = zetarakuCatalog
+        let snapshot = await Task.detached(priority: .userInitiated) {
+            let withUtageMeta = ZetarakuCatalogConverter.enrichCNSongsWithUtageMetadata(rawList, from: zCatalog)
+            return Self.buildSnapshotSync(from: withUtageMeta)
+        }.value
         cnSongs = snapshot.songs
         cnSongsById = snapshot.songsById
     }
@@ -306,15 +321,37 @@ final class DataStore {
         epoch: Int? = nil
     ) async {
         let cnRef = cnSongs
-        let snapshot = await Task.detached(priority: .userInitiated) { () -> SongSnapshot in
-            let converted = ZetarakuCatalogConverter.convert(catalog, region: region, cnReference: cnRef)
-            return Self.buildSnapshotSync(from: converted)
+        let idMap = dxDataIdMap
+        let (snapshot, migrations) = await Task.detached(priority: .userInitiated) { () -> (SongSnapshot, [(legacyId: String, resolvedId: String)]) in
+            let output = ZetarakuCatalogConverter.convertWithMigrations(
+                catalog,
+                region: region,
+                cnReference: cnRef,
+                dxIdMap: idMap
+            )
+            return (Self.buildSnapshotSync(from: output.songs), output.migratedIdPairs)
         }.value
         if let epoch, regionEpoch != epoch { return }
+        migrateFavoriteIdsIfNeeded(migrations)
         songs = snapshot.songs
         songsById = snapshot.songsById
         maxNotesStats = snapshot.maxNotes
         catalogRevision &+= 1
+    }
+
+    /// Smoothly upgrades any favorited temporary key (`zeta_dx_*`) to its official numeric ID once online `dxdata` provides it.
+    private func migrateFavoriteIdsIfNeeded(_ pairs: [(legacyId: String, resolvedId: String)]) {
+        guard !favoriteIds.isEmpty, !pairs.isEmpty else { return }
+        var updated = favoriteIds
+        var changed = false
+        for pair in pairs where updated.contains(pair.legacyId) {
+            updated.remove(pair.legacyId)
+            updated.insert(pair.resolvedId)
+            changed = true
+        }
+        if changed {
+            favoriteIds = updated
+        }
     }
 
     private static func buildSnapshot(from list: [SongData]) async -> SongSnapshot {
@@ -385,11 +422,17 @@ final class DataStore {
     }
 
     private func loadOrFetchZetaraku(for region: MaimaiConstants.ServerRegion, epoch: Int) async {
-        let url = cachedZetarakuURL
-        if let diskCatalog = await Task.detached(priority: .userInitiated, operation: { () -> ZetarakuCatalog? in
-            guard let data = try? Data(contentsOf: url) else { return nil }
-            return try? JSONDecoder().decode(ZetarakuCatalog.self, from: data)
-        }).value {
+        let zURL = cachedZetarakuURL
+        let idURL = cachedDXDataIdMapURL
+        let (diskCatalog, diskIdMap) = await Task.detached(priority: .userInitiated, operation: { () -> (ZetarakuCatalog?, DXDataIdMap?) in
+            let z = (try? Data(contentsOf: zURL)).flatMap { try? JSONDecoder().decode(ZetarakuCatalog.self, from: $0) }
+            let m = (try? Data(contentsOf: idURL)).flatMap { try? JSONDecoder().decode(DXDataIdMap.self, from: $0) }
+            return (z, m)
+        }).value
+        if let diskIdMap, dxDataIdMap == nil {
+            dxDataIdMap = diskIdMap
+        }
+        if let diskCatalog {
             guard regionEpoch == epoch else { return }
             zetarakuCatalog = diskCatalog
             await applyZetarakuCatalog(diskCatalog, for: region, epoch: epoch)
@@ -401,7 +444,10 @@ final class DataStore {
 
     private func refreshZetarakuIfStale() async {
         let oneDay: TimeInterval = 24 * 3600
-        if let last = lastZetarakuSync, Date().timeIntervalSince(last) < oneDay, zetarakuCatalog != nil {
+        if let last = lastZetarakuSync,
+           Date().timeIntervalSince(last) < oneDay,
+           zetarakuCatalog != nil,
+           dxDataIdMap != nil {
             return
         }
         await syncZetarakuCatalog(force: false)
@@ -411,24 +457,56 @@ final class DataStore {
         guard !isFetchingZetaraku else { return }
         isFetchingZetaraku = true
         defer { isFetchingZetaraku = false }
-        do {
-            let (raw, decoded) = try await MaimaiAPI.fetchZetarakuCatalog()
-            try raw.write(to: cachedZetarakuURL, options: .atomic)
+
+        // Fetch Zetaraku catalog and DXRating live internalId map concurrently with independent fault isolation:
+        // a temporary failure on one endpoint never blocks or corrupts the other.
+        async let zetarakuTask: Result<(raw: Data, catalog: ZetarakuCatalog), Error> = {
+            do {
+                return .success(try await MaimaiAPI.fetchZetarakuCatalog())
+            } catch {
+                return .failure(error)
+            }
+        }()
+        async let dxIdTask: DXDataIdMap? = try? await MaimaiAPI.fetchDXDataIdMap()
+
+        let (zResult, fetchedIdMap) = await (zetarakuTask, dxIdTask)
+
+        if let fetchedIdMap {
+            dxDataIdMap = fetchedIdMap
+            if let encoded = try? JSONEncoder().encode(fetchedIdMap) {
+                try? encoded.write(to: cachedDXDataIdMapURL, options: .atomic)
+            }
+        }
+
+        switch zResult {
+        case .success(let (raw, decoded)):
+            try? raw.write(to: cachedZetarakuURL, options: .atomic)
             zetarakuCatalog = decoded
             lastZetarakuSync = Date()
-            if serverRegion != .cn {
+            if !cnSongs.isEmpty {
+                await storeCNBaseline(cnSongs)
+            }
+            if serverRegion == .cn {
+                if !cnSongs.isEmpty {
+                    await applySongs(cnSongs, epoch: regionEpoch)
+                }
+            } else {
                 await applyZetarakuCatalog(decoded, for: serverRegion, epoch: regionEpoch)
                 if force {
                     let verText = decoded.updateTime.map { String($0.prefix(10)) } ?? "最新"
-                    statusMessage = "\(serverRegion.shortName)曲库已同步（\(verText)，共 \(songs.count) 首）"
+                    statusMessage = "\(serverRegion.shortName)曲库与 ID 映射已同步（\(verText)，共 \(songs.count) 首）"
                 }
             }
-        } catch {
+        case .failure(let error):
+            // Even if Zetaraku failed, if DXData updated and we have a local Zetaraku cache, re-apply with fresher IDs!
+            if fetchedIdMap != nil, let existingCatalog = zetarakuCatalog, serverRegion != .cn {
+                await applyZetarakuCatalog(existingCatalog, for: serverRegion, epoch: regionEpoch)
+            }
             if serverRegion != .cn {
                 statusMessage = force ? "\(serverRegion.shortName)曲库更新失败：\(error.localizedDescription)" : nil
                 syncNotice = DataSyncNotice(
                     kind: .songs,
-                    message: "\(serverRegion.shortName)曲库更新失败，请检查网络后重试。\n\(error.localizedDescription)"
+                    message: "\(serverRegion.shortName)曲库更新失败，正在使用本地缓存。请检查网络后重试。\n\(error.localizedDescription)"
                 )
             }
         }
@@ -774,6 +852,7 @@ final class DataStore {
 private struct LocalCaches {
     var songs: [SongData]?
     var zetaraku: ZetarakuCatalog?
+    var dxIdMap: DXDataIdMap?
     var stats: ChartStatsResponse?
     var records: [ProberRecord]?
     var usedSeed = false

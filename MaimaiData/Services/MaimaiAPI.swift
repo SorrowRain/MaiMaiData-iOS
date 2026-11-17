@@ -33,6 +33,7 @@ enum MaimaiAPIError: LocalizedError {
 enum MaimaiAPI {
     private static let updateInfoURL = URL(string: "https://bucket-1256206908.cos.ap-shanghai.myqcloud.com/update.json")!
     private static let zetarakuDataURL = URL(string: "https://dp4p6x0xfi5o9.cloudfront.net/maimai/data.json")!
+    private static let dxDataURL = URL(string: "https://miruku.dxrating.net/api/v1/dxdata")!
     private static let divingFishBase = "https://www.diving-fish.com"
     private static let userAgent = "okhttp/4.9.3"
 
@@ -70,6 +71,17 @@ enum MaimaiAPI {
         try validateHTTP(resp, data: data)
         let decoded = try JSONDecoder().decode(ZetarakuCatalog.self, from: data)
         return (data, decoded)
+    }
+
+    static func fetchDXDataIdMap() async throws -> DXDataIdMap {
+        var req = URLRequest(url: dxDataURL)
+        req.setValue("MaimaiData-iOS/1.0", forHTTPHeaderField: "User-Agent")
+        let (data, resp) = try await session.data(for: req)
+        try validateHTTP(resp, data: data)
+        return try await Task.detached(priority: .utility) {
+            let rawCatalog = try JSONDecoder().decode(DXDataRawCatalog.self, from: data)
+            return DXDataIdMap.extract(from: rawCatalog)
+        }.value
     }
 
     static func fetchChartStats() async throws -> (raw: Data, stats: ChartStatsResponse) {

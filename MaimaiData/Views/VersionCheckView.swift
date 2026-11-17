@@ -103,7 +103,8 @@ struct VersionCheckView: View {
                                             song: song,
                                             record: store.record(forSongId: song.numericId, difficultyIndex: 3),
                                             borderColor: DifficultyType.master.color,
-                                            displayMode: displayMode
+                                            displayMode: displayMode,
+                                            region: store.serverRegion
                                         )
                                     }
                                     .buttonStyle(.plain)

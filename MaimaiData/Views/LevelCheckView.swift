@@ -144,7 +144,8 @@ struct LevelCheckView: View {
                                             record: store.record(forSongId: item.song.numericId, difficultyIndex: item.chart.index),
                                             borderColor: item.chart.difficulty.color,
                                             displayMode: displayMode,
-                                            showTypeBadge: true
+                                            showTypeBadge: true,
+                                            region: store.serverRegion
                                         )
                                     }
                                     .buttonStyle(.plain)

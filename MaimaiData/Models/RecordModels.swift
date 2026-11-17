@@ -109,13 +109,8 @@ struct ProberRecord: Codable, Identifiable, Hashable {
         )
     }
 
-    var rankAssetName: String {
-        switch rate {
-        case "d", "c", "b", "bb", "bbb", "a", "aa", "aaa", "s", "sp", "ss", "ssp", "sss", "sssp":
-            return "mmd_player_rtsong_\(rate)"
-        default:
-            return "mmd_player_rtsong_d"
-        }
+    func rankAssetName(for region: MaimaiConstants.ServerRegion) -> String {
+        MaimaiConstants.rankAssetName(for: rate, region: region)
     }
 
     var fcAssetName: String? {

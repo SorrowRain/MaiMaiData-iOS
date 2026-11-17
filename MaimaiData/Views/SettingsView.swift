@@ -44,12 +44,7 @@ struct SettingsView: View {
                     // 2. 游戏区服
                     AppSectionCard(title: "游戏区服") {
                         AppInsetGroup {
-                            AppInsetRow(
-                                title: "当前曲库与算分区服",
-                                subtitle: store.serverRegion == .cn
-                                    ? "曲库、收录版本与 Rating 按国服规则展示"
-                                    : "曲库、定数与 B50 按\(store.serverRegion.shortName)最新新规 (AP+1) 重排"
-                            ) {
+                            AppInsetRow(title: "当前曲库与区服") {
                                 HStack(spacing: AppTheme.Space.s) {
                                     if store.isSyncingSongs && store.serverRegion != .cn {
                                         ProgressView().controlSize(.small)

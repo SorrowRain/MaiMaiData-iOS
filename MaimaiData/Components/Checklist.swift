@@ -101,6 +101,7 @@ struct ChecklistSongTile: View {
     let borderColor: Color
     let displayMode: CheckDisplayMode
     var showTypeBadge: Bool = false
+    var region: MaimaiConstants.ServerRegion = .cn
 
     var body: some View {
         let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.tile, style: .continuous)
@@ -134,7 +135,7 @@ struct ChecklistSongTile: View {
     private func overlayMark(for record: ProberRecord) -> some View {
         switch displayMode {
         case .sss:
-            Image(record.rankAssetName)
+            Image(record.rankAssetName(for: region))
                 .resizable()
                 .scaledToFit()
                 .frame(width: 52, height: 24)

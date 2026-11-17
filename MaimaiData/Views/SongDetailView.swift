@@ -51,16 +51,21 @@ struct SongDetailView: View {
                 if !chartsDesc.isEmpty {
                     difficultyPicker
 
-                    Picker("详情分区", selection: $selectedTab.animation(.snappy(duration: 0.22))) {
-                        ForEach(DetailTab.allCases, id: \.self) { tab in
-                            Text(tab.title).tag(tab)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-
                     let currentIndex = min(selectedChartIndex, chartsDesc.count - 1)
                     let chart = chartsDesc[currentIndex]
-                    tabContent(chart: chart, genreColors: genreColors)
+
+                    if currentSong.isUtage {
+                        overviewSection(chart: chart)
+                    } else {
+                        Picker("详情分区", selection: $selectedTab.animation(.snappy(duration: 0.22))) {
+                            ForEach(DetailTab.allCases, id: \.self) { tab in
+                                Text(tab.title).tag(tab)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+
+                        tabContent(chart: chart, genreColors: genreColors)
+                    }
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
@@ -145,8 +150,14 @@ struct SongDetailView: View {
             }
 
             HStack(spacing: AppTheme.Space.s) {
-                factPill(label: "BPM", value: "\(currentSong.basicInfo.bpm)")
-                factPill(label: "歌曲分类", value: currentSong.basicInfo.genre)
+                factPill(
+                    label: "BPM",
+                    value: currentSong.basicInfo.bpm > 0 ? "\(currentSong.basicInfo.bpm)" : "—"
+                )
+                factPill(
+                    label: "歌曲分类",
+                    value: MaimaiConstants.shortGenreDisplayName(for: currentSong.basicInfo.genre)
+                )
                 factPill(label: "歌曲 ID", value: currentSong.numericId > 0 ? currentSong.id : "—")
                     .onLongPressGesture {
                         if currentSong.numericId > 0 {
@@ -240,8 +251,11 @@ struct SongDetailView: View {
                         selectedChartIndex = idx
                     }
                 } label: {
+                    let badgeTitle = currentSong.isUtage
+                        ? (chart.kanji ?? chart.difficulty.shortName)
+                        : chart.difficulty.shortName
                     VStack(spacing: 2) {
-                        Text(chart.difficulty.shortName)
+                        Text(badgeTitle)
                             .font(AppTheme.Typography.captionBold)
                         Text(chart.level)
                             .font(AppTheme.Typography.badge)
@@ -258,7 +272,7 @@ struct SongDetailView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(chart.difficulty.shortName)，等级 \(chart.level)")
+                .accessibilityLabel("\(currentSong.isUtage ? (chart.kanji ?? chart.difficulty.shortName) : chart.difficulty.shortName)，等级 \(chart.level)")
                 .accessibilityAddTraits(isSelected ? .isSelected : [])
             }
         }
@@ -363,13 +377,7 @@ struct SongDetailView: View {
 
                     AppInsetGroup {
                         VStack(spacing: 0) {
-                            detailRow("谱面作者") {
-                                Text(chart.charter.isEmpty ? "—" : chart.charter)
-                                    .font(AppTheme.Typography.rowTitle)
-                                    .multilineTextAlignment(.trailing)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            .onLongPressGesture { copyText(chart.charter, label: "谱面作者") }
+                            charterOrDescriptionRow(chart: chart)
 
                             Divider().padding(.leading, AppTheme.Space.m)
 
@@ -381,7 +389,9 @@ struct SongDetailView: View {
                 }
             }
 
-            ChartNotesBarCard(chart: chart, maxStats: store.maxNotesStats, barColor: chart.difficulty.color)
+            if !currentSong.isUtage {
+                ChartNotesBarCard(chart: chart, maxStats: store.maxNotesStats, barColor: chart.difficulty.color)
+            }
 
             if !aliases.isEmpty {
                 AppSectionCard(title: "歌曲别名") {
@@ -417,23 +427,66 @@ struct SongDetailView: View {
             let rows = RatingCalculator.buildTierRows(
                 ds: chart.ds,
                 currentAchievement: record?.achievements,
-                b50BaselineRating: baseline
+                currentIsAP: record?.isAllPerfect == true,
+                b50BaselineRating: baseline,
+                includeAPBonusRow: store.serverRegion.usesAPBonus
             )
 
-            AppSectionCard(
-                title: "分段 Rating 对照",
-                subtitle: store.serverRegion.usesAPBonus
-                    ? "\(store.serverRegion.shortName)新规：达成 AP / AP+ 时单曲 Rating 额外 +1"
-                    : nil
-            ) {
+            AppSectionCard(title: "分段 Rating 对照") {
                 AppCapsuleLabel(text: String(format: "定数 %.1f", chart.ds))
             } content: {
-                RatingTierTable(rows: rows, showB50Column: showB50)
+                RatingTierTable(
+                    rows: rows,
+                    showB50Column: showB50,
+                    region: store.serverRegion
+                )
             }
         }
     }
 
     // MARK: - Helpers
+
+    @ViewBuilder
+    private func charterOrDescriptionRow(chart: ResolvedChart) -> some View {
+        let hasCharter = !chart.charter.isEmpty && chart.charter != "-"
+        if currentSong.isUtage && !hasCharter {
+            if let desc = currentSong.comment, !desc.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("谱面说明")
+                        .font(AppTheme.Typography.inlineAction)
+                        .foregroundStyle(.secondary)
+                    Text(desc)
+                        .font(AppTheme.Typography.rowTitle)
+                        .foregroundStyle(.primary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .padding(.horizontal, AppTheme.Space.m)
+                .padding(.vertical, 10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+                .onLongPressGesture { copyText(desc, label: "谱面说明") }
+            } else {
+                detailRow("谱面说明") {
+                    Text("—")
+                        .font(AppTheme.Typography.rowTitle)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        } else {
+            let displayCharter = hasCharter ? chart.charter : "—"
+            detailRow("谱面作者") {
+                Text(displayCharter)
+                    .font(AppTheme.Typography.rowTitle)
+                    .multilineTextAlignment(.trailing)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .onLongPressGesture {
+                if hasCharter {
+                    copyText(chart.charter, label: "谱面作者")
+                }
+            }
+        }
+    }
 
     private func detailRow<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         HStack(alignment: .center, spacing: AppTheme.Space.m) {
@@ -456,7 +509,7 @@ struct SongDetailView: View {
                 Text(String(format: "%.4f%%", record.achievements))
                     .font(AppTheme.Typography.rowMetric)
                     .contentTransition(.numericText())
-                RecordStatusBadges(record: record, size: .regular)
+                RecordStatusBadges(record: record, size: .regular, region: store.serverRegion)
             }
         } else {
             Text("暂无成绩")

@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct RatingCalculatorView: View {
+    @Environment(DataStore.self) private var store
+
     private enum CalculatorMode: Int, CaseIterable {
         case singleSong = 0
         case targetReverse = 1
@@ -143,9 +145,11 @@ struct RatingCalculatorView: View {
                 RatingTierTable(
                     rows: RatingCalculator.buildTierRows(
                         ds: selectedDS,
-                        currentAchievement: Double(customAchiInput.trimmingCharacters(in: .whitespaces))
+                        currentAchievement: Double(customAchiInput.trimmingCharacters(in: .whitespaces)),
+                        includeAPBonusRow: store.serverRegion.usesAPBonus
                     ),
-                    showB50Column: false
+                    showB50Column: false,
+                    region: store.serverRegion
                 )
             }
         }

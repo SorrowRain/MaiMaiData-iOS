@@ -254,6 +254,37 @@ enum MaimaiConstants {
         }
     }
 
+    static func shortGenreDisplayName(for genre: String) -> String {
+        genre == "niconico & VOCALOID" ? "VOCALOID" : genre
+    }
+
+    enum RankIconTheme: String {
+        case prism
+        case circle
+    }
+
+    static let validRankKeys: Set<String> = [
+        "d", "c", "b", "bb", "bbb", "a", "aa", "aaa", "s", "sp", "ss", "ssp", "sss", "sssp"
+    ]
+
+    static func rankIconTheme(for region: ServerRegion) -> RankIconTheme {
+        switch region {
+        case .cn:
+            return .prism
+        case .intl, .jp:
+            return .circle
+        }
+    }
+
+    static func rankAssetName(for rate: String, region: ServerRegion) -> String {
+        let lower = rate.lowercased()
+        if lower == "ap" || lower == "app" {
+            return "mmd_player_rtsong_\(lower)"
+        }
+        let safeRate = validRankKeys.contains(lower) ? lower : "d"
+        return "mmd_rank_\(rankIconTheme(for: region).rawValue)_\(safeRate)"
+    }
+
     /// Resolves the version logo asset and fallback label for the active game server.
     static func activeServerVersionDisplay(
         for info: SongData.BasicInfo,

@@ -13,7 +13,8 @@ enum Best50Renderer {
         playerName: String,
         songsById: [Int: SongData],
         b35: [ProberRecord],
-        b15: [ProberRecord]
+        b15: [ProberRecord],
+        region: MaimaiConstants.ServerRegion = .cn
     ) async -> UIImage? {
         let allRecords = b35 + b15
         guard !allRecords.isEmpty else { return nil }
@@ -51,7 +52,8 @@ enum Best50Renderer {
                 playerName: playerName,
                 covers: frozenCovers,
                 b35: b35,
-                b15: b15
+                b15: b15,
+                region: region
             )
         }.value
     }
@@ -60,7 +62,8 @@ enum Best50Renderer {
         playerName: String,
         covers: [Int: UIImage],
         b35: [ProberRecord],
-        b15: [ProberRecord]
+        b15: [ProberRecord],
+        region: MaimaiConstants.ServerRegion
     ) -> UIImage {
         let totalSize = CGSize(width: containerWidth, height: containerHeight + headerHeight)
         let format = UIGraphicsImageRendererFormat()
@@ -80,7 +83,7 @@ enum Best50Renderer {
             for (idx, record) in b35.enumerated() {
                 let x = CGFloat(idx % 7) * (itemWidth + itemPadding)
                 let y = headerHeight + CGFloat(idx / 7) * (itemHeight + itemPadding)
-                drawRecordCard(record, cover: covers[record.songId], at: CGPoint(x: x, y: y))
+                drawRecordCard(record, cover: covers[record.songId], region: region, at: CGPoint(x: x, y: y))
             }
 
             // New Version (B15: 3 columns x 5 rows)
@@ -88,7 +91,7 @@ enum Best50Renderer {
             for (idx, record) in b15.enumerated() {
                 let x = newOriginX + CGFloat(idx % 3) * (itemWidth + itemPadding)
                 let y = headerHeight + CGFloat(idx / 3) * (itemHeight + itemPadding)
-                drawRecordCard(record, cover: covers[record.songId], at: CGPoint(x: x, y: y))
+                drawRecordCard(record, cover: covers[record.songId], region: region, at: CGPoint(x: x, y: y))
             }
 
             let oldRating = b35.reduce(0) { $0 + $1.computedRating }
@@ -140,7 +143,12 @@ enum Best50Renderer {
         }
     }
 
-    private static func drawRecordCard(_ record: ProberRecord, cover: UIImage?, at origin: CGPoint) {
+    private static func drawRecordCard(
+        _ record: ProberRecord,
+        cover: UIImage?,
+        region: MaimaiConstants.ServerRegion,
+        at origin: CGPoint
+    ) {
         let cardRect = CGRect(origin: origin, size: CGSize(width: itemWidth, height: itemHeight))
 
         UIImage(named: record.ratingBoardAssetName)?.draw(in: cardRect)
@@ -161,7 +169,7 @@ enum Best50Renderer {
         UIImage(named: record.typeAssetName)?.draw(in: CGRect(x: origin.x + 101, y: origin.y, width: 96, height: 27))
 
         // Rank badge
-        UIImage(named: record.rankAssetName)?.draw(in: CGRect(x: origin.x + 22, y: origin.y + 145, width: 84, height: 32))
+        UIImage(named: record.rankAssetName(for: region))?.draw(in: CGRect(x: origin.x + 22, y: origin.y + 145, width: 84, height: 32))
 
         // FC / FS badges
         if let fcName = record.fcAssetName, let fcImg = UIImage(named: fcName) {

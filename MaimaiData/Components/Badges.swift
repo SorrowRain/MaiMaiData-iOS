@@ -283,12 +283,13 @@ struct RecordStatusBadges: View {
 
     let record: ProberRecord
     var size: Size = .compact
+    var region: MaimaiConstants.ServerRegion = .cn
 
     var body: some View {
         let rankHeight: CGFloat = size == .regular ? 20 : 16
         let markHeight: CGFloat = size == .regular ? 22 : 18
 
-        Image(record.rankAssetName)
+        Image(record.rankAssetName(for: region))
             .resizable()
             .scaledToFit()
             .frame(height: rankHeight)

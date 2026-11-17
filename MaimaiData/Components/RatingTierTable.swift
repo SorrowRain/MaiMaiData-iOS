@@ -7,6 +7,7 @@ struct RatingTierTable: View {
     @Environment(\.colorScheme) private var colorScheme
     let rows: [RatingCalculator.TierRow]
     var showB50Column: Bool = false
+    var region: MaimaiConstants.ServerRegion = .cn
 
     var body: some View {
         AppInsetGroup {
@@ -40,17 +41,24 @@ struct RatingTierTable: View {
     private func tierRowView(_ row: RatingCalculator.TierRow) -> some View {
         HStack(spacing: AppTheme.Space.s) {
             HStack(spacing: 4) {
-                // All rank PNGs share a 200x89 canvas where `sss`/`ss`/`s`/`aaa` center their
-                // letters at x=100px, while `sssp`/`ssp`/`sp` include the trailing `+` in canvas
-                // centering (shifting the base letters 13~14px left). Shifting `+` variants right
-                // aligns the base letters (`SSS`, `SS`, `S`) identically within each tier while
-                // keeping all letter bodies centered along the same vertical axis.
-                Image(row.rankAssetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 18)
-                    .offset(x: opticalLetterOffset(for: row.rate))
-                    .frame(width: 46, height: 18, alignment: .leading)
+                if row.isAPRow {
+                    Image(row.badgeAssetName(for: region))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
+                        .frame(width: 38.4, height: 18, alignment: .center)
+                        .frame(width: 46, height: 18, alignment: .leading)
+                } else {
+                    // All PRiSM & CiRCLE rank PNGs share a 256x120 canvas (38.4x18pt at height 18).
+                    // `+` variants shift base letters slightly left to center the trailing `+`;
+                    // measured per-theme offsets align the base `S` glyphs identically within each tier.
+                    Image(row.badgeAssetName(for: region))
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 18)
+                        .offset(x: opticalLetterOffset(for: row.rate))
+                        .frame(width: 46, height: 18, alignment: .leading)
+                }
 
                 Text(row.achievementText)
                     .font(AppTheme.Typography.captionMono)
@@ -102,13 +110,21 @@ struct RatingTierTable: View {
     }
 
     private func opticalLetterOffset(for rate: String) -> CGFloat {
-        switch rate {
-        case "sssp":
-            return 2.6
-        case "ssp", "sp":
-            return 2.8
-        default:
-            return 0
+        switch MaimaiConstants.rankIconTheme(for: region) {
+        case .prism:
+            switch rate {
+            case "sssp": return 2.25
+            case "ssp": return 2.40
+            case "sp": return 2.55
+            default: return 0
+            }
+        case .circle:
+            switch rate {
+            case "sssp": return 2.55
+            case "ssp": return 2.25
+            case "sp": return 3.45
+            default: return 0
+            }
         }
     }
 }

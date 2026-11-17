@@ -10,7 +10,9 @@ struct SongData: Codable, Identifiable, Hashable {
     let title: String
     let type: String
     var alias: [String]?
+    var comment: String? = nil
     var remoteCoverName: String? = nil
+    var preferRemoteCover: Bool? = nil
     var sortOrder: Int? = nil
 
     enum CodingKeys: String, CodingKey {
@@ -23,7 +25,9 @@ struct SongData: Codable, Identifiable, Hashable {
         case title
         case type
         case alias
+        case comment
         case remoteCoverName = "remote_cover"
+        case preferRemoteCover = "prefer_remote_cover"
         case sortOrder = "sort_order"
     }
 
@@ -62,6 +66,7 @@ struct SongData: Codable, Identifiable, Hashable {
                 oldDs: meaningfulOldDs,
                 level: level.indices.contains(idx) ? level[idx] : "-",
                 charter: raw.charter,
+                kanji: raw.kanji,
                 tap: tap,
                 hold: hold,
                 slide: slide,
@@ -79,6 +84,9 @@ struct SongData: Codable, Identifiable, Hashable {
             return [Self.zetarakuCoverURL(for: remoteCoverName)].compactMap { $0 }
         }
         var urls: [URL] = []
+        if preferRemoteCover == true, let remoteURL = Self.zetarakuCoverURL(for: remoteCoverName) {
+            urls.append(remoteURL)
+        }
         if let lxns = URL(string: "https://assets2.lxns.net/maimai/jacket/\(baseJacketId).png") {
             urls.append(lxns)
         }
@@ -92,7 +100,7 @@ struct SongData: Codable, Identifiable, Hashable {
                 urls.append(dfBase)
             }
         }
-        if let remoteURL = Self.zetarakuCoverURL(for: remoteCoverName) {
+        if preferRemoteCover != true, let remoteURL = Self.zetarakuCoverURL(for: remoteCoverName) {
             urls.append(remoteURL)
         }
         return urls
@@ -126,6 +134,7 @@ struct SongData: Codable, Identifiable, Hashable {
     struct RawChart: Codable, Hashable {
         let charter: String
         let notes: [Int]
+        var kanji: String? = nil
     }
 
     /// Synchronizes song-level community aliases across SD <-> DX counterpart pairs (`id ± 10000`),
@@ -193,6 +202,7 @@ struct ResolvedChart: Identifiable, Hashable {
     let oldDs: Double?
     let level: String
     let charter: String
+    let kanji: String?
     let tap: Int
     let hold: Int
     let slide: Int

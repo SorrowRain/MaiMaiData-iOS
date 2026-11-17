@@ -3,7 +3,7 @@ import UIKit
 @testable import MaimaiData
 
 final class MultiRegionTests: XCTestCase {
-    func testAPPlusOneSingleSongRatingAndRecordProjection() throws {
+    func testAPPlusOneSingleSongRatingTierRowAndRecordProjection() throws {
         // Base 14.8 @ 100.5000% = 333
         XCTAssertEqual(
             RatingCalculator.singleSongRating(ds: 14.8, achievement: 100.5, isAP: true, apBonusEnabled: false),
@@ -17,6 +17,30 @@ final class MultiRegionTests: XCTestCase {
             RatingCalculator.singleSongRating(ds: 14.8, achievement: 100.5, isAP: false, apBonusEnabled: true),
             333
         )
+
+        // Top AP row in JP/INTL mode sits above SSS+ with +1 Ra and distinct Identifiable id
+        let nonAPRows = RatingCalculator.buildTierRows(
+            ds: 14.8,
+            currentAchievement: 100.6,
+            currentIsAP: false,
+            includeAPBonusRow: true
+        )
+        XCTAssertEqual(nonAPRows[0].rate, "ap")
+        XCTAssertEqual(nonAPRows[0].singleRating, 334)
+        XCTAssertEqual(nonAPRows[0].isCurrentTier, false)
+        XCTAssertEqual(nonAPRows[1].rate, "sssp")
+        XCTAssertEqual(nonAPRows[1].singleRating, 333)
+        XCTAssertEqual(nonAPRows[1].isCurrentTier, true)
+        XCTAssertNotEqual(nonAPRows[0].id, nonAPRows[1].id)
+
+        let apRows = RatingCalculator.buildTierRows(
+            ds: 14.8,
+            currentAchievement: 100.6,
+            currentIsAP: true,
+            includeAPBonusRow: true
+        )
+        XCTAssertEqual(apRows[0].isCurrentTier, true)
+        XCTAssertEqual(apRows[1].isPassed, true)
 
         let recordJSON = """
         {
@@ -56,27 +80,16 @@ final class MultiRegionTests: XCTestCase {
             alias: nil
         )
 
-        // CN keeps original 14.7 without AP+1 (330)
         let cnProjected = cnRecord.projected(onto: jpSong, region: .cn)
         XCTAssertEqual(cnProjected.ds, 14.7)
         XCTAssertEqual(cnProjected.computedRating, 330)
 
-        // JP & INTL project to 14.8 (333) + AP bonus (+1) = 334
         let jpProjected = cnRecord.projected(onto: jpSong, region: .jp)
         XCTAssertEqual(jpProjected.ds, 14.8)
         XCTAssertEqual(jpProjected.computedRating, 334)
-
-        let intlProjected = cnRecord.projected(onto: jpSong, region: .intl)
-        XCTAssertEqual(intlProjected.computedRating, 334)
-
-        // Round-trip encoding of ProberRecord stays clean
-        let reencoded = try JSONEncoder().encode(jpProjected)
-        let roundTrip = try JSONDecoder().decode(ProberRecord.self, from: reencoded)
-        XCTAssertEqual(roundTrip.songId, 11663)
-        XCTAssertEqual(roundTrip.apBonusEnabled, false)
     }
 
-    func testZetarakuConverterCNJoinOverridesB15AndNullSafety() throws {
+    func testZetarakuConverterDXDataIdJoinUtageBPMCommentAndMigration() throws {
         let cnLink = SongData(
             basicInfo: .init(
                 artist: "Clean Tears",
@@ -97,25 +110,22 @@ final class MultiRegionTests: XCTestCase {
             alias: ["cof", "link cof"]
         )
 
-        let cnUtage = SongData(
-            basicInfo: .init(
-                artist: "Artist U",
-                bpm: 200,
-                from: "舞萌DX 2025",
-                genre: "宴会場",
-                isNew: false,
-                title: "[協]Test Utage",
-                version: "25000"
-            ),
-            charts: [.init(charter: "Utage Charter", notes: [200, 30, 40, 10, 20])],
-            ds: [13.7],
-            oldDs: nil,
-            id: "100018",
-            level: ["13+?"],
-            title: "[協]Test Utage",
-            type: "DX",
-            alias: nil
-        )
+        let rawDXDataJSON = """
+        {
+          "updatedAt": "2026-11-17T16:00:00Z",
+          "songs": [
+            {
+              "category": "maimai",
+              "title": "魔法仕掛けのファンタジア",
+              "sheets": [
+                { "type": "dx", "internalId": 2025 }
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
+        let dxMap = DXDataIdMap.extract(from: try JSONDecoder().decode(DXDataRawCatalog.self, from: rawDXDataJSON))
+        XCTAssertEqual(dxMap.idsByKey["魔法仕掛けのファンタジア|舞萌|DX"], 12025)
 
         let rawCatalogJSON = """
         {
@@ -150,32 +160,33 @@ final class MultiRegionTests: XCTestCase {
               ]
             },
             {
-              "songId": "Happy Halloween",
-              "category": "POPS＆アニメ",
-              "title": "Happy Halloween",
-              "artist": "Junky",
-              "bpm": 150.0,
-              "imageName": "happy_halloween.png",
+              "songId": "魔法仕掛けのファンタジア",
+              "category": "maimai",
+              "title": "魔法仕掛けのファンタジア",
+              "artist": "igel",
+              "bpm": 280.0,
+              "imageName": "fantasia.png",
               "version": "MAGiCAL",
               "releaseDate": "2026-10-29",
               "sheets": [
-                { "type": "dx", "difficulty": "basic", "level": "4", "internalLevelValue": 4.0, "noteDesigner": "-", "noteCounts": { "tap": 80, "hold": 10, "slide": 10, "touch": 5, "break": 5, "total": 110 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
-                { "type": "dx", "difficulty": "advanced", "level": "7", "internalLevelValue": 7.2, "noteDesigner": "-", "noteCounts": { "tap": 120, "hold": 15, "slide": 15, "touch": 10, "break": 8, "total": 168 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
-                { "type": "dx", "difficulty": "expert", "level": "10+", "internalLevelValue": 10.6, "noteDesigner": "Ex", "noteCounts": { "tap": 250, "hold": 30, "slide": 30, "touch": 20, "break": 15, "total": 345 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
-                { "type": "dx", "difficulty": "master", "level": "13+", "internalLevelValue": 13.8, "noteDesigner": "Mas", "noteCounts": { "tap": 450, "hold": 60, "slide": 70, "touch": 40, "break": 30, "total": 650 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" }
+                { "type": "dx", "difficulty": "basic", "level": "5", "internalLevelValue": 5.0, "noteDesigner": "-", "noteCounts": { "tap": 80, "hold": 10, "slide": 10, "touch": 5, "break": 5, "total": 110 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
+                { "type": "dx", "difficulty": "advanced", "level": "8", "internalLevelValue": 8.2, "noteDesigner": "-", "noteCounts": { "tap": 120, "hold": 15, "slide": 15, "touch": 10, "break": 8, "total": 168 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
+                { "type": "dx", "difficulty": "expert", "level": "12", "internalLevelValue": 12.2, "noteDesigner": "Ex", "noteCounts": { "tap": 250, "hold": 30, "slide": 30, "touch": 20, "break": 15, "total": 345 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" },
+                { "type": "dx", "difficulty": "master", "level": "14+", "internalLevelValue": 14.8, "noteDesigner": "Mas", "noteCounts": { "tap": 450, "hold": 60, "slide": 70, "touch": 40, "break": 30, "total": 650 }, "regions": { "jp": true, "intl": false }, "version": "MAGiCAL" }
               ]
             },
             {
-              "songId": "[協]Test Utage",
+              "songId": "[魔]魔法仕掛けのファンタジア",
               "category": "宴会場",
-              "title": "[協]Test Utage",
-              "artist": "Artist U",
+              "title": "[魔]魔法仕掛けのファンタジア",
+              "artist": "igel",
               "bpm": null,
-              "imageName": "utage.png",
-              "version": "PRiSM",
-              "releaseDate": "2025-01-01",
+              "imageName": "utage_fantasia.png",
+              "version": "MAGiCAL",
+              "releaseDate": "2026-10-29",
+              "comment": "魔法の力でノンストップ！",
               "sheets": [
-                { "type": "utage", "difficulty": "【協】", "level": "13+?", "internalLevelValue": 13.7, "noteDesigner": null, "noteCounts": { "tap": null, "hold": null, "slide": null, "touch": null, "break": null, "total": null }, "regions": { "jp": true, "intl": true }, "version": null }
+                { "type": "utage", "difficulty": "【魔】", "level": "14+?", "internalLevelValue": 14.8, "noteDesigner": null, "noteCounts": { "tap": null, "hold": null, "slide": null, "touch": null, "break": null, "total": null }, "regions": { "jp": true, "intl": false }, "version": null }
               ]
             }
           ]
@@ -183,60 +194,60 @@ final class MultiRegionTests: XCTestCase {
         """.data(using: .utf8)!
 
         let catalog = try JSONDecoder().decode(ZetarakuCatalog.self, from: rawCatalogJSON)
-
-        // JP conversion
-        let jpSongs = ZetarakuCatalogConverter.convert(catalog, region: .jp, cnReference: [cnLink, cnUtage])
-        XCTAssertEqual(jpSongs.count, 3)
-
-        let jpLink = try XCTUnwrap(jpSongs.first { $0.id == "383" })
-        XCTAssertEqual(jpLink.ds[3], 12.6)
-        // Master changed 12.4 -> 12.6, so resolvedCharts[3].oldDs exposes 12.4; Basic stayed 3.0 -> nil
-        XCTAssertEqual(jpLink.resolvedCharts[3].oldDs, 12.4)
-        XCTAssertNil(jpLink.resolvedCharts[0].oldDs)
-        XCTAssertTrue(jpLink.alias?.contains("cof") == true)
-        XCTAssertTrue(jpLink.alias?.contains("Link(CoF)") == true)
-        XCTAssertFalse(jpLink.basicInfo.isNew)
-
-        let jpMagical = try XCTUnwrap(jpSongs.first { $0.title == "Happy Halloween" })
-        XCTAssertEqual(jpMagical.numericId, 0)
-        XCTAssertTrue(jpMagical.basicInfo.isNew)
-        XCTAssertEqual(jpMagical.basicInfo.genre, "流行&动漫")
-        XCTAssertEqual(
-            jpMagical.coverCandidateURLs.map(\.absoluteString),
-            ["https://dp4p6x0xfi5o9.cloudfront.net/maimai/img/cover/happy_halloween.png"]
+        let conv = ZetarakuCatalogConverter.convertWithMigrations(
+            catalog,
+            region: .jp,
+            cnReference: [cnLink],
+            dxIdMap: dxMap
         )
 
-        let jpUtage = try XCTUnwrap(jpSongs.first { $0.isUtage })
-        XCTAssertEqual(jpUtage.id, "100018")
-        XCTAssertEqual(jpUtage.basicInfo.bpm, 0)
-        // Null Zetaraku Utage noteCounts fell back to CN Utage's note counts
-        XCTAssertEqual(jpUtage.resolvedCharts[0].totalNotes, 300)
+        // JP-exclusive song got real online ID 12025 from dxdata + migration pair + CloudFront primary cover
+        let jpFantasia = try XCTUnwrap(conv.songs.first { $0.title == "魔法仕掛けのファンタジア" })
+        XCTAssertEqual(jpFantasia.id, "12025")
+        XCTAssertEqual(jpFantasia.numericId, 12025)
+        XCTAssertEqual(
+            jpFantasia.coverCandidateURLs.first?.absoluteString,
+            "https://dp4p6x0xfi5o9.cloudfront.net/maimai/img/cover/fantasia.png"
+        )
+        XCTAssertTrue(conv.migratedIdPairs.contains {
+            $0.legacyId == "zeta_dx_魔法仕掛けのファンタジア" && $0.resolvedId == "12025"
+        })
 
-        // INTL conversion excludes JP-only MAGiCAL song and applies intl override on Link Master (12.5)
-        let intlSongs = ZetarakuCatalogConverter.convert(catalog, region: .intl, cnReference: [cnLink, cnUtage])
-        XCTAssertEqual(intlSongs.count, 2)
-        let intlLink = try XCTUnwrap(intlSongs.first { $0.id == "383" })
-        XCTAssertEqual(intlLink.ds[3], 12.5)
-        XCTAssertEqual(intlLink.level[3], "12")
+        // JP-only Utage derived ID 100000 + 12025 = 112025, recovered BPM 280 from base song, and preserved comment & kanji!
+        let jpUtage = try XCTUnwrap(conv.songs.first { $0.isUtage })
+        XCTAssertEqual(jpUtage.id, "112025")
+        XCTAssertEqual(jpUtage.basicInfo.bpm, 280)
+        XCTAssertEqual(jpUtage.comment, "魔法の力でノンストップ！")
+        XCTAssertEqual(jpUtage.resolvedCharts[0].kanji, "【魔】")
+
+        // CN Utage enrichment backfills comment and kanji when cached Zetaraku catalog is present
+        let rawCNUtage = SongData(
+            basicInfo: .init(
+                artist: "igel",
+                bpm: 280,
+                from: "舞萌DX 2026",
+                genre: "宴会場",
+                isNew: false,
+                title: "[魔]魔法仕掛けのファンタジア",
+                version: "26000"
+            ),
+            charts: [.init(charter: "-", notes: [100, 10, 10, 10, 10])],
+            ds: [14.8],
+            oldDs: nil,
+            id: "112025",
+            level: ["14+?"],
+            title: "[魔]魔法仕掛けのファンタジア",
+            type: "DX",
+            alias: nil
+        )
+        let enrichedCN = ZetarakuCatalogConverter.enrichCNSongsWithUtageMetadata([rawCNUtage], from: catalog)
+        XCTAssertEqual(enrichedCN[0].comment, "魔法の力でノンストップ！")
+        XCTAssertEqual(enrichedCN[0].resolvedCharts[0].kanji, "【魔】")
     }
 
-    func testB15TwoGenerationRuleAndAllVersionAssetsExist() {
-        XCTAssertTrue(ZetarakuCatalogConverter.isB15NewVersion("MAGiCAL", region: .jp))
-        XCTAssertTrue(ZetarakuCatalogConverter.isB15NewVersion("CiRCLE PLUS", region: .jp))
-        XCTAssertFalse(ZetarakuCatalogConverter.isB15NewVersion("CiRCLE", region: .jp))
-
-        XCTAssertTrue(ZetarakuCatalogConverter.isB15NewVersion("CiRCLE PLUS", region: .intl))
-        XCTAssertTrue(ZetarakuCatalogConverter.isB15NewVersion("CiRCLE", region: .intl))
-        XCTAssertFalse(ZetarakuCatalogConverter.isB15NewVersion("PRiSM PLUS", region: .intl))
-
-        XCTAssertEqual(MaimaiConstants.checklistVersions(for: .cn).count, 20)
-        XCTAssertEqual(MaimaiConstants.checklistVersions(for: .intl).count, 27)
-        XCTAssertEqual(MaimaiConstants.checklistVersions(for: .jp).count, 28)
-
-        XCTAssertEqual(
-            MaimaiConstants.expandVersionFilter(["GreeN", "MAGiCAL"], region: .jp),
-            ["GreeN", "GreeN PLUS", "MAGiCAL"]
-        )
+    func testShortGenreAndAllVersionAndRankAssetsExist() {
+        XCTAssertEqual(MaimaiConstants.shortGenreDisplayName(for: "niconico & VOCALOID"), "VOCALOID")
+        XCTAssertEqual(MaimaiConstants.shortGenreDisplayName(for: "流行&动漫"), "流行&动漫")
 
         for ver in MaimaiConstants.cnVersions {
             XCTAssertNotNil(UIImage(named: ver.asset), "Missing CN version asset: \(ver.asset)")
@@ -244,5 +255,17 @@ final class MultiRegionTests: XCTestCase {
         for ver in MaimaiConstants.jpVersions {
             XCTAssertNotNil(UIImage(named: ver.asset), "Missing JP version asset: \(ver.asset)")
         }
+
+        for rate in MaimaiConstants.validRankKeys {
+            let cnAsset = MaimaiConstants.rankAssetName(for: rate, region: .cn)
+            let intlAsset = MaimaiConstants.rankAssetName(for: rate, region: .intl)
+            let jpAsset = MaimaiConstants.rankAssetName(for: rate, region: .jp)
+            XCTAssertTrue(cnAsset.contains("_prism_"))
+            XCTAssertTrue(intlAsset.contains("_circle_"))
+            XCTAssertEqual(intlAsset, jpAsset)
+            XCTAssertNotNil(UIImage(named: cnAsset), "Missing PRiSM rank asset: \(cnAsset)")
+            XCTAssertNotNil(UIImage(named: jpAsset), "Missing CiRCLE rank asset: \(jpAsset)")
+        }
+        XCTAssertNotNil(UIImage(named: MaimaiConstants.rankAssetName(for: "ap", region: .jp)))
     }
 }

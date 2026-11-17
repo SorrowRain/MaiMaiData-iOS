@@ -107,7 +107,7 @@ enum RatingCalculator {
     // MARK: - Per-Chart Rating Tier Table (with SSS Intra-Tier +1 Thresholds & B50 Net Gain)
 
     struct TierRow: Identifiable, Equatable {
-        var id: Int { achiTenThousandths }
+        var id: String { "\(rate)_\(achiTenThousandths)" }
         let rate: String
         let achiTenThousandths: Int
         let singleRating: Int
@@ -116,33 +116,33 @@ enum RatingCalculator {
         /// Net increase to player's total B50 rating (`nil` when already reached or when B50 column is hidden).
         let b50Gain: Int?
 
+        var isAPRow: Bool { rate == "ap" }
+
         var achievementText: String {
             String(format: "%.4f%%", Double(achiTenThousandths) / 10_000.0)
         }
 
-        var rankAssetName: String {
-            "mmd_player_rtsong_\(rate)"
+        func badgeAssetName(for region: MaimaiConstants.ServerRegion) -> String {
+            MaimaiConstants.rankAssetName(for: rate, region: region)
         }
     }
 
-    /// Builds the descending achievement tier table (`SSS+` -> intra-`SSS` +1 jump lines -> `SSS` -> ... -> `AAA`).
-    /// - Parameters:
-    ///   - ds: Chart constant (e.g. `14.8`).
-    ///   - currentAchievement: Player's current achievement on this chart, if any.
-    ///   - b50BaselineRating: If logged in, the rating threshold this chart must exceed to add total B50 points
-    ///     (either the chart's own existing rating if already in B35/B15, or the current B35/B15 floor rating).
-    ///     Pass `nil` when not logged in so `b50Gain` is omitted.
+    /// Builds the descending achievement tier table (`AP` -> `SSS+` -> intra-`SSS` +1 jump lines -> `SSS` -> ... -> `AAA`).
     static func buildTierRows(
         ds: Double,
         currentAchievement: Double? = nil,
-        b50BaselineRating: Int? = nil
+        currentIsAP: Bool = false,
+        b50BaselineRating: Int? = nil,
+        includeAPBonusRow: Bool = false
     ) -> [TierRow] {
         let lv = Int((ds * 10).rounded())
         guard lv > 0 else { return [] }
 
-        var specs: [(rate: String, achi: Int)] = [
-            ("sssp", 1_005_000)
-        ]
+        var specs: [(rate: String, achi: Int)] = []
+        if includeAPBonusRow {
+            specs.append(("ap", 1_005_000))
+        }
+        specs.append(("sssp", 1_005_000))
 
         // Compute exact +1 Ra integer jump thresholds strictly inside SSS (100.0001% ... 100.4998%)
         let baseSSSRa = achievementToRating(levelTenths: lv, achievementTenThousandths: 1_000_000)
@@ -168,11 +168,17 @@ enum RatingCalculator {
         let currentAchiInt = currentAchievement.map { Int(($0 * 10_000).rounded()) }
         let matchedCurrentIndex: Int? = {
             guard let cur = currentAchiInt else { return nil }
-            return specs.firstIndex { cur >= $0.achi }
+            return specs.firstIndex { spec in
+                if spec.rate == "ap" {
+                    return currentIsAP && cur >= spec.achi
+                }
+                return cur >= spec.achi
+            }
         }()
 
         return specs.enumerated().map { idx, spec in
-            let ra = achievementToRating(levelTenths: lv, achievementTenThousandths: spec.achi)
+            let baseRa = achievementToRating(levelTenths: lv, achievementTenThousandths: spec.achi)
+            let ra = spec.rate == "ap" ? (baseRa + 1) : baseRa
             let isCurrent = (matchedCurrentIndex == idx)
             let isPassed: Bool = {
                 guard let matchedCurrentIndex else { return false }
@@ -181,7 +187,7 @@ enum RatingCalculator {
 
             let gain: Int? = {
                 guard let baseline = b50BaselineRating else { return nil }
-                if let cur = currentAchiInt, spec.achi <= cur {
+                if let cur = currentAchiInt, spec.achi <= cur, (spec.rate != "ap" || currentIsAP) {
                     return 0
                 }
                 return max(0, ra - baseline)

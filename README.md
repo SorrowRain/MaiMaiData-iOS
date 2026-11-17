@@ -64,7 +64,7 @@ MaimaiDataTests/             # 单元测试（Rating 计算边界与曲库多维
 - 谱面统计数据与玩家查分接口由 [Diving-Fish（水鱼查分器）](https://github.com/Diving-Fish/maimaidx-prober) 提供
 - 高清曲绘镜像源由 [LXNS（落雪咖啡屋）](https://lxns.net/) 与 Diving-Fish 提供
 - 曲目别名库来自 [Yuri-YuzuChaN/maimaiDX](https://github.com/Yuri-YuzuChaN/maimaiDX)
-- 日服与国际服曲库及封面数据源由 [zetaraku/arcade-songs-fetch](https://github.com/zetaraku/arcade-songs-fetch) 提供
+- 日服与国际服曲库及封面数据源由 [zetaraku/arcade-songs-fetch](https://github.com/zetaraku/arcade-songs-fetch) 提供，曲目底层 ID 映射由 [DXRating](https://github.com/gekichumai/dxrating) 提供
 
 ## 开源许可
 

@@ -63,11 +63,11 @@ struct ProberView: View {
                         let song = store.songsById[record.songId]
                         if let song {
                             NavigationLink(value: SongDetailRoute(song: song, initialDifficulty: record.difficulty)) {
-                                ProberRecordRow(rank: idx + 1, record: record, song: song)
+                                ProberRecordRow(rank: idx + 1, record: record, song: song, region: store.serverRegion)
                             }
                             .buttonStyle(.plain)
                         } else {
-                            ProberRecordRow(rank: idx + 1, record: record, song: nil)
+                            ProberRecordRow(rank: idx + 1, record: record, song: nil, region: store.serverRegion)
                         }
                     }
                 }
@@ -166,7 +166,8 @@ struct ProberView: View {
             playerName: store.displayPlayerName,
             songsById: store.songsById,
             b35: b35,
-            b15: b15
+            b15: b15,
+            region: store.serverRegion
         ) {
             b50PreviewItem = B50PreviewItem(image: image)
         } else {
@@ -179,6 +180,7 @@ private struct ProberRecordRow: View {
     let rank: Int
     let record: ProberRecord
     let song: SongData?
+    let region: MaimaiConstants.ServerRegion
 
     var body: some View {
         let diff = record.difficulty
@@ -218,7 +220,7 @@ private struct ProberRecordRow: View {
                             .font(AppTheme.Typography.captionMetaBold)
                             .foregroundStyle(.primary)
 
-                        RecordStatusBadges(record: record, size: .compact)
+                        RecordStatusBadges(record: record, size: .compact, region: region)
 
                         Spacer(minLength: 0)
 
