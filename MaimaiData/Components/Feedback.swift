@@ -9,10 +9,18 @@ extension View {
             let base: Glass = interactive ? .regular.interactive() : .regular
             glassEffect(tint.map { interactive ? Glass.regular.tint($0).interactive() : Glass.regular.tint($0) } ?? base, in: shape)
         } else {
-            background(.ultraThinMaterial, in: shape)
-                .background {
-                    if let tint { shape.fill(tint.opacity(0.85)) }
+            // Layer order matters: backgrounds applied later sit further behind. The tint must be
+            // closest to the content so the material does not wash out the brand color.
+            background {
+                if let tint { shape.fill(tint.opacity(0.85)) }
+            }
+            .background(.ultraThinMaterial, in: shape)
+            .overlay {
+                // Untinted fallback (secondary/circle buttons) needs a hairline edge on light pages.
+                if tint == nil {
+                    shape.stroke(Color.primary.opacity(0.08), lineWidth: 1)
                 }
+            }
         }
     }
 
