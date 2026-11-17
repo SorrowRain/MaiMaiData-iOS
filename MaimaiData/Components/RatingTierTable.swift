@@ -8,6 +8,10 @@ struct RatingTierTable: View {
     let rows: [RatingCalculator.TierRow]
     var showB50Column: Bool = false
 
+    private var singleRaColumnWidth: CGFloat {
+        showB50Column ? 76 : 88
+    }
+
     var body: some View {
         AppInsetGroup {
             VStack(spacing: 0) {
@@ -15,10 +19,10 @@ struct RatingTierTable: View {
                     Text("分段档位")
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Text("单曲 Ra")
-                        .frame(width: 68, alignment: .trailing)
+                        .frame(width: singleRaColumnWidth, alignment: .center)
                     if showB50Column {
                         Text("B50 可加")
-                            .frame(width: 72, alignment: .trailing)
+                            .frame(width: 76, alignment: .center)
                     }
                 }
                 .font(AppTheme.Typography.caption2Bold)
@@ -45,10 +49,7 @@ struct RatingTierTable: View {
                 Text(row.achievementText)
                     .font(row.isCurrentTier ? AppTheme.Typography.captionMeta : AppTheme.Typography.captionMono)
                     .foregroundStyle(.primary)
-
-                if row.isCurrentTier {
-                    AppCapsuleLabel(text: "当前", style: .compact)
-                }
+                    .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -56,28 +57,23 @@ struct RatingTierTable: View {
                 .font(AppTheme.Typography.captionMeta)
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
-                .frame(width: 68, alignment: .trailing)
+                .frame(width: singleRaColumnWidth, alignment: .center)
 
             if showB50Column {
+                let gain = row.b50Gain ?? 0
                 Group {
-                    if let gain = row.b50Gain {
-                        if gain > 0 {
-                            Text("+\(gain)")
-                                .font(AppTheme.Typography.captionMetaBold)
-                                .foregroundStyle(AppTheme.accentText)
-                                .contentTransition(.numericText())
-                        } else {
-                            Text("+0")
-                                .font(AppTheme.Typography.captionMono)
-                                .foregroundStyle(.secondary)
-                        }
+                    if gain > 0 {
+                        Text("+\(gain)")
+                            .font(AppTheme.Typography.captionMetaBold)
+                            .foregroundStyle(AppTheme.accentText)
+                            .contentTransition(.numericText())
                     } else {
-                        Text("—")
+                        Text("+0")
                             .font(AppTheme.Typography.captionMono)
                             .foregroundStyle(.tertiary)
                     }
                 }
-                .frame(width: 72, alignment: .trailing)
+                .frame(width: 76, alignment: .center)
             }
         }
         .padding(.horizontal, AppTheme.Space.m)

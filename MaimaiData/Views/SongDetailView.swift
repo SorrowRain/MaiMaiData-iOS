@@ -115,17 +115,11 @@ struct SongDetailView: View {
                 .accessibilityLabel("放大查看《\(currentSong.title)》封面")
 
                 VStack(alignment: .leading, spacing: 6) {
-                    if let counterpart {
-                        HStack {
-                            Spacer(minLength: 0)
-                            counterpartSwitchBadge(to: counterpart)
-                        }
-                    }
-
                     Text(currentSong.title)
                         .font(AppTheme.Typography.heroTitle)
                         .foregroundStyle(.white)
                         .fixedSize(horizontal: false, vertical: true)
+                        .padding(.trailing, counterpart != nil ? 56 : 0)
                         .onLongPressGesture { copyText(currentSong.title, label: "歌曲名") }
 
                     Text(currentSong.basicInfo.artist)
@@ -156,6 +150,13 @@ struct SongDetailView: View {
         .overlay(
             shape.strokeBorder(Color.white.opacity(0.22), lineWidth: 1)
         )
+        .overlay(alignment: .topTrailing) {
+            if let counterpart {
+                counterpartSwitchBadge(to: counterpart)
+                    .padding(.top, 10)
+                    .padding(.trailing, 10)
+            }
+        }
     }
 
     private func counterpartSwitchBadge(to counterpart: SongData) -> some View {
@@ -170,19 +171,16 @@ struct SongDetailView: View {
                 selectedChartIndex = nextIdx
             }
         } label: {
-            HStack(spacing: AppTheme.Space.xs) {
+            HStack(spacing: 3) {
                 Image(systemName: "arrow.left.arrow.right")
-                    .font(AppTheme.Typography.caption2Bold)
-                Text(counterpart.isDX ? "切至 DX" : "切至标准")
+                    .font(AppTheme.Typography.caption2)
+                Text(counterpart.isDX ? "DX" : "标准")
                     .font(AppTheme.Typography.caption2Semibold)
             }
-            .foregroundStyle(.white.opacity(0.95))
+            .foregroundStyle(.white.opacity(0.82))
             .padding(.horizontal, AppTheme.Space.s)
-            .padding(.vertical, 4)
-            .background(Color.black.opacity(0.22), in: Capsule())
-            .overlay(
-                Capsule().strokeBorder(Color.white.opacity(0.24), lineWidth: 0.8)
-            )
+            .padding(.vertical, 3)
+            .background(Color.black.opacity(0.18), in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -314,14 +312,14 @@ struct SongDetailView: View {
                         }
                     }
 
-                    AppInsetGroup(padding: AppTheme.Space.m) {
-                        VStack(spacing: AppTheme.itemSpacing) {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
                             detailRow("收录版本") {
                                 if let asset = versionInfo.asset {
                                     Image(asset)
                                         .resizable()
                                         .scaledToFit()
-                                        .frame(maxWidth: 116, maxHeight: 28, alignment: .trailing)
+                                        .frame(maxWidth: 108, maxHeight: 22, alignment: .trailing)
                                         .accessibilityLabel(versionInfo.fallback)
                                 } else {
                                     Text(versionInfo.fallback)
@@ -330,7 +328,7 @@ struct SongDetailView: View {
                                 }
                             }
 
-                            Divider()
+                            Divider().padding(.leading, AppTheme.Space.m)
 
                             detailRow("谱面作者") {
                                 Text(chart.charter.isEmpty ? "—" : chart.charter)
@@ -338,10 +336,9 @@ struct SongDetailView: View {
                                     .multilineTextAlignment(.trailing)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
-                            .contentShape(Rectangle())
                             .onLongPressGesture { copyText(chart.charter, label: "谱面作者") }
 
-                            Divider()
+                            Divider().padding(.leading, AppTheme.Space.m)
 
                             detailRow("我的成绩") {
                                 recordSummary(record)
@@ -407,7 +404,10 @@ struct SongDetailView: View {
             Spacer(minLength: AppTheme.Space.m)
             content()
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, AppTheme.Space.m)
+        .padding(.vertical, AppTheme.Space.s)
+        .frame(maxWidth: .infinity, minHeight: 42)
+        .contentShape(Rectangle())
     }
 
     @ViewBuilder

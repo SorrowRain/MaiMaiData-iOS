@@ -84,15 +84,15 @@ final class RatingCalculatorTests: XCTestCase {
         XCTAssertEqual(sssRows.map(\.achiTenThousandths), [1_004_130, 1_001_002, 1_000_000])
         XCTAssertEqual(sssRows.map(\.singleRating), [321, 320, 319])
 
-        // Current score 98.3500% highlights S+ (98.0000%)
+        // Current score 98.3500% highlights S+ (98.0000%), which has 0 remaining gain
         let current = rows.first { $0.isCurrentTier }
         XCTAssertEqual(current?.rate, "sp")
-        XCTAssertNil(current?.b50Gain)
+        XCTAssertEqual(current?.b50Gain, 0)
 
-        // Tiers below S+ (97%, 94%) are marked passed with nil gain
+        // Tiers below S+ (97%, 94%) are marked passed with +0 gain
         let sRow = rows.first { $0.rate == "s" }
         XCTAssertEqual(sRow?.isPassed, true)
-        XCTAssertNil(sRow?.b50Gain)
+        XCTAssertEqual(sRow?.b50Gain, 0)
 
         // SS (99.0% -> 304) exceeds baseline 300 by +4; SSS+ (333) exceeds by +33
         XCTAssertEqual(rows.first { $0.rate == "ss" }?.b50Gain, 4)

@@ -95,3 +95,67 @@ struct ZoomableImageScrollView: UIViewRepresentable {
         }
     }
 }
+
+/// Adds a subtle GPU cross-dissolve to the enclosing `UITabBarController`'s content view
+/// when switching tabs, keeping rendered buffers 100% opaque (preventing any white window flash)
+/// without touching `UITabBarController.delegate` or the native Liquid Glass `UITabBar`.
+struct TabCrossfadeBridge: UIViewControllerRepresentable {
+    let selectedTab: Int
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(lastTab: selectedTab)
+    }
+
+    func makeUIViewController(context: Context) -> ProbeViewController {
+        let vc = ProbeViewController()
+        vc.onResolveTabBarController = { [weak coordinator = context.coordinator] tbc in
+            coordinator?.tabBarController = tbc
+        }
+        return vc
+    }
+
+    func updateUIViewController(_ uiViewController: ProbeViewController, context: Context) {
+        if let tbc = uiViewController.tabBarController {
+            context.coordinator.tabBarController = tbc
+        }
+        guard context.coordinator.lastTab != selectedTab else { return }
+        context.coordinator.lastTab = selectedTab
+
+        guard !UIAccessibility.isReduceMotionEnabled,
+              let tbc = context.coordinator.tabBarController ?? uiViewController.tabBarController else {
+            return
+        }
+        let contentView = tbc.view.subviews.first { !($0 is UITabBar) } ?? tbc.view
+        let transition = CATransition()
+        transition.type = .fade
+        transition.duration = 0.15
+        transition.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+        contentView?.layer.add(transition, forKey: "maimaiTabCrossfade")
+    }
+
+    final class Coordinator {
+        var lastTab: Int
+        weak var tabBarController: UITabBarController?
+
+        init(lastTab: Int) {
+            self.lastTab = lastTab
+        }
+    }
+
+    final class ProbeViewController: UIViewController {
+        var onResolveTabBarController: ((UITabBarController) -> Void)?
+
+        override func viewDidLoad() {
+            super.viewDidLoad()
+            view.isHidden = true
+            view.isUserInteractionEnabled = false
+        }
+
+        override func didMove(toParent parent: UIViewController?) {
+            super.didMove(toParent: parent)
+            if let tbc = tabBarController {
+                onResolveTabBarController?(tbc)
+            }
+        }
+    }
+}

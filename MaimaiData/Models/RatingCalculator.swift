@@ -175,7 +175,7 @@ enum RatingCalculator {
             let gain: Int? = {
                 guard let baseline = b50BaselineRating else { return nil }
                 if let cur = currentAchiInt, spec.achi <= cur {
-                    return nil
+                    return 0
                 }
                 return max(0, ra - baseline)
             }()
