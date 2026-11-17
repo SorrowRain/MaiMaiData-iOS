@@ -272,7 +272,9 @@ final class DataStore {
     }
 
     func loginAndSyncRecords(username: String, password: String) async throws {
-        guard !isSyncingRecords else { return }
+        // 同步进行中不能静默丢弃登录请求：把忙状态作为错误抛给调用方，
+        // 由登录弹窗/账号管理页展示，而不是关闭弹窗后仍是未登录状态。
+        guard !isSyncingRecords else { throw MaimaiAPIError.syncInProgress }
         isSyncingRecords = true
         defer { isSyncingRecords = false }
 

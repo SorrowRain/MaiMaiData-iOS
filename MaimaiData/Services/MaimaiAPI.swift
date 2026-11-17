@@ -5,6 +5,7 @@ enum MaimaiAPIError: LocalizedError {
     case httpError(Int, String?)
     case missingCookie
     case unauthorized(String)
+    case syncInProgress
 
     var errorDescription: String? {
         switch self {
@@ -16,6 +17,8 @@ enum MaimaiAPIError: LocalizedError {
             return "登录未返回有效 Cookie"
         case .unauthorized(let message):
             return message
+        case .syncInProgress:
+            return "正在同步成绩，请稍后再试。"
         }
     }
     var recoveryMessage: String {
@@ -29,6 +32,8 @@ enum MaimaiAPIError: LocalizedError {
             return "水鱼未返回登录凭证，请稍后重试。"
         case .unauthorized(let message):
             return message
+        case .syncInProgress:
+            return "正在同步成绩，请等待当前同步结束后再登录。"
         }
     }
 }
