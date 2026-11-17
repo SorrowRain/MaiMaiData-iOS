@@ -30,8 +30,7 @@ struct SettingsView: View {
                                     title: store.currentUsername.isEmpty ? "当前未登录" : store.displayPlayerName,
                                     subtitle: (!store.currentUsername.isEmpty && store.displayPlayerName != store.currentUsername)
                                         ? store.currentUsername
-                                        : nil,
-                                    showsChevron: true
+                                        : nil
                                 ) {
                                     Text(store.currentUsername.isEmpty ? "登录 / 管理" : "切换账号")
                                         .font(AppTheme.Typography.inlineAction)
@@ -179,7 +178,7 @@ struct SettingsView: View {
                                 Button {
                                     showAcknowledgmentsSheet = true
                                 } label: {
-                                    AppInsetRow(title: "致谢与参考", showsChevron: true) {
+                                    AppInsetRow(title: "致谢与参考") {
                                         Text("查看详情")
                                             .font(AppTheme.Typography.inlineAction)
                                             .foregroundStyle(AppTheme.accentText)
