@@ -238,17 +238,15 @@ struct RatingToolsView: View {
             title: "单曲 Rating 计算",
             subtitle: "输入谱面定数与达成率即时换算"
         ) {
-            HStack(spacing: 4) {
-                Text("Ra")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(AppTheme.accent)
-                Text("\(computedSingleRating)")
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(AppTheme.accent)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(AppTheme.accent.opacity(0.12), in: Capsule())
+            AppCapsuleLabel(
+                text: "\(computedSingleRating)",
+                tint: AppTheme.accent,
+                font: .title3.weight(.bold).monospacedDigit(),
+                backgroundOpacity: 0.12,
+                horizontalPadding: 10,
+                verticalPadding: 4,
+                prefix: "Ra"
+            )
         } content: {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 12) {

@@ -11,10 +11,18 @@ struct AppCapsuleLabel: View {
     var horizontalPadding: CGFloat = 8
     var verticalPadding: CGFloat = 3
     var foreground: Color? = nil
+    var prefix: String? = nil
+    var prefixFont: Font = .caption.weight(.bold)
 
     var body: some View {
-        Text(text)
-            .font(font)
+        HStack(spacing: 4) {
+            if let prefix {
+                Text(prefix)
+                    .font(prefixFont)
+            }
+            Text(text)
+                .font(font)
+        }
             .padding(.horizontal, horizontalPadding)
             .padding(.vertical, verticalPadding)
             .background(tint.opacity(colorScheme == .dark ? max(backgroundOpacity, 0.22) : backgroundOpacity), in: Capsule())
