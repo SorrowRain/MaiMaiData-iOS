@@ -124,15 +124,6 @@ struct ProberView: View {
                 }
                 .pickerStyle(.segmented)
 
-                if store.serverRegion != .cn {
-                    Label(
-                        "当前按\(store.serverRegion.shortName)曲库定数与新规（B15 两代版本 · AP +1）重排",
-                        systemImage: "globe.asia.australia.fill"
-                    )
-                    .font(AppTheme.Typography.caption)
-                    .foregroundStyle(.secondary)
-                }
-
                 if !isMatching && !store.records.isEmpty {
                     Label("部分成绩未匹配到当前曲库，建议在「设置与数据」中更新曲库", systemImage: "exclamationmark.triangle.fill")
                         .font(AppTheme.Typography.caption)

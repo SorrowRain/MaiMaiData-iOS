@@ -153,6 +153,16 @@ final class DataStore {
         return list
     }
 
+    /// Unified plate progress scopes for the active server region (`.cn`, `.intl`, or `.jp`).
+    var activePlateScopes: [PlateCheckScope] {
+        LXNSCatalogConverter.buildPlateScopes(
+            for: serverRegion,
+            cnPlateGroups: cnPlateCheckGroups,
+            activeSongs: songs,
+            zetarakuVersions: zetarakuCatalog?.versions
+        )
+    }
+
     var lastCatalogSyncText: String {
         let latest: Date? = {
             switch (lastCNCatalogSync, lastZetarakuSync) {
@@ -232,10 +242,8 @@ final class DataStore {
         self.useProberNickname = ud.bool(forKey: Keys.useDFNickname)
         self.customNickname = ud.string(forKey: Keys.customNickname) ?? ""
         self.lastVersionCheckIndex = ud.integer(forKey: Keys.lastVersionCheck)
-        self.lastVersionCheckIntlIndex = (ud.object(forKey: Keys.lastVersionCheckIntl) as? Int)
-            ?? max(0, MaimaiConstants.checklistVersions(for: .intl).count - 1)
-        self.lastVersionCheckJpIndex = (ud.object(forKey: Keys.lastVersionCheckJp) as? Int)
-            ?? max(0, MaimaiConstants.checklistVersions(for: .jp).count - 1)
+        self.lastVersionCheckIntlIndex = ud.integer(forKey: Keys.lastVersionCheckIntl)
+        self.lastVersionCheckJpIndex = ud.integer(forKey: Keys.lastVersionCheckJp)
         self.lastLevelCheckIndex = ud.integer(forKey: Keys.lastLevelCheck)
     }
 

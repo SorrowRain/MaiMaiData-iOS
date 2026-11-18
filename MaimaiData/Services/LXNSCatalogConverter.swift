@@ -407,6 +407,189 @@ enum LXNSCatalogConverter {
         return Array(bestByKey.values)
     }
 
+    // MARK: - 4. Multi-Region Unified Plate Scopes (CN / INTL / JP)
+
+    /// SD-era Re:MASTER internal IDs present on JP/INTL in addition to CN's 59 `舞` Re:MASTER IDs
+    /// (verified against DXRating `plates.ts` & `dxdata`: 39, ようこそジャパリパークへ, 妄想感傷代償連盟, ヒバナ, キミとボクのミライ, Lost Princess).
+    private static let additionalOverseasSdRemasterIds: Set<Int> = [146, 668, 731, 792, 826, 827]
+    private static let additionalOverseasSdRemasterTitles: Set<String> = [
+        "39", "ようこそジャパリパークへ", "妄想感傷代償連盟", "ヒバナ", "キミとボクのミライ", "Lost Princess"
+    ]
+
+    private static let overseasSdVersions: Set<String> = [
+        "maimai", "maimai PLUS", "GreeN", "GreeN PLUS", "ORANGE", "ORANGE PLUS",
+        "PiNK", "PiNK PLUS", "MURASAKi", "MURASAKi PLUS", "MiLK", "MiLK PLUS", "FiNALE"
+    ]
+
+    static func buildPlateScopes(
+        for region: MaimaiConstants.ServerRegion,
+        cnPlateGroups: [CNPlateRuleGroup],
+        activeSongs: [SongData],
+        zetarakuVersions: [ZetarakuVersionEntry]? = nil
+    ) -> [PlateCheckScope] {
+        switch region {
+        case .cn:
+            return cnPlateGroups.map { group in
+                PlateCheckScope(
+                    id: group.id,
+                    title: group.title,
+                    versionAsset: group.resolvedVersionAsset,
+                    rule: .explicitIds(
+                        basicToMaster: Set(group.basicToMasterSongIds),
+                        remaster: Set(group.remasterSongIds)
+                    )
+                )
+            }
+
+        case .intl, .jp:
+            let cnMaiRemasterIds = Set(cnPlateGroups.first(where: { $0.id == "舞" })?.remasterSongIds ?? [])
+            let sdRemasterIds = cnMaiRemasterIds.union(additionalOverseasSdRemasterIds)
+
+            var scopes: [PlateCheckScope] = [
+                PlateCheckScope(
+                    id: "真",
+                    title: "真 · maimai ~ PLUS",
+                    versionAsset: "maimai",
+                    rule: .versions(
+                        includedVersions: ["maimai", "maimai PLUS"],
+                        excludedIds: [70],
+                        excludedStandardTitles: ["ジングルベル"]
+                    )
+                ),
+                PlateCheckScope(id: "超", title: "超 · GreeN", versionAsset: "maimai_green", rule: .versions(includedVersions: ["GreeN"])),
+                PlateCheckScope(id: "檄", title: "檄 · GreeN PLUS", versionAsset: "maimai_green_plus", rule: .versions(includedVersions: ["GreeN PLUS"])),
+                PlateCheckScope(id: "橙", title: "橙 · ORANGE", versionAsset: "maimai_orange", rule: .versions(includedVersions: ["ORANGE"])),
+                PlateCheckScope(id: "暁", title: "暁 · ORANGE PLUS", versionAsset: "maimai_orange_plus", rule: .versions(includedVersions: ["ORANGE PLUS"])),
+                PlateCheckScope(id: "桃", title: "桃 · PiNK", versionAsset: "maimai_pink", rule: .versions(includedVersions: ["PiNK"])),
+                PlateCheckScope(id: "櫻", title: "櫻 · PiNK PLUS", versionAsset: "maimai_pink_plus", rule: .versions(includedVersions: ["PiNK PLUS"])),
+                PlateCheckScope(id: "紫", title: "紫 · MURASAKi", versionAsset: "maimai_murasaki", rule: .versions(includedVersions: ["MURASAKi"])),
+                PlateCheckScope(
+                    id: "菫",
+                    title: "菫 · MURASAKi PLUS",
+                    versionAsset: "maimai_murasaki_plus",
+                    rule: .versions(
+                        includedVersions: ["MURASAKi PLUS"],
+                        excludedIds: [853],
+                        excludedStandardTitles: ["前前前世"]
+                    )
+                ),
+                PlateCheckScope(id: "白", title: "白 · MiLK", versionAsset: "maimai_milk", rule: .versions(includedVersions: ["MiLK"])),
+                PlateCheckScope(id: "雪", title: "雪 · MiLK PLUS", versionAsset: "maimai_milk_plus", rule: .versions(includedVersions: ["MiLK PLUS"])),
+                PlateCheckScope(id: "輝", title: "輝 · FiNALE", versionAsset: "maimai_finale", rule: .versions(includedVersions: ["FiNALE"])),
+                PlateCheckScope(
+                    id: "舞",
+                    title: "舞 / 覇者 · 旧框全曲",
+                    versionAsset: "maimai_finale",
+                    rule: .versions(
+                        includedVersions: overseasSdVersions,
+                        excludedIds: [853],
+                        excludedStandardTitles: ["前前前世"],
+                        sdRemasterIds: sdRemasterIds,
+                        sdRemasterFallbackTitles: additionalOverseasSdRemasterTitles
+                    )
+                ),
+                PlateCheckScope(id: "熊", title: "熊 · でらっくす", versionAsset: "maimaidx", rule: .versions(includedVersions: ["maimaiでらっくす"])),
+                PlateCheckScope(id: "華", title: "華 · でらっくす PLUS", versionAsset: "maimaidx_plus", rule: .versions(includedVersions: ["maimaiでらっくす PLUS"])),
+                PlateCheckScope(id: "爽", title: "爽 · Splash", versionAsset: "maimaidx_splash", rule: .versions(includedVersions: ["Splash"])),
+                PlateCheckScope(id: "煌", title: "煌 · Splash PLUS", versionAsset: "maimaidx_splash_plus", rule: .versions(includedVersions: ["Splash PLUS"])),
+                PlateCheckScope(id: "宙", title: "宙 · UNiVERSE", versionAsset: "maimaidx_universe", rule: .versions(includedVersions: ["UNiVERSE"])),
+                PlateCheckScope(id: "星", title: "星 · UNiVERSE PLUS", versionAsset: "maimaidx_universe_plus", rule: .versions(includedVersions: ["UNiVERSE PLUS"])),
+                PlateCheckScope(id: "祭", title: "祭 · FESTiVAL", versionAsset: "maimaidx_festival", rule: .versions(includedVersions: ["FESTiVAL"])),
+                PlateCheckScope(id: "祝", title: "祝 · FESTiVAL PLUS", versionAsset: "maimaidx_festival_plus", rule: .versions(includedVersions: ["FESTiVAL PLUS"])),
+                PlateCheckScope(id: "双", title: "双 · BUDDiES", versionAsset: "maimaidx_buddies", rule: .versions(includedVersions: ["BUDDiES"])),
+                PlateCheckScope(id: "宴", title: "宴 · BUDDiES PLUS", versionAsset: "maimaidx_buddies_plus", rule: .versions(includedVersions: ["BUDDiES PLUS"])),
+                PlateCheckScope(id: "鏡", title: "鏡 · PRiSM", versionAsset: "maimaidx_prism", rule: .versions(includedVersions: ["PRiSM"])),
+                PlateCheckScope(id: "彩", title: "彩 · PRiSM PLUS", versionAsset: "maimaidx_prism_plus", rule: .versions(includedVersions: ["PRiSM PLUS"])),
+                PlateCheckScope(id: "丸", title: "丸 · CiRCLE", versionAsset: "maimaidx_circle", rule: .versions(includedVersions: ["CiRCLE"]))
+            ]
+
+            let presentVersions = Set(activeSongs.filter { !$0.isUtage }.map(\.basicInfo.from))
+            let abbrByVer = Dictionary(
+                (zetarakuVersions ?? []).map { ($0.version, $0.abbr ?? "") },
+                uniquingKeysWith: { first, _ in first }
+            )
+
+            if region == .jp {
+                scopes.append(
+                    PlateCheckScope(
+                        id: "廻",
+                        title: "廻 · CiRCLE PLUS",
+                        versionAsset: "maimaidx_circle_plus",
+                        rule: .versions(includedVersions: ["CiRCLE PLUS"])
+                    )
+                )
+                let magicalKanji = extractTrailingKanji(from: abbrByVer["MAGiCAL"])
+                scopes.append(
+                    PlateCheckScope(
+                        id: magicalKanji ?? "MAGiCAL",
+                        title: magicalKanji.map { "\($0) · MAGiCAL" } ?? "MAGiCAL",
+                        versionAsset: "maimaidx_magical",
+                        rule: .versions(includedVersions: ["MAGiCAL"])
+                    )
+                )
+            } else {
+                // On INTL, `廻` arrives once INTL advances to MAGiCAL; until then `CiRCLE PLUS` is the active version.
+                let intlHasMagical = presentVersions.contains("MAGiCAL")
+                scopes.append(
+                    PlateCheckScope(
+                        id: intlHasMagical ? "廻" : "CiRCLE PLUS",
+                        title: intlHasMagical ? "廻 · CiRCLE PLUS" : "CiRCLE PLUS",
+                        versionAsset: "maimaidx_circle_plus",
+                        rule: .versions(includedVersions: ["CiRCLE PLUS"])
+                    )
+                )
+                if intlHasMagical {
+                    let magicalKanji = extractTrailingKanji(from: abbrByVer["MAGiCAL"])
+                    scopes.append(
+                        PlateCheckScope(
+                            id: magicalKanji ?? "MAGiCAL",
+                            title: magicalKanji.map { "\($0) · MAGiCAL" } ?? "MAGiCAL",
+                            versionAsset: "maimaidx_magical",
+                            rule: .versions(includedVersions: ["MAGiCAL"])
+                        )
+                    )
+                }
+            }
+
+            // Future-proof: automatically append any newly released versions beyond MAGiCAL from Zetaraku `versions`.
+            let coveredVersions: Set<String> = overseasSdVersions.union([
+                "maimaiでらっくす", "maimaiでらっくす PLUS", "Splash", "Splash PLUS",
+                "UNiVERSE", "UNiVERSE PLUS", "FESTiVAL", "FESTiVAL PLUS",
+                "BUDDiES", "BUDDiES PLUS", "PRiSM", "PRiSM PLUS",
+                "CiRCLE", "CiRCLE PLUS", "MAGiCAL"
+            ])
+            if let zetarakuVersions {
+                for entry in zetarakuVersions where !coveredVersions.contains(entry.version) {
+                    guard region == .jp || presentVersions.contains(entry.version) else { continue }
+                    let kanji = extractTrailingKanji(from: entry.abbr)
+                    let asset = MaimaiConstants.jpVersionAssetByName(entry.version) ?? "maimaidx_magical"
+                    scopes.append(
+                        PlateCheckScope(
+                            id: kanji ?? entry.version,
+                            title: kanji.map { "\($0) · \(entry.version)" } ?? entry.version,
+                            versionAsset: asset,
+                            rule: .versions(includedVersions: [entry.version])
+                        )
+                    )
+                }
+            }
+
+            return scopes
+        }
+    }
+
+    /// Parses `"MAGiCAL (魔)"` -> `"魔"` when Zetaraku assigns a plate character in `versions[].abbr`.
+    private static func extractTrailingKanji(from abbr: String?) -> String? {
+        guard let abbr,
+              let open = abbr.lastIndex(of: "("),
+              let close = abbr.lastIndex(of: ")"),
+              open < close else {
+            return nil
+        }
+        let inner = abbr[abbr.index(after: open)..<close].trimmingCharacters(in: .whitespaces)
+        return inner.isEmpty ? nil : inner
+    }
+
     // MARK: - Helpers
 
     static func normalizeSongId(id: Int, type: String) -> Int {

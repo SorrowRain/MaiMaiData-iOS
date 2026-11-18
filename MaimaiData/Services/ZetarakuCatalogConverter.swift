@@ -2,7 +2,19 @@ import Foundation
 
 struct ZetarakuCatalog: Codable, Sendable {
     let songs: [ZetarakuSong]
+    let versions: [ZetarakuVersionEntry]?
     let updateTime: String?
+
+    init(songs: [ZetarakuSong], versions: [ZetarakuVersionEntry]? = nil, updateTime: String? = nil) {
+        self.songs = songs
+        self.versions = versions
+        self.updateTime = updateTime
+    }
+}
+
+struct ZetarakuVersionEntry: Codable, Sendable, Equatable {
+    let version: String
+    let abbr: String?
 }
 
 struct ZetarakuSong: Codable, Sendable {

@@ -19,13 +19,27 @@ struct RatingToolsView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                VStack(spacing: AppTheme.cardSpacing) {
-                    ratingSummaryCard
-                    recordsAndProgressSection
-                    calculatorsSection
+                ZStack(alignment: .top) {
+                    VStack(spacing: AppTheme.cardSpacing) {
+                        ratingSummaryCard
+                            .zIndex(20)
+                        recordsAndProgressSection
+                        calculatorsSection
+                    }
+                    .padding(.horizontal, AppTheme.pagePadding)
+                    .padding(.vertical, AppTheme.Space.m)
+
+                    if isProfileExpanded {
+                        Color.black.opacity(0.001)
+                            .ignoresSafeArea()
+                            .zIndex(10)
+                            .onTapGesture {
+                                withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
+                                    isProfileExpanded = false
+                                }
+                            }
+                    }
                 }
-                .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, AppTheme.Space.m)
             }
             .appPageBackground()
             .sensoryFeedback(.selection, trigger: store.activeProfileId)
@@ -74,7 +88,7 @@ struct RatingToolsView: View {
                 HStack(alignment: .center, spacing: AppTheme.Space.s) {
                     if store.activeProfile != nil {
                         Button {
-                            withAnimation(.snappy(duration: 0.22)) {
+                            withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
                                 isProfileExpanded.toggle()
                             }
                         } label: {
@@ -93,19 +107,12 @@ struct RatingToolsView: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击展开成绩档案切换列表")
+                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击切换成绩档案")
                     } else {
                         Text("未添加档案")
                             .font(AppTheme.Typography.cardTitle)
                             .foregroundStyle(.primary)
                             .lineLimit(1)
-                    }
-
-                    if store.serverRegion != .cn {
-                        AppCapsuleLabel(
-                            text: "\(store.serverRegion.shortName)新规",
-                            style: .compact
-                        )
                     }
 
                     Spacer(minLength: 4)
@@ -128,12 +135,13 @@ struct RatingToolsView: View {
                     }
                 }
 
-                if isProfileExpanded, let activeProfile = store.activeProfile {
-                    inlineProfileSelector(activeProfileId: activeProfile.id)
-                        .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
                 Button {
+                    if isProfileExpanded {
+                        withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
+                            isProfileExpanded = false
+                        }
+                        return
+                    }
                     path.append(isLoggedIn ? ToolRoute.prober : ToolRoute.accountManagement)
                 } label: {
                     HStack(spacing: AppTheme.Space.s) {
@@ -157,19 +165,30 @@ struct RatingToolsView: View {
                 .accessibilityLabel(isLoggedIn ? "查看 Best 50 成绩详情" : "前往添加成绩档案")
             }
         }
+        .overlay(alignment: .topLeading) {
+            if isProfileExpanded, let activeProfile = store.activeProfile {
+                floatingProfileDropdown(activeProfileId: activeProfile.id)
+                    .padding(.top, 50)
+                    .padding(.leading, AppTheme.cardPadding)
+                    .transition(
+                        .scale(scale: 0.95, anchor: .topLeading)
+                        .combined(with: .opacity)
+                    )
+            }
+        }
     }
 
-    private func inlineProfileSelector(activeProfileId: UUID) -> some View {
-        AppInsetGroup {
+    private func floatingProfileDropdown(activeProfileId: UUID) -> some View {
+        AppFloatingPanel {
             VStack(spacing: 0) {
                 ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
                     if idx > 0 {
-                        Divider().padding(.leading, AppTheme.Space.m)
+                        Divider()
                     }
                     let isCurrent = (profile.id == activeProfileId)
 
                     Button {
-                        withAnimation(.snappy(duration: 0.2)) {
+                        withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
                             isProfileExpanded = false
                         }
                         guard !isCurrent else { return }
@@ -185,10 +204,14 @@ struct RatingToolsView: View {
                     .appInsetRowHighlight(isCurrent)
                 }
 
-                Divider().padding(.leading, AppTheme.Space.m)
+                Divider()
 
                 Button {
-                    isProfileExpanded = false
+                    var tx = Transaction()
+                    tx.disablesAnimations = true
+                    withTransaction(tx) {
+                        isProfileExpanded = false
+                    }
                     path.append(ToolRoute.accountManagement)
                 } label: {
                     AppInsetRow(title: "管理成绩档案", showsChevron: true)
@@ -196,6 +219,7 @@ struct RatingToolsView: View {
                 .buttonStyle(.plain)
             }
         }
+        .frame(width: 244)
     }
 
     private func syncRecords() async {
@@ -224,7 +248,7 @@ struct RatingToolsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Divider().padding(.leading, 58)
+                    Divider()
 
                     NavigationLink(value: ToolRoute.versionCheck) {
                         AppInsetRow(
@@ -235,7 +259,7 @@ struct RatingToolsView: View {
                     }
                     .buttonStyle(.plain)
 
-                    Divider().padding(.leading, 58)
+                    Divider()
 
                     NavigationLink(value: ToolRoute.levelCheck) {
                         AppInsetRow(

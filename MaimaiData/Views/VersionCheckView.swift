@@ -13,78 +13,40 @@ struct VersionCheckView: View {
         let songs: [SongData]
     }
 
-    private struct CheckScopeItem {
-        let title: String
-        let asset: String
-        let cnGroup: CNPlateRuleGroup?
+    private var scopes: [PlateCheckScope] {
+        store.activePlateScopes
     }
 
-    private var scopeItems: [CheckScopeItem] {
-        if store.serverRegion == .cn {
-            let cnGroups = store.cnPlateCheckGroups
-            if !cnGroups.isEmpty {
-                return cnGroups.map { group in
-                    CheckScopeItem(
-                        title: group.title,
-                        asset: group.resolvedVersionAsset,
-                        cnGroup: group
-                    )
-                }
-            }
-        }
-        return MaimaiConstants.checklistVersions(for: store.serverRegion).map { ver in
-            CheckScopeItem(title: ver.name, asset: ver.asset, cnGroup: nil)
-        }
-    }
-
-    private var activeScope: CheckScopeItem {
-        let items = scopeItems
+    private var activeScope: PlateCheckScope {
+        let items = scopes
         guard !items.isEmpty else {
-            return CheckScopeItem(title: "舞萌DX", asset: "maimaidx_cn", cnGroup: nil)
+            return PlateCheckScope(
+                id: "default",
+                title: "真 · maimai ~ PLUS",
+                versionAsset: "maimai",
+                rule: .versions(includedVersions: ["maimai", "maimai PLUS"])
+            )
         }
         let idx = min(max(0, store.activeVersionCheckIndex), items.count - 1)
         return items[idx]
     }
 
     private var availableDifficulties: [DifficultyType] {
-        if let cnGroup = activeScope.cnGroup {
-            if !cnGroup.remasterSongIds.isEmpty {
-                return [.basic, .advanced, .expert, .master, .remaster]
-            }
-            return [.basic, .advanced, .expert, .master]
+        if activeScope.supportsRemaster {
+            return [.basic, .advanced, .expert, .master, .remaster]
         }
-        return [.basic, .advanced, .expert, .master, .remaster]
+        return [.basic, .advanced, .expert, .master]
     }
 
     private func rebuildGroups() {
         if !availableDifficulties.contains(selectedDifficulty) {
             selectedDifficulty = .master
         }
-        let diffIdx = selectedDifficulty.rawValue
-        let filtered: [SongData]
+        let scope = activeScope
+        let diff = selectedDifficulty
+        let diffIdx = diff.rawValue
 
-        if let cnGroup = activeScope.cnGroup {
-            let requiredIds = Set(
-                selectedDifficulty == .remaster
-                    ? cnGroup.remasterSongIds
-                    : cnGroup.basicToMasterSongIds
-            )
-            filtered = store.songs.filter { song in
-                !song.isUtage &&
-                song.isDisabled != true &&
-                requiredIds.contains(song.numericId) &&
-                song.charts.count > diffIdx
-            }
-        } else {
-            let verName = activeScope.title
-            filtered = store.songs.filter { song in
-                song.basicInfo.from == verName &&
-                !song.isUtage &&
-                song.isDisabled != true &&
-                song.charts.count > diffIdx
-            }
-        }
-
+        let filtered = store.songs.filter { scope.contains($0, difficulty: diff) }
         let sorted = filtered.sorted { ($0.ds[safe: diffIdx] ?? 0) > ($1.ds[safe: diffIdx] ?? 0) }
         let dict = Dictionary(grouping: sorted) { $0.level[safe: diffIdx] ?? "?" }
         groupedSongs = dict.keys.sorted { levelOrder($0) > levelOrder($1) }
@@ -92,10 +54,18 @@ struct VersionCheckView: View {
     }
 
     var body: some View {
-        @Bindable var storeBindable = store
         let diffIdx = selectedDifficulty.rawValue
         let diffTint = selectedDifficulty.color
-        let items = scopeItems
+        let items = scopes
+        let clampedSelection = Binding<Int>(
+            get: {
+                guard !items.isEmpty else { return 0 }
+                return min(max(0, store.activeVersionCheckIndex), items.count - 1)
+            },
+            set: { newValue in
+                store.activeVersionCheckIndex = newValue
+            }
+        )
 
         let allSongs = groupedSongs.flatMap(\.songs)
         let matchedRecords = allSongs.compactMap { store.record(forSongId: $0.numericId, difficultyIndex: diffIdx) }
@@ -115,7 +85,7 @@ struct VersionCheckView: View {
                 AppCard(padding: AppTheme.cardPadding, tint: diffTint) {
                     VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                         HStack(spacing: AppTheme.Space.m) {
-                            Image(activeScope.asset)
+                            Image(activeScope.versionAsset)
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 92, height: 36, alignment: .center)
@@ -135,13 +105,13 @@ struct VersionCheckView: View {
 
                         HStack(spacing: AppTheme.Space.s) {
                             Menu {
-                                Picker("牌子或版本", selection: $storeBindable.activeVersionCheckIndex) {
+                                Picker("牌子", selection: clampedSelection) {
                                     ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
                                         Text(item.title).tag(idx)
                                     }
                                 }
                             } label: {
-                                AppMenuCapsule(title: store.serverRegion == .cn ? "切换牌子" : "切换版本")
+                                AppMenuCapsule(title: "切换牌子")
                             }
 
                             Menu {
@@ -165,7 +135,19 @@ struct VersionCheckView: View {
                     onlyUnfinished: $onlyUnfinished
                 )
 
-                if visibleGroups.isEmpty && !allSongs.isEmpty {
+                if store.isSyncingSongs && store.songs.isEmpty {
+                    ProgressView("正在同步\(store.serverRegion.shortName)曲库…")
+                        .font(AppTheme.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, AppTheme.Space.xl)
+                } else if store.songs.isEmpty {
+                    ContentUnavailableView(
+                        "暂无\(store.serverRegion.shortName)曲库数据",
+                        systemImage: "arrow.triangle.2.circlepath",
+                        description: Text("请前往「设置与数据 → 数据同步与存储」点击检查更新")
+                    )
+                    .padding(.top, AppTheme.Space.xl)
+                } else if visibleGroups.isEmpty && !allSongs.isEmpty {
                     ContentUnavailableView(
                         "已全部达成 \(displayMode.title)",
                         systemImage: "checkmark.seal.fill",
@@ -204,9 +186,7 @@ struct VersionCheckView: View {
         .navigationTitle("牌子进度表")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            if groupedSongs.isEmpty && !store.songs.isEmpty {
-                rebuildGroups()
-            }
+            rebuildGroups()
         }
         .onChange(of: store.activeVersionCheckIndex) { _, _ in rebuildGroups() }
         .onChange(of: selectedDifficulty) { _, _ in rebuildGroups() }

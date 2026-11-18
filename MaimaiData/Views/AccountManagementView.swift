@@ -40,7 +40,7 @@ struct AccountManagementView: View {
                             VStack(spacing: 0) {
                                 ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
                                     if idx > 0 {
-                                        Divider().padding(.leading, AppTheme.Space.m)
+                                        Divider()
                                     }
                                     profileRow(profile)
                                 }

@@ -398,7 +398,7 @@ struct SongDetailView: View {
                                     }
                                 }
 
-                                Divider().padding(.leading, AppTheme.Space.m)
+                                Divider()
 
                                 detailRow("我的成绩") {
                                     recordSummary(record)

@@ -294,4 +294,87 @@ final class ScoreProfileAndLXNSTests: XCTestCase {
         try await Task.sleep(for: .milliseconds(230))
         XCTAssertNil(toast.text)
     }
+
+    func testOverseasPlateScopesCoverJPAndINTLWithExclusionsAndDynamicFutureKanji() throws {
+        let plateSeedURL = try XCTUnwrap(Bundle.main.url(forResource: "plate_rules_seed", withExtension: "json"))
+        let plateCatalog = try JSONDecoder().decode(CNPlateCatalog.self, from: Data(contentsOf: plateSeedURL))
+
+        func makeOverseasSong(id: String, title: String, from: String, type: String = "SD", chartCount: Int = 4) -> SongData {
+            SongData(
+                basicInfo: .init(
+                    artist: "Artist",
+                    bpm: 150,
+                    from: from,
+                    genre: "舞萌",
+                    isNew: false,
+                    title: title,
+                    version: from
+                ),
+                charts: (0..<chartCount).map { _ in .init(charter: "-", notes: type == "DX" ? [100, 10, 10, 10, 5] : [100, 10, 10, 5]) },
+                ds: Array(repeating: 13.0, count: chartCount),
+                oldDs: nil,
+                id: id,
+                level: Array(repeating: "13", count: chartCount),
+                title: title,
+                type: type,
+                alias: nil
+            )
+        }
+
+        let jingleBells = makeOverseasSong(id: "70", title: "ジングルベル", from: "maimai")
+        let trueLove = makeOverseasSong(id: "8", title: "True Love Song", from: "maimai")
+        let zenzenzense = makeOverseasSong(id: "853", title: "前前前世", from: "MURASAKi PLUS")
+        let hibana = makeOverseasSong(id: "792", title: "ヒバナ", from: "MiLK", chartCount: 5)
+        let dxEraRemaster = makeOverseasSong(id: "500", title: "JACKY [Remix]", from: "PiNK", chartCount: 5)
+        let circlePlusSong = makeOverseasSong(id: "11800", title: "CiRCLE+ Song", from: "CiRCLE PLUS", type: "DX")
+        let magicalSong = makeOverseasSong(id: "11900", title: "MAGiCAL Song", from: "MAGiCAL", type: "DX")
+
+        let jpSongs = [jingleBells, trueLove, zenzenzense, hibana, dxEraRemaster, circlePlusSong, magicalSong]
+        let jpScopes = LXNSCatalogConverter.buildPlateScopes(
+            for: .jp,
+            cnPlateGroups: plateCatalog.groups,
+            activeSongs: jpSongs
+        )
+
+        let jpShin = try XCTUnwrap(jpScopes.first { $0.id == "真" })
+        XCTAssertTrue(jpShin.contains(trueLove, difficulty: .master))
+        XCTAssertFalse(jpShin.contains(jingleBells, difficulty: .master))
+
+        let jpMai = try XCTUnwrap(jpScopes.first { $0.id == "舞" })
+        // ジングルベル still counts toward 舞 / 覇者, while 前前前世 is excluded
+        XCTAssertTrue(jpMai.contains(jingleBells, difficulty: .master))
+        XCTAssertFalse(jpMai.contains(zenzenzense, difficulty: .master))
+        // ヒバナ (792, or synthetic `zeta_std_hibana` offline) is an SD-era Re:MASTER, whereas 500 is a DX-era added Re:MASTER
+        let offlineHibana = makeOverseasSong(id: "zeta_std_hibana", title: "ヒバナ", from: "MiLK", chartCount: 5)
+        XCTAssertTrue(jpMai.contains(hibana, difficulty: .remaster))
+        XCTAssertTrue(jpMai.contains(offlineHibana, difficulty: .remaster))
+        XCTAssertFalse(jpMai.contains(dxEraRemaster, difficulty: .remaster))
+
+        XCTAssertTrue(jpScopes.contains { $0.title == "彩 · PRiSM PLUS" })
+        XCTAssertTrue(jpScopes.contains { $0.title == "丸 · CiRCLE" })
+        XCTAssertTrue(jpScopes.contains { $0.title == "廻 · CiRCLE PLUS" })
+        XCTAssertTrue(jpScopes.contains { $0.title == "MAGiCAL" })
+
+        // On INTL before MAGiCAL launches, CiRCLE PLUS has no plate kanji yet
+        let intlSongsBeforeMagical = [trueLove, circlePlusSong]
+        let intlScopes = LXNSCatalogConverter.buildPlateScopes(
+            for: .intl,
+            cnPlateGroups: plateCatalog.groups,
+            activeSongs: intlSongsBeforeMagical
+        )
+        XCTAssertEqual(intlScopes.last?.title, "CiRCLE PLUS")
+
+        // Once INTL receives MAGiCAL (and Zetaraku assigns a future plate kanji in `abbr`), both promote automatically
+        let futureScopes = LXNSCatalogConverter.buildPlateScopes(
+            for: .intl,
+            cnPlateGroups: plateCatalog.groups,
+            activeSongs: jpSongs,
+            zetarakuVersions: [
+                ZetarakuVersionEntry(version: "MAGiCAL", abbr: "MAGiCAL (魔)"),
+                ZetarakuVersionEntry(version: "MAGiCAL PLUS", abbr: "MAGiCAL+")
+            ]
+        )
+        XCTAssertTrue(futureScopes.contains { $0.title == "廻 · CiRCLE PLUS" })
+        XCTAssertTrue(futureScopes.contains { $0.title == "魔 · MAGiCAL" })
+    }
 }

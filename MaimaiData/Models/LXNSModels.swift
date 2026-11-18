@@ -295,3 +295,60 @@ struct CNPlateRuleGroup: Codable, Identifiable, Equatable, Hashable {
         id == "真" ? "maimai" : versionAsset
     }
 }
+
+/// Region-agnostic plate / version progress scope shared across CN, INTL, and JP in `VersionCheckView`.
+struct PlateCheckScope: Identifiable, Equatable, Hashable {
+    enum Rule: Equatable, Hashable {
+        case explicitIds(basicToMaster: Set<Int>, remaster: Set<Int>)
+        case versions(
+            includedVersions: Set<String>,
+            excludedIds: Set<Int> = [],
+            excludedStandardTitles: Set<String> = [],
+            sdRemasterIds: Set<Int>? = nil,
+            sdRemasterFallbackTitles: Set<String> = []
+        )
+    }
+
+    let id: String
+    let title: String
+    let versionAsset: String
+    let rule: Rule
+
+    var supportsRemaster: Bool {
+        switch rule {
+        case .explicitIds(_, let rem):
+            return !rem.isEmpty
+        case .versions(_, _, _, let sdRem, _):
+            return sdRem != nil
+        }
+    }
+
+    func contains(_ song: SongData, difficulty: DifficultyType) -> Bool {
+        guard !song.isUtage, song.isDisabled != true, song.charts.count > difficulty.rawValue else {
+            return false
+        }
+        switch rule {
+        case .explicitIds(let b2m, let rem):
+            let target = (difficulty == .remaster) ? rem : b2m
+            return song.numericId > 0 && target.contains(song.numericId)
+        case .versions(let versions, let excludedIds, let excludedStdTitles, let sdRemasterIds, let sdRemasterFallbackTitles):
+            if song.numericId > 0 && excludedIds.contains(song.numericId) {
+                return false
+            }
+            if !song.isDX && excludedStdTitles.contains(song.title) {
+                return false
+            }
+            guard versions.contains(song.basicInfo.from) else {
+                return false
+            }
+            if difficulty == .remaster {
+                guard let sdRemasterIds else { return false }
+                if song.numericId > 0 {
+                    return sdRemasterIds.contains(song.numericId)
+                }
+                return !song.isDX && sdRemasterFallbackTitles.contains(song.title)
+            }
+            return true
+        }
+    }
+}

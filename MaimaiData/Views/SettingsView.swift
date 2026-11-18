@@ -40,7 +40,7 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                Divider().padding(.leading, AppTheme.Space.m)
+                                Divider()
 
                                 NavigationLink(value: SettingsRoute.serverRegion) {
                                     AppInsetRow(title: "游戏区服", showsChevron: true) {
@@ -68,7 +68,7 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                Divider().padding(.leading, AppTheme.Space.m)
+                                Divider()
 
                                 NavigationLink(value: SettingsRoute.dataAndStorage) {
                                     AppInsetRow(title: "数据同步与存储", showsChevron: true) {
@@ -91,7 +91,7 @@ struct SettingsView: View {
                                 }
                                 .buttonStyle(.plain)
 
-                                Divider().padding(.leading, AppTheme.Space.m)
+                                Divider()
 
                                 AppInsetRow(title: "版本") {
                                     Text(appVersionText)
@@ -151,7 +151,7 @@ private struct ServerRegionSettingsView: View {
                         VStack(spacing: 0) {
                             ForEach(Array(MaimaiConstants.ServerRegion.allCases.enumerated()), id: \.element.id) { idx, region in
                                 if idx > 0 {
-                                    Divider().padding(.leading, AppTheme.Space.m)
+                                    Divider()
                                 }
                                 regionRow(region)
                             }
@@ -208,12 +208,12 @@ private struct PreferencesSettingsView: View {
                                 title: "曲目详情页显示别名",
                                 isOn: $storeBindable.enableShowAlias
                             )
-                            Divider().padding(.leading, AppTheme.Space.m)
+                            Divider()
                             settingToggleRow(
                                 title: "搜索时匹配曲目别名",
                                 isOn: $storeBindable.enableAliasSearch
                             )
-                            Divider().padding(.leading, AppTheme.Space.m)
+                            Divider()
                             settingToggleRow(
                                 title: "搜索时匹配谱师名称",
                                 isOn: $storeBindable.enableCharterSearch
@@ -266,7 +266,7 @@ private struct DataAndStorageSettingsView: View {
                                 }
                             }
 
-                            Divider().padding(.leading, AppTheme.Space.m)
+                            Divider()
 
                             AppInsetRow(
                                 title: "水鱼拟合定数",

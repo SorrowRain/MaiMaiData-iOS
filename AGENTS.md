@@ -27,12 +27,12 @@ MaimaiData/
 │   ├── MaimaiConstants.swift        # 分类、等级、国服/日服版本常量与配色/贴图映射
 │   ├── RatingCalculator.swift       # 单曲 Rating 换算、目标总 Rating 二分反推、全曲库最大物量统计
 │   ├── RecordModels.swift           # 多源成绩档案模型 ScoreProfile、成绩模型、进度表统计、筛选条件模型
-│   ├── LXNSModels.swift             # 落雪咖啡屋 OAuth / 成绩模型、公共曲库与官方牌子曲目规则模型
+│   ├── LXNSModels.swift             # 落雪咖啡屋 OAuth / 成绩模型、公共曲库与三区服通用牌子范围模型 PlateCheckScope
 │   └── Extensions.swift             # Color(hex:) / 自适应与提亮扩展、安全下标 Collection[safe:]、版本号按段数值比较 VersionString
 ├── Services/
 │   ├── DataStore.swift              # @MainActor @Observable 全局状态中心（本地缓存、多区服切换、落雪曲库/牌子与水鱼统计同步、多源成绩档案管理、B50 拆表）
 │   ├── MaimaiAPI.swift              # 无状态网络层（落雪公共曲库/别名/牌子与 OAuth、水鱼账密/Import-Token/拟合定数、Zetaraku & DXRating 曲库）
-│   ├── LXNSCatalogConverter.swift   # 落雪公共曲库/双人宴谱转换、官方牌子曲目规则提取与落雪成绩转标准记录纯函数
+│   ├── LXNSCatalogConverter.swift   # 落雪公共曲库/双人宴谱转换、三区服牌子规则构建与落雪成绩转标准记录纯函数
 │   ├── ZetarakuCatalogConverter.swift # 日服/国际服 Zetaraku 曲库纯函数转换器（关联国服 ID/别名/基准定数、国际服覆写与两代 B15 判定）
 │   ├── AccountCredentialStore.swift # Keychain 多源档案凭据/令牌存储与旧版单账号无感迁移
 │   ├── ImageLoader.swift            # 内存 + 磁盘双层曲绘缓存 CoverImageCache 与异步曲绘视图 CoverImageView
@@ -48,7 +48,7 @@ MaimaiData/
     ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、档案秒切菜单、成绩牌子入口、算分工具入口）
     ├── RatingCalculatorView.swift   # Rating 计算器二级页（双滑块定数分段算分 + 目标总分反推）
     ├── ProberView.swift             # B35 / B15 成绩列表与 Best 50 成绩图生成预览
-    ├── VersionCheckView.swift       # 国服官方牌子曲表 / 外服版本完成度进度表
+    ├── VersionCheckView.swift       # 国服 / 国际服 / 日服统一牌子进度表（支持旧框舞/覇者与各代全曲牌子）
     ├── LevelCheckView.swift         # 按 1～15 级定数分组的全难度完成度进度表
     ├── FinaleToDxView.swift         # 旧框 (FiNALE) 音符判定换算 DX 达成率工具
     ├── SettingsView.swift           # 极简两级目录式设置页（含区服选择、检索偏好、数据存储与致谢二级页）
@@ -151,8 +151,9 @@ MaimaiData/
 | `AppCard` | `Containers.swift` | 页面基础圆角卡片（支持浅色白底/深色 `surfaceDark`、可选左上淡渐变 `tint` 与细描边） |
 | `AppSectionHeader` | `Containers.swift` | 带左侧蓝色渐变竖条的标准分组标题栏（含可选 `subtitle` 与右侧 `trailing` 槽位） |
 | `AppSectionCard` | `Containers.swift` | 组合 `AppCard` + `AppSectionHeader` 的页面主力业务卡片，凡带标题的卡片一律使用它 |
-| `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器（内置 `clipShape` 自动裁切首尾行外侧圆角），用于承载设置组、工具入口列表、数据表格或指标块 |
+| `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器（内置 `clipShape` 自动裁切首尾行外侧圆角，内部统一用通栏 `Divider()` 分割），用于承载设置组、工具入口列表、数据表格或指标块 |
 | `AppInsetRow` / `.appInsetRowHighlight` | `Containers.swift` | `AppInsetGroup` 内的标准行及显式 `Rectangle()` 通栏高亮修饰符（严禁对表格行裸调 `.background(color)` 以免继承外层圆角） |
+| `AppFloatingPanel` / `ScoreProfileRowLabel` | `Containers.swift` | 不透明圆角悬浮下拉面板（锚定缩放+透明度动画，不挤压页面布局）与统一成绩档案单行标签 |
 | `FlowLayout` | `Containers.swift` | 自适应折行流式布局，用于筛选条件 Chip、歌曲别名胶囊等多标签排布 |
 | `PhotoPreviewScaffold` | `Containers.swift` | 全屏纯黑底图片缩放预览、系统分享与保存相册通用脚手架（`CoverZoomView` 与 `B50PreviewSheet` 共用） |
 | `RatingTierTable` | `RatingTierTable.swift` | 谱面各达成率分段（含 SSS 区间 +1 跳分线）单曲分与 B50 净涨分对照表（未登录自动退化为两列） |

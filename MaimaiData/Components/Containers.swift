@@ -431,6 +431,36 @@ extension View {
     }
 }
 
+/// Opaque elevated floating dropdown panel (clips inner rows cleanly to `Radius.inset` and casts a soft elevation shadow).
+struct AppFloatingPanel<Content: View>: View {
+    @Environment(\.colorScheme) private var colorScheme
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous)
+        content()
+            .clipShape(shape)
+            .background(
+                colorScheme == .dark ? AppTheme.Palette.surfaceDark : Color.white,
+                in: shape
+            )
+            .overlay(
+                shape.strokeBorder(
+                    colorScheme == .dark
+                        ? Color.white.opacity(0.12)
+                        : AppTheme.Palette.hairline.opacity(0.12),
+                    lineWidth: 1
+                )
+            )
+            .shadow(
+                color: .black.opacity(colorScheme == .dark ? 0.42 : 0.12),
+                radius: 14,
+                x: 0,
+                y: 8
+            )
+    }
+}
+
 /// Shared single-line score profile row content (fixed-width provider tag on the left + player ID + trailing selection mark),
 /// reused by both `AccountManagementView` and `RatingToolsView`'s inline switcher.
 struct ScoreProfileRowLabel: View {
