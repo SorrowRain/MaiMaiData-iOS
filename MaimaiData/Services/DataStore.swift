@@ -39,6 +39,8 @@ final class DataStore {
     private(set) var isLoadingLocalData = true
     var statusMessage: String?
     var syncNotice: DataSyncNotice?
+    var availableAppUpdate: AppReleaseInfo?
+    private(set) var isCheckingAppUpdate = false
 
     // Single-flight guard for rotating LXNS OAuth refresh tokens
     private var inFlightTokenRefreshTasks: [UUID: Task<String, Error>] = [:]
@@ -337,7 +339,51 @@ final class DataStore {
         try? await Task.sleep(for: .seconds(3))
         async let periodicCatalogCheck: Void = syncAllCatalogsAndRules(force: false)
         async let periodicStatsCheck: Void = refreshChartStatsIfStale(force: false)
-        _ = await (periodicCatalogCheck, periodicStatsCheck)
+        async let periodicAppUpdateCheck: Void = checkAppUpdateIfNeeded(manual: false)
+        _ = await (periodicCatalogCheck, periodicStatsCheck, periodicAppUpdateCheck)
+    }
+
+    // MARK: - App Version Update Check (24h Silent Auto-Check for Sideload + Manual Check in About)
+
+    func checkAppUpdateIfNeeded(manual: Bool) async {
+        guard !isCheckingAppUpdate else { return }
+        let channel = IOSInstallChannel.current
+        if !manual {
+            // App Store and TestFlight have native Apple update notifications; only auto-prompt sideload/dev builds.
+            guard channel == .sideloadOrDev else { return }
+            let ud = UserDefaults.standard
+            if let lastTs = ud.object(forKey: Keys.appUpdateCheck) as? TimeInterval,
+               Date().timeIntervalSince1970 - lastTs < 24 * 3600 {
+                return
+            }
+        }
+
+        isCheckingAppUpdate = true
+        defer { isCheckingAppUpdate = false }
+
+        do {
+            let latest = try await MaimaiAPI.fetchLatestGitHubRelease()
+            UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Keys.appUpdateCheck)
+            let currentShort = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+
+            if let latest, latest.isNewer(than: currentShort) {
+                let ignored = UserDefaults.standard.string(forKey: Keys.ignoredAppUpdateVersion)
+                if manual || ignored != latest.version {
+                    availableAppUpdate = latest
+                }
+            } else if manual {
+                statusMessage = "当前已是最新版本（v\(currentShort)）"
+            }
+        } catch {
+            if manual {
+                statusMessage = "检查更新失败，请检查网络连接后重试"
+            }
+        }
+    }
+
+    func ignoreAppUpdate(version: String) {
+        UserDefaults.standard.set(version, forKey: Keys.ignoredAppUpdateVersion)
+        availableAppUpdate = nil
     }
 
     private func storeCNBaseline(_ rawList: [SongData]) async {

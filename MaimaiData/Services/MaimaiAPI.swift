@@ -412,4 +412,28 @@ enum MaimaiAPI {
         if let err = obj["error"] as? String, !err.isEmpty { return err }
         return nil
     }
+
+    // MARK: - 5. GitHub Latest Release Update Check
+
+    private static let githubLatestReleaseURL = URL(
+        string: "https://api.github.com/repos/SorrowRain/MaimaiData/releases/latest"
+    )!
+
+    static func fetchLatestGitHubRelease() async throws -> AppReleaseInfo? {
+        var req = URLRequest(url: githubLatestReleaseURL, timeoutInterval: 6)
+        req.setValue(appUserAgent, forHTTPHeaderField: "User-Agent")
+        req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
+        let (data, resp) = try await session.data(for: req)
+        guard let httpResp = resp as? HTTPURLResponse else {
+            throw MaimaiAPIError.httpError(-1, "无效响应")
+        }
+        if httpResp.statusCode == 404 {
+            return nil
+        }
+        guard (200...299).contains(httpResp.statusCode) else {
+            throw MaimaiAPIError.httpError(httpResp.statusCode, extractErrorMessage(from: data))
+        }
+        let payload = try JSONDecoder().decode(GitHubLatestReleasePayload.self, from: data)
+        return AppReleaseInfo.from(payload: payload)
+    }
 }

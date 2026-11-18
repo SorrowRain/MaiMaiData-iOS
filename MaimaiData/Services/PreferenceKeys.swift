@@ -19,6 +19,8 @@ enum PreferenceKeys {
     static let lastVersionCheckIntl = "last_version_check_intl"
     static let lastVersionCheckJp = "last_version_check_jp"
     static let lastLevelCheck = "last_level_check"
+    static let appUpdateCheck = "app_update_check_ts"
+    static let ignoredAppUpdateVersion = "ignored_app_update_version"
 
     // Legacy single-provider keys retained strictly for one-time migration
     static let savedAccounts = "saved_accounts"

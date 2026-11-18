@@ -317,7 +317,7 @@ private struct SongRowView: View {
                     borderColor: colors.stroke
                 )
 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 0) {
                     HStack(alignment: .top, spacing: 6) {
                         Text(song.title)
                             .font(AppTheme.Typography.songTitle)
@@ -337,11 +337,13 @@ private struct SongRowView: View {
                         ChartTypeBadge(isDX: song.isDX)
                             .padding(.top, 2)
                     }
+                    .padding(.bottom, 5)
 
                     HStack(spacing: 6) {
                         GenreCapsuleTag(genre: song.basicInfo.genre)
                         Spacer(minLength: 0)
                     }
+                    .padding(.bottom, 7)
 
                     HStack(spacing: 5) {
                         ForEach(song.resolvedCharts) { chart in

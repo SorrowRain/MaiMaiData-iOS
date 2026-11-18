@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct MainTabView: View {
+    @Environment(DataStore.self) private var store
+    @Environment(\.openURL) private var openURL
     @State private var selectedTab: Int = 0
 
     var body: some View {
@@ -29,5 +31,33 @@ struct MainTabView: View {
         }
         .tint(AppTheme.accent)
         .sensoryFeedback(.selection, trigger: selectedTab)
+        .alert(
+            store.availableAppUpdate.map { "发现新版本 v\($0.version)" } ?? "发现新版本",
+            isPresented: Binding(
+                get: { store.availableAppUpdate != nil },
+                set: { if !$0 { store.availableAppUpdate = nil } }
+            ),
+            presenting: store.availableAppUpdate
+        ) { release in
+            if IOSInstallChannel.current == .testFlight,
+               let tfURL = URL(string: "itms-beta://") {
+                Button("打开 TestFlight") {
+                    openURL(tfURL)
+                    store.availableAppUpdate = nil
+                }
+            }
+            Button("知道了", role: .cancel) {
+                store.availableAppUpdate = nil
+            }
+            Button("忽略此版本") {
+                store.ignoreAppUpdate(version: release.version)
+            }
+        } message: { release in
+            if release.notes.isEmpty {
+                Text("已有新版本发布，TestFlight 用户可在 TestFlight 更新，自签用户可前往关于页版本发布处获取新包。")
+            } else {
+                Text(release.notes)
+            }
+        }
     }
 }

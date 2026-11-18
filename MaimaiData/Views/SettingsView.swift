@@ -17,15 +17,6 @@ struct SettingsView: View {
         return "v\(short)"
     }
 
-    private var appVersionText: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "1.0.0"
-        if let build = info?["CFBundleVersion"] as? String, !build.isEmpty {
-            return "v\(short) (\(build))"
-        }
-        return "v\(short)"
-    }
-
     private var activeProfileSummary: String {
         guard let profile = store.activeProfile else { return "未添加" }
         return profile.displayTitle
@@ -124,7 +115,7 @@ struct SettingsView: View {
                 case .dataAndStorage:
                     DataAndStorageSettingsView()
                 case .about:
-                    AboutView(versionText: appVersionText)
+                    AboutView(versionText: shortVersionText)
                 case .acknowledgments:
                     AcknowledgmentsView()
                 }
@@ -331,6 +322,7 @@ private struct DataAndStorageSettingsView: View {
 // MARK: - Secondary Page 4: 关于 MaimaiData
 
 private struct AboutView: View {
+    @Environment(DataStore.self) private var store
     let versionText: String
 
     private static let repoURL = URL(string: "https://github.com/SorrowRain/MaimaiData")!
@@ -340,6 +332,7 @@ private struct AboutView: View {
     private static let authorURL = URL(string: "https://github.com/SorrowRain")!
 
     var body: some View {
+        @Bindable var storeBindable = store
         let iconShape = RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
 
         ScrollView {
@@ -374,6 +367,18 @@ private struct AboutView: View {
                 AppSectionCard(title: "项目与反馈") {
                     AppInsetGroup {
                         VStack(spacing: 0) {
+                            AppInsetRow(title: "检查版本更新") {
+                                AppInlineButton(
+                                    title: "检查更新",
+                                    icon: "arrow.clockwise",
+                                    isLoading: store.isCheckingAppUpdate
+                                ) {
+                                    Task { await store.checkAppUpdateIfNeeded(manual: true) }
+                                }
+                            }
+
+                            Divider()
+
                             externalLinkRow(
                                 title: "GitHub 开源仓库",
                                 subtitle: "github.com/SorrowRain/MaimaiData",
@@ -425,6 +430,7 @@ private struct AboutView: View {
         .appPageBackground()
         .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
+        .errorAlert("版本检查", message: $storeBindable.statusMessage)
     }
 
     private func externalLinkRow(title: String, subtitle: String, url: URL) -> some View {

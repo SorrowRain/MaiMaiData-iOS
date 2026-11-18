@@ -294,3 +294,71 @@ struct SongFilterCriteria: Equatable {
         sortOption != .defaultDesc
     }
 }
+
+struct GitHubLatestReleasePayload: Decodable {
+    let tagName: String
+    let htmlURL: String
+    let body: String?
+
+    enum CodingKeys: String, CodingKey {
+        case tagName = "tag_name"
+        case htmlURL = "html_url"
+        case body
+    }
+}
+
+struct AppReleaseInfo: Identifiable, Equatable {
+    var id: String { version }
+    let version: String
+    let tagName: String
+    let notes: String
+    let htmlURL: String
+
+    static func from(payload: GitHubLatestReleasePayload) -> AppReleaseInfo? {
+        let rawTag = payload.tagName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleaned = rawTag.replacingOccurrences(
+            of: #"^[vV]+"#,
+            with: "",
+            options: .regularExpression
+        )
+        guard !cleaned.isEmpty else { return nil }
+        let trimmedNotes = (payload.body ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let cappedNotes = trimmedNotes.count > 420
+            ? String(trimmedNotes.prefix(420)) + "…"
+            : trimmedNotes
+        return AppReleaseInfo(
+            version: cleaned,
+            tagName: rawTag,
+            notes: cappedNotes,
+            htmlURL: payload.htmlURL
+        )
+    }
+
+    func isNewer(than currentVersion: String) -> Bool {
+        let cleanedCurrent = currentVersion
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: #"^[vV]+"#, with: "", options: .regularExpression)
+        return VersionString.isNewer(version, than: cleanedCurrent)
+    }
+}
+
+enum IOSInstallChannel {
+    case appStore
+    case testFlight
+    case sideloadOrDev
+
+    static var current: IOSInstallChannel {
+        let hasEmbeddedProvision = Bundle.main.path(forResource: "embedded", ofType: "mobileprovision") != nil
+        if hasEmbeddedProvision {
+            return .sideloadOrDev
+        }
+        let receiptName = Bundle.main.appStoreReceiptURL?.lastPathComponent ?? ""
+        if receiptName == "sandboxReceipt" {
+            return .testFlight
+        }
+        if receiptName == "receipt" {
+            return .appStore
+        }
+        return .sideloadOrDev
+    }
+}

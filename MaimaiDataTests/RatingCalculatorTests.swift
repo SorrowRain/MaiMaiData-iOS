@@ -106,4 +106,15 @@ final class RatingCalculatorTests: XCTestCase {
         let loggedOutRows = RatingCalculator.buildTierRows(ds: 14.8, currentAchievement: nil, b50BaselineRating: nil)
         XCTAssertTrue(loggedOutRows.allSatisfy { $0.b50Gain == nil })
     }
+
+    func testAppReleaseInfoTagParsingAndVersionCheck() throws {
+        let json = #"{"tag_name":"v1.1.0","html_url":"https://github.com/SorrowRain/MaimaiData/releases/tag/v1.1.0","body":"  新增功能与体验优化  "}"#
+        let payload = try JSONDecoder().decode(GitHubLatestReleasePayload.self, from: Data(json.utf8))
+        let info = try XCTUnwrap(AppReleaseInfo.from(payload: payload))
+        XCTAssertEqual(info.version, "1.1.0")
+        XCTAssertEqual(info.notes, "新增功能与体验优化")
+        XCTAssertTrue(info.isNewer(than: "1.0.0"))
+        XCTAssertFalse(info.isNewer(than: "1.1.0"))
+        XCTAssertFalse(info.isNewer(than: "1.2.0"))
+    }
 }
