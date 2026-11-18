@@ -120,6 +120,8 @@ private struct TintedActionCapsuleChrome: ViewModifier {
         let isDark = colorScheme == .dark
         let isNeutral = tint == .secondary
         content
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .foregroundStyle(
                 isNeutral
                     ? Color.secondary

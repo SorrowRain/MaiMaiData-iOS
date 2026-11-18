@@ -83,48 +83,32 @@ struct VersionCheckView: View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppCard(padding: AppTheme.cardPadding, tint: diffTint) {
-                    VStack(alignment: .leading, spacing: AppTheme.Space.m) {
-                        HStack(spacing: AppTheme.Space.m) {
-                            Image(activeScope.versionAsset)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 92, height: 36, alignment: .center)
+                    HStack(spacing: AppTheme.Space.m) {
+                        Image(activeScope.versionAsset)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 92, height: 36, alignment: .center)
 
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(activeScope.title)
-                                    .font(AppTheme.Typography.rowTitle)
-                                    .lineLimit(1)
-                                Text("共 \(allSongs.count) 首歌曲")
-                                    .font(AppTheme.Typography.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-
-                            Spacer(minLength: 0)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(activeScope.title)
+                                .font(AppTheme.Typography.rowTitle)
+                                .lineLimit(1)
+                            Text("共 \(allSongs.count) 首歌曲")
+                                .font(AppTheme.Typography.caption)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(1)
                         }
 
-                        HStack(spacing: AppTheme.Space.s) {
-                            Menu {
-                                Picker("牌子", selection: clampedSelection) {
-                                    ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
-                                        Text(item.title).tag(idx)
-                                    }
-                                }
-                            } label: {
-                                AppMenuCapsule(title: "切换牌子")
-                            }
+                        Spacer(minLength: AppTheme.Space.xs)
 
-                            Menu {
-                                Picker("难度", selection: $selectedDifficulty) {
-                                    ForEach(availableDifficulties, id: \.self) { diff in
-                                        Text(diff.shortName).tag(diff)
-                                    }
+                        Menu {
+                            Picker("牌子", selection: clampedSelection) {
+                                ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
+                                    Text(item.title).tag(idx)
                                 }
-                            } label: {
-                                AppMenuCapsule(title: selectedDifficulty.shortName, tint: diffTint)
                             }
-
-                            Spacer()
+                        } label: {
+                            AppMenuCapsule(title: "切换牌子")
                         }
                     }
                 }
@@ -133,7 +117,17 @@ struct VersionCheckView: View {
                     stats: stats,
                     displayMode: $displayMode,
                     onlyUnfinished: $onlyUnfinished
-                )
+                ) {
+                    Menu {
+                        Picker("难度", selection: $selectedDifficulty) {
+                            ForEach(availableDifficulties, id: \.self) { diff in
+                                Text(diff.shortName).tag(diff)
+                            }
+                        }
+                    } label: {
+                        AppMenuCapsule(title: selectedDifficulty.shortName, tint: diffTint)
+                    }
+                }
 
                 if store.isSyncingSongs && store.songs.isEmpty {
                     ProgressView("正在同步\(store.serverRegion.shortName)曲库…")

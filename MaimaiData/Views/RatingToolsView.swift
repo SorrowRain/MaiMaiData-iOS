@@ -4,7 +4,6 @@ struct RatingToolsView: View {
     @Environment(DataStore.self) private var store
 
     @State private var path = NavigationPath()
-    @State private var isProfileExpanded = false
     @State private var toast = ToastState()
     @State private var syncErrorMessage: String?
 
@@ -19,41 +18,19 @@ struct RatingToolsView: View {
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
-                ZStack(alignment: .top) {
-                    VStack(spacing: AppTheme.cardSpacing) {
-                        ratingSummaryCard
-                            .zIndex(20)
-                        recordsAndProgressSection
-                        calculatorsSection
-                    }
-                    .padding(.horizontal, AppTheme.pagePadding)
-                    .padding(.vertical, AppTheme.Space.m)
-
-                    if isProfileExpanded {
-                        Color.black.opacity(0.001)
-                            .ignoresSafeArea()
-                            .zIndex(10)
-                            .onTapGesture {
-                                withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
-                                    isProfileExpanded = false
-                                }
-                            }
-                    }
+                VStack(spacing: AppTheme.cardSpacing) {
+                    ratingSummaryCard
+                    recordsAndProgressSection
+                    calculatorsSection
                 }
+                .padding(.horizontal, AppTheme.pagePadding)
+                .padding(.vertical, AppTheme.Space.m)
             }
             .appPageBackground()
-            .sensoryFeedback(.selection, trigger: store.activeProfileId)
             .navigationTitle("Rating 与查分")
             .navigationBarTitleDisplayMode(.inline)
             .statusToast(toast)
             .errorAlert("同步失败", message: $syncErrorMessage)
-            .onDisappear {
-                var tx = Transaction()
-                tx.disablesAnimations = true
-                withTransaction(tx) {
-                    isProfileExpanded = false
-                }
-            }
             .navigationDestination(for: ToolRoute.self) { route in
                 switch route {
                 case .prober:
@@ -86,34 +63,11 @@ struct RatingToolsView: View {
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center, spacing: AppTheme.Space.s) {
-                    if store.activeProfile != nil {
-                        Button {
-                            withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
-                                isProfileExpanded.toggle()
-                            }
-                        } label: {
-                            HStack(alignment: .center, spacing: 6) {
-                                Text(store.displayPlayerName)
-                                    .font(AppTheme.Typography.cardTitle)
-                                    .foregroundStyle(.primary)
-                                    .lineLimit(1)
-                                    .transaction { $0.animation = nil }
-
-                                Image(systemName: "chevron.down")
-                                    .font(AppTheme.Typography.captionBold)
-                                    .foregroundStyle(.secondary)
-                                    .rotationEffect(.degrees(isProfileExpanded ? 180 : 0))
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击切换成绩档案")
-                    } else {
-                        Text("未添加档案")
-                            .font(AppTheme.Typography.cardTitle)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                    }
+                    Text(store.activeProfile != nil ? store.displayPlayerName : "未添加档案")
+                        .font(AppTheme.Typography.cardTitle)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .transaction { $0.animation = nil }
 
                     Spacer(minLength: 4)
 
@@ -136,12 +90,6 @@ struct RatingToolsView: View {
                 }
 
                 Button {
-                    if isProfileExpanded {
-                        withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
-                            isProfileExpanded = false
-                        }
-                        return
-                    }
                     path.append(isLoggedIn ? ToolRoute.prober : ToolRoute.accountManagement)
                 } label: {
                     HStack(spacing: AppTheme.Space.s) {
@@ -165,61 +113,6 @@ struct RatingToolsView: View {
                 .accessibilityLabel(isLoggedIn ? "查看 Best 50 成绩详情" : "前往添加成绩档案")
             }
         }
-        .overlay(alignment: .topLeading) {
-            if isProfileExpanded, let activeProfile = store.activeProfile {
-                floatingProfileDropdown(activeProfileId: activeProfile.id)
-                    .padding(.top, 50)
-                    .padding(.leading, AppTheme.cardPadding)
-                    .transition(
-                        .scale(scale: 0.95, anchor: .topLeading)
-                        .combined(with: .opacity)
-                    )
-            }
-        }
-    }
-
-    private func floatingProfileDropdown(activeProfileId: UUID) -> some View {
-        AppFloatingPanel {
-            VStack(spacing: 0) {
-                ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
-                    if idx > 0 {
-                        Divider()
-                    }
-                    let isCurrent = (profile.id == activeProfileId)
-
-                    Button {
-                        withAnimation(.snappy(duration: 0.18, extraBounce: 0)) {
-                            isProfileExpanded = false
-                        }
-                        guard !isCurrent else { return }
-                        store.switchProfile(to: profile.id)
-                        toast.show("已切换至 \(profile.displayTitle)", duration: 1.6)
-                    } label: {
-                        ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
-                            .padding(.horizontal, AppTheme.Space.m)
-                            .frame(minHeight: 46)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .appInsetRowHighlight(isCurrent)
-                }
-
-                Divider()
-
-                Button {
-                    var tx = Transaction()
-                    tx.disablesAnimations = true
-                    withTransaction(tx) {
-                        isProfileExpanded = false
-                    }
-                    path.append(ToolRoute.accountManagement)
-                } label: {
-                    AppInsetRow(title: "管理成绩档案", showsChevron: true)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .frame(width: 244)
     }
 
     private func syncRecords() async {

@@ -493,7 +493,7 @@ final class DataStore {
                !cnSongs.isEmpty,
                plateCatalog != nil,
                zetarakuCatalog != nil {
-                statusMessage = "近期已同步过全量曲库与规则，当前已是最新数据"
+                statusMessage = "当前已是最新数据"
                 return
             }
         } else {
@@ -532,7 +532,7 @@ final class DataStore {
 
         if force {
             if cnErr == nil && zErr == nil {
-                statusMessage = "全量曲库与牌子规则已更新"
+                statusMessage = "已更新至最新数据"
                 syncNotice = nil
             } else if let err = cnErr ?? zErr {
                 statusMessage = "部分数据同步失败：\(err.localizedDescription)"
@@ -650,7 +650,7 @@ final class DataStore {
         if force {
             let manualCooldown: TimeInterval = 5 * 60
             if let last = lastChartStatsSync, Date().timeIntervalSince(last) < manualCooldown, !chartStats.isEmpty {
-                statusMessage = "近期已刷新过拟合定数，当前已是最新数据"
+                statusMessage = "当前已是最新数据"
                 return
             }
         } else {

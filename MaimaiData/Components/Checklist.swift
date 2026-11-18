@@ -32,20 +32,36 @@ enum CheckDisplayMode: Int, CaseIterable {
 
 private let checklistGridColumns = [GridItem(.adaptive(minimum: 72), spacing: AppTheme.itemSpacing)]
 
-struct ChecklistStatsHeader: View {
+struct ChecklistStatsHeader<LeadingAccessory: View>: View {
     let stats: ChecklistStats
     @Binding var displayMode: CheckDisplayMode
     @Binding var onlyUnfinished: Bool
+    private let leadingAccessory: LeadingAccessory
+
+    init(
+        stats: ChecklistStats,
+        displayMode: Binding<CheckDisplayMode>,
+        onlyUnfinished: Binding<Bool>,
+        @ViewBuilder leadingAccessory: () -> LeadingAccessory
+    ) {
+        self.stats = stats
+        self._displayMode = displayMode
+        self._onlyUnfinished = onlyUnfinished
+        self.leadingAccessory = leadingAccessory()
+    }
 
     var body: some View {
         AppSectionCard(title: "完成度统计") {
-            AppInlineButton(
-                title: "仅看未达成",
-                icon: onlyUnfinished ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle",
-                tint: onlyUnfinished ? AppTheme.accent : .secondary
-            ) {
-                withAnimation(.snappy(duration: 0.22)) {
-                    onlyUnfinished.toggle()
+            HStack(spacing: AppTheme.Space.s) {
+                leadingAccessory
+                AppInlineButton(
+                    title: "仅看未达成",
+                    icon: onlyUnfinished ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle",
+                    tint: onlyUnfinished ? AppTheme.accent : .secondary
+                ) {
+                    withAnimation(.snappy(duration: 0.22)) {
+                        onlyUnfinished.toggle()
+                    }
                 }
             }
         } content: {
@@ -77,6 +93,22 @@ struct ChecklistStatsHeader: View {
         .buttonStyle(.plain)
         .accessibilityLabel("\(mode.title) 进度 \(count) / \(stats.totalCount)")
         .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+extension ChecklistStatsHeader where LeadingAccessory == EmptyView {
+    init(
+        stats: ChecklistStats,
+        displayMode: Binding<CheckDisplayMode>,
+        onlyUnfinished: Binding<Bool>
+    ) {
+        self.init(
+            stats: stats,
+            displayMode: displayMode,
+            onlyUnfinished: onlyUnfinished
+        ) {
+            EmptyView()
+        }
     }
 }
 

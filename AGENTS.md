@@ -45,7 +45,7 @@ MaimaiData/
     ├── SearchFilterSheet.swift      # 等级/定数双滑块、分类、收录版本与难度排序筛选弹窗
     ├── SongDetailView.swift         # 曲目详情、难度切换、拟合定数、物量分布条与容错扣分参考
     ├── CoverZoomView.swift          # 曲目高清封面全屏缩放预览页
-    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、档案秒切菜单、成绩牌子入口、算分工具入口）
+    ├── RatingToolsView.swift        # Rating 与查分主页（玩家总览、成绩牌子入口、算分工具入口）
     ├── RatingCalculatorView.swift   # Rating 计算器二级页（双滑块定数分段算分 + 目标总分反推）
     ├── ProberView.swift             # B35 / B15 成绩列表与 Best 50 成绩图生成预览
     ├── VersionCheckView.swift       # 国服 / 国际服 / 日服统一牌子进度表（支持旧框舞/覇者与各代全曲牌子）
@@ -153,7 +153,7 @@ MaimaiData/
 | `AppSectionCard` | `Containers.swift` | 组合 `AppCard` + `AppSectionHeader` 的页面主力业务卡片，凡带标题的卡片一律使用它 |
 | `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器（内置 `clipShape` 自动裁切首尾行外侧圆角，内部统一用通栏 `Divider()` 分割），用于承载设置组、工具入口列表、数据表格或指标块 |
 | `AppInsetRow` / `.appInsetRowHighlight` | `Containers.swift` | `AppInsetGroup` 内的标准行及显式 `Rectangle()` 通栏高亮修饰符（严禁对表格行裸调 `.background(color)` 以免继承外层圆角） |
-| `AppFloatingPanel` / `ScoreProfileRowLabel` | `Containers.swift` | 不透明圆角悬浮下拉面板（锚定缩放+透明度动画，不挤压页面布局）与统一成绩档案单行标签 |
+| `ScoreProfileRowLabel` | `Containers.swift` | 统一成绩档案单行展示标签（左侧平台胶囊 + 玩家 ID + 右侧对勾） |
 | `FlowLayout` | `Containers.swift` | 自适应折行流式布局，用于筛选条件 Chip、歌曲别名胶囊等多标签排布 |
 | `PhotoPreviewScaffold` | `Containers.swift` | 全屏纯黑底图片缩放预览、系统分享与保存相册通用脚手架（`CoverZoomView` 与 `B50PreviewSheet` 共用） |
 | `RatingTierTable` | `RatingTierTable.swift` | 谱面各达成率分段（含 SSS 区间 +1 跳分线）单曲分与 B50 净涨分对照表（未登录自动退化为两列） |
