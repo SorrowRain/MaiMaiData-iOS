@@ -1,3 +1,4 @@
+import Observation
 import SwiftUI
 
 extension View {
@@ -50,10 +51,10 @@ extension View {
         }
     }
 
-    /// Bottom glass toast overlay with slide+fade transition.
-    func statusToast(_ message: String?) -> some View {
+    /// Bottom glass toast overlay bound to a race-free `ToastState`.
+    func statusToast(_ toast: ToastState) -> some View {
         overlay(alignment: .bottom) {
-            if let message {
+            if let message = toast.text {
                 StatusToast(text: message)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -61,21 +62,26 @@ extension View {
     }
 }
 
-/// Clears an optional toast text after a delay.
+/// Race-free toast state controller: showing a new toast immediately cancels any prior dismiss timer
+/// so rapid consecutive actions never cut short the latest toast.
 @MainActor
-func dismissToast(
-    _ text: Binding<String?>,
-    after seconds: Double,
-    animated: Bool = false,
-    ifContains expected: String? = nil
-) async {
-    try? await Task.sleep(for: .seconds(seconds))
-    // A newer toast may have replaced this one while we waited.
-    if let expected, text.wrappedValue?.contains(expected) != true { return }
-    if animated {
-        withAnimation { text.wrappedValue = nil }
-    } else {
-        text.wrappedValue = nil
+@Observable
+final class ToastState {
+    private(set) var text: String?
+    @ObservationIgnored private var dismissTask: Task<Void, Never>?
+
+    func show(_ message: String, duration: Double = 1.8) {
+        dismissTask?.cancel()
+        withAnimation(.snappy(duration: 0.22)) {
+            text = message
+        }
+        dismissTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(duration))
+            guard !Task.isCancelled else { return }
+            withAnimation(.snappy(duration: 0.22)) {
+                self?.text = nil
+            }
+        }
     }
 }
 
@@ -89,6 +95,7 @@ struct StatusToast: View {
             Text(text)
                 .font(AppTheme.Typography.inlineAction)
                 .multilineTextAlignment(.center)
+                .transaction { $0.animation = nil }
         }
         .padding(.horizontal, AppTheme.Space.l)
         .padding(.vertical, 10)
@@ -108,7 +115,7 @@ struct SyncStatusBanner: View {
                     HStack(alignment: .center, spacing: AppTheme.itemSpacing) {
                         if store.isLoadingLocalData || store.isSyncingSongs {
                             ProgressView().controlSize(.small)
-                            Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在同步\(store.serverRegion.shortName)曲库…")
+                            Text(store.isLoadingLocalData ? "正在读取本地曲库…" : "正在同步曲库与规则…")
                                 .font(AppTheme.Typography.tag)
                                 .foregroundStyle(.secondary)
                         } else if let notice = store.syncNotice {
@@ -126,10 +133,9 @@ struct SyncStatusBanner: View {
                         HStack(spacing: 10) {
                             AppInlineButton(title: "重试", icon: "arrow.clockwise") {
                                 store.syncNotice = nil
-                                // Retry the operation that actually failed.
                                 switch notice.kind {
                                 case .songs:
-                                    Task { await store.syncActiveRegionSongs(force: true) }
+                                    Task { await store.syncAllCatalogsAndRules(force: true) }
                                 case .stats:
                                     Task { await store.refreshChartStatsIfStale(force: true) }
                                 }

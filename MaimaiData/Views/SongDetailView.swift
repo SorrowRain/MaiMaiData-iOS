@@ -22,7 +22,7 @@ struct SongDetailView: View {
     @State private var selectedChartIndex: Int
     @State private var selectedTab: DetailTab = .overview
     @State private var showCoverZoom = false
-    @State private var copiedToast: String?
+    @State private var toast = ToastState()
     @State private var copyTrigger = 0
 
     init(song: SongData, initialDifficulty: DifficultyType? = nil) {
@@ -91,7 +91,7 @@ struct SongDetailView: View {
         .sensoryFeedback(.selection, trigger: selectedTab)
         .sensoryFeedback(.selection, trigger: currentSong.id)
         .sensoryFeedback(.success, trigger: copyTrigger)
-        .statusToast(copiedToast)
+        .statusToast(toast)
         .fullScreenCover(isPresented: $showCoverZoom) {
             CoverZoomView(song: currentSong)
         }
@@ -545,12 +545,7 @@ struct SongDetailView: View {
         guard !value.isEmpty else { return }
         UIPasteboard.general.string = value
         copyTrigger += 1
-        withAnimation {
-            copiedToast = "已复制\(label)：\(value)"
-        }
-        Task {
-            await dismissToast($copiedToast, after: 1.8, animated: true, ifContains: value)
-        }
+        toast.show("已复制\(label)：\(value)")
     }
 }
 

@@ -275,4 +275,23 @@ final class ScoreProfileAndLXNSTests: XCTestCase {
         XCTAssertEqual(try MaimaiAPI.parseOAuthCallback(url: validCallback, expectedState: "STATE_OK"), "AUTH123")
         XCTAssertThrowsError(try MaimaiAPI.parseOAuthCallback(url: validCallback, expectedState: "WRONG_STATE"))
     }
+
+    @MainActor
+    func testToastStateCancelsPreviousDismissTimerOnRapidSwitches() async throws {
+        let toast = ToastState()
+        toast.show("已切换至 A", duration: 0.12)
+        XCTAssertEqual(toast.text, "已切换至 A")
+
+        try await Task.sleep(for: .milliseconds(60))
+        toast.show("已切换至 B", duration: 0.28)
+        XCTAssertEqual(toast.text, "已切换至 B")
+
+        // At 60 + 100 = 160ms, the first 120ms timer would have fired if not cancelled.
+        try await Task.sleep(for: .milliseconds(100))
+        XCTAssertEqual(toast.text, "已切换至 B")
+
+        // After the second timer completes, toast clears cleanly.
+        try await Task.sleep(for: .milliseconds(230))
+        XCTAssertNil(toast.text)
+    }
 }

@@ -188,6 +188,7 @@ struct AppInsetGroup<Content: View>: View {
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .clipShape(shape)
             .background(
                 colorScheme == .dark
                     ? Color.white.opacity(0.045)
@@ -321,7 +322,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
 
     @ViewBuilder let placeholder: () -> Placeholder
 
-    @State private var saveStatus: String?
+    @State private var saveToast = ToastState()
     @State private var showShare = false
     @State private var didSaveTrigger = 0
 
@@ -383,7 +384,7 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
                     }
                 }
             }
-            .statusToast(saveStatus)
+            .statusToast(saveToast)
             .sensoryFeedback(.success, trigger: didSaveTrigger)
             .sheet(isPresented: $showShare) {
                 if let image {
@@ -402,15 +403,36 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
         } catch {
             message = error.localizedDescription
         }
-        withAnimation {
-            saveStatus = message
-        }
-        await dismissToast($saveStatus, after: 2.2, animated: true, ifContains: message)
+        saveToast.show(message, duration: 2.2)
+    }
+}
+
+private struct InsetRowHighlightModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    let isHighlighted: Bool
+    let tint: Color
+
+    func body(content: Content) -> some View {
+        content.background(
+            isHighlighted
+                ? tint.opacity(colorScheme == .dark ? 0.16 : 0.08)
+                : Color.clear,
+            in: Rectangle()
+        )
+    }
+}
+
+extension View {
+    /// Edge-to-edge rectangular row highlight inside `AppInsetGroup`.
+    /// Passing `in: Rectangle()` explicitly prevents SwiftUI on iOS 26 from inheriting the enclosing rounded container shape,
+    /// while `AppInsetGroup.clipShape` cleanly rounds only the outer corners of the first/last rows.
+    func appInsetRowHighlight(_ isHighlighted: Bool, tint: Color = AppTheme.accent) -> some View {
+        modifier(InsetRowHighlightModifier(isHighlighted: isHighlighted, tint: tint))
     }
 }
 
 /// Shared single-line score profile row content (fixed-width provider tag on the left + player ID + trailing selection mark),
-/// reused by both `AccountManagementView` and `RatingToolsView`'s quick switcher popover.
+/// reused by both `AccountManagementView` and `RatingToolsView`'s inline switcher.
 struct ScoreProfileRowLabel: View {
     let profile: ScoreProfile
     let isSelected: Bool
@@ -426,9 +448,10 @@ struct ScoreProfileRowLabel: View {
             )
 
             Text(profile.displayTitle)
-                .font(isSelected ? AppTheme.Typography.songTitle : AppTheme.Typography.rowTitle)
+                .font(AppTheme.Typography.rowTitle)
                 .foregroundStyle(isSelected ? AppTheme.accentText : .primary)
                 .lineLimit(1)
+                .transaction { $0.animation = nil }
 
             Spacer(minLength: AppTheme.Space.s)
 

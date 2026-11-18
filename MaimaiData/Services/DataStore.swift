@@ -153,23 +153,16 @@ final class DataStore {
         return list
     }
 
-    var activeCatalogSubtitle: String {
-        switch serverRegion {
-        case .cn:
-            let plateCount = plateCatalog?.groups.count ?? 0
-            let plateSuffix = plateCount > 0 ? " · \(plateCount) 组牌子" : ""
-            return "国服 \(dataVersion) · \(songs.count) 首\(plateSuffix)"
-        case .intl, .jp:
-            let stamp: String
-            if let updateTime = zetarakuCatalog?.updateTime, !updateTime.isEmpty {
-                stamp = String(updateTime.prefix(10))
-            } else if let last = lastZetarakuSync {
-                stamp = last.formatted(date: .numeric, time: .omitted)
-            } else {
-                stamp = "尚未同步"
+    var lastCatalogSyncText: String {
+        let latest: Date? = {
+            switch (lastCNCatalogSync, lastZetarakuSync) {
+            case let (cn?, z?): return max(cn, z)
+            case let (cn?, nil): return cn
+            case let (nil, z?): return z
+            case (nil, nil): return nil
             }
-            return "\(serverRegion.shortName)数据 \(stamp) · 共 \(songs.count) 首"
-        }
+        }()
+        return latest?.formatted(date: .abbreviated, time: .shortened) ?? "内置离线数据"
     }
 
     private typealias Keys = PreferenceKeys
@@ -327,23 +320,16 @@ final class DataStore {
         didBootstrap = true
         await loadLocalCaches()
 
-        async let songCheck: Void = checkSongDataUpdateIfNeeded(force: false)
-        async let statsCheck: Void = refreshChartStatsIfStale(force: false)
-        async let regionCheck: Void = bootstrapSupplementalCatalogIfNeeded()
-        _ = await (songCheck, statsCheck, regionCheck)
-    }
-
-    private func bootstrapSupplementalCatalogIfNeeded() async {
-        if serverRegion != .cn {
-            if zetarakuCatalog == nil || dxDataIdMap == nil {
-                await syncZetarakuCatalog(force: false)
-            } else {
-                await refreshZetarakuIfStale()
-            }
-        } else if zetarakuCatalog == nil {
-            // Silently cache Utage descriptions ("谱面说明") in background on first CN launch as well.
+        // If the active region is JP/INTL and has never cached Zetaraku yet, pull it once so the song list isn't empty.
+        if serverRegion != .cn && zetarakuCatalog == nil {
             await syncZetarakuCatalog(force: false)
         }
+
+        // Defer low-frequency periodic checks so app launch never bursts upstream APIs.
+        try? await Task.sleep(for: .seconds(3))
+        async let periodicCatalogCheck: Void = syncAllCatalogsAndRules(force: false)
+        async let periodicStatsCheck: Void = refreshChartStatsIfStale(force: false)
+        _ = await (periodicCatalogCheck, periodicStatsCheck)
     }
 
     private func storeCNBaseline(_ rawList: [SongData]) async {
@@ -462,15 +448,6 @@ final class DataStore {
         prefetchBest50Covers()
     }
 
-    func syncActiveRegionSongs(force: Bool = false) async {
-        switch serverRegion {
-        case .cn:
-            await checkSongDataUpdateIfNeeded(force: force)
-        case .intl, .jp:
-            await syncZetarakuCatalog(force: force)
-        }
-    }
-
     private func loadOrFetchZetaraku(for region: MaimaiConstants.ServerRegion, epoch: Int) async {
         let zURL = cachedZetarakuURL
         let idURL = cachedDXDataIdMapURL
@@ -492,10 +469,77 @@ final class DataStore {
         await syncZetarakuCatalog(force: false)
     }
 
+    /// Unified full catalog & rules sync (LXNS CN songs + aliases + plates, plus Zetaraku JP/INTL catalog + DXData IDs)
+    /// with strict multi-layer throttling:
+    /// - Cold install uses bundled seeds without hitting upstream servers;
+    /// - Automatic periodic sync runs at most once every 7 days;
+    /// - Manual "检查更新" enforces a 10-minute cooldown when all local caches are already fresh.
+    func syncAllCatalogsAndRules(force: Bool = false) async {
+        guard !isSyncingSongs else { return }
+
+        if force {
+            let manualCooldown: TimeInterval = 10 * 60
+            if let lastCN = lastCNCatalogSync,
+               let lastZ = lastZetarakuSync,
+               Date().timeIntervalSince(min(lastCN, lastZ)) < manualCooldown,
+               !cnSongs.isEmpty,
+               plateCatalog != nil,
+               zetarakuCatalog != nil {
+                statusMessage = "近期已同步过全量曲库与规则，当前已是最新数据"
+                return
+            }
+        } else {
+            let sevenDays: TimeInterval = 7 * 24 * 3600
+            if lastCNCatalogSync == nil, !cnSongs.isEmpty, plateCatalog != nil {
+                // Record seed baseline date on first launch; do not burst APIs on cold install.
+                lastCNCatalogSync = Date()
+                return
+            }
+            let cnFresh = lastCNCatalogSync.map { Date().timeIntervalSince($0) < sevenDays } ?? false
+            let zFresh = (serverRegion == .cn && zetarakuCatalog == nil)
+                || (lastZetarakuSync.map { Date().timeIntervalSince($0) < sevenDays } ?? false)
+            if cnFresh && zFresh && !cnSongs.isEmpty && plateCatalog != nil {
+                return
+            }
+        }
+
+        async let cnOutcome: Error? = performLXNSCatalogSync()
+        async let zOutcome: Error? = performZetarakuSync()
+        let (cnErr, zErr) = await (cnOutcome, zOutcome)
+
+        // Re-apply active region once both CN baseline and Zetaraku/DXData caches have settled.
+        if !cnSongs.isEmpty {
+            await storeCNBaseline(cnSongs)
+        }
+        switch serverRegion {
+        case .cn:
+            if !cnSongs.isEmpty {
+                await applySongs(cnSongs, epoch: regionEpoch)
+            }
+        case .intl, .jp:
+            if let catalog = zetarakuCatalog {
+                await applyZetarakuCatalog(catalog, for: serverRegion, epoch: regionEpoch)
+            }
+        }
+
+        if force {
+            if cnErr == nil && zErr == nil {
+                statusMessage = "全量曲库与牌子规则已更新"
+                syncNotice = nil
+            } else if let err = cnErr ?? zErr {
+                statusMessage = "部分数据同步失败：\(err.localizedDescription)"
+                syncNotice = DataSyncNotice(
+                    kind: .songs,
+                    message: "曲库与规则同步未完全成功，正在使用本地缓存数据。\n\(err.localizedDescription)"
+                )
+            }
+        }
+    }
+
     private func refreshZetarakuIfStale() async {
-        let oneDay: TimeInterval = 24 * 3600
+        let sevenDays: TimeInterval = 7 * 24 * 3600
         if let last = lastZetarakuSync,
-           Date().timeIntervalSince(last) < oneDay,
+           Date().timeIntervalSince(last) < sevenDays,
            zetarakuCatalog != nil,
            dxDataIdMap != nil {
             return
@@ -504,7 +548,21 @@ final class DataStore {
     }
 
     func syncZetarakuCatalog(force: Bool = false) async {
-        guard !isFetchingZetaraku else { return }
+        let err = await performZetarakuSync()
+        if let catalog = zetarakuCatalog, serverRegion != .cn {
+            await applyZetarakuCatalog(catalog, for: serverRegion, epoch: regionEpoch)
+        }
+        if let err, serverRegion != .cn {
+            statusMessage = force ? "曲库同步失败：\(err.localizedDescription)" : nil
+            syncNotice = DataSyncNotice(
+                kind: .songs,
+                message: "\(serverRegion.shortName)曲库获取失败，正在使用本地缓存。\n\(err.localizedDescription)"
+            )
+        }
+    }
+
+    private func performZetarakuSync() async -> Error? {
+        guard !isFetchingZetaraku else { return nil }
         isFetchingZetaraku = true
         defer { isFetchingZetaraku = false }
 
@@ -531,52 +589,14 @@ final class DataStore {
             try? raw.write(to: cachedZetarakuURL, options: .atomic)
             zetarakuCatalog = decoded
             lastZetarakuSync = Date()
-            if !cnSongs.isEmpty {
-                await storeCNBaseline(cnSongs)
-            }
-            if serverRegion == .cn {
-                if !cnSongs.isEmpty {
-                    await applySongs(cnSongs, epoch: regionEpoch)
-                }
-            } else {
-                await applyZetarakuCatalog(decoded, for: serverRegion, epoch: regionEpoch)
-                if force {
-                    let verText = decoded.updateTime.map { String($0.prefix(10)) } ?? "最新"
-                    statusMessage = "\(serverRegion.shortName)曲库与 ID 映射已同步（\(verText)，共 \(songs.count) 首）"
-                }
-            }
+            return nil
         case .failure(let error):
-            if fetchedIdMap != nil, let existingCatalog = zetarakuCatalog, serverRegion != .cn {
-                await applyZetarakuCatalog(existingCatalog, for: serverRegion, epoch: regionEpoch)
-            }
-            if serverRegion != .cn {
-                statusMessage = force ? "\(serverRegion.shortName)曲库更新失败：\(error.localizedDescription)" : nil
-                syncNotice = DataSyncNotice(
-                    kind: .songs,
-                    message: "\(serverRegion.shortName)曲库更新失败，正在使用本地缓存。请检查网络后重试。\n\(error.localizedDescription)"
-                )
-            }
+            return error
         }
     }
 
-    /// Syncs CN songs, community aliases, and official plate rules from LXNS public JSON endpoints.
-    /// Local disk cache is always primary; automatic background checks run at most once every 7 days.
-    func checkSongDataUpdateIfNeeded(force: Bool = false) async {
-        guard !isFetchingCNSongs else { return }
-        let sevenDays: TimeInterval = 7 * 24 * 3600
-        if !force,
-           let last = lastCNCatalogSync,
-           Date().timeIntervalSince(last) < sevenDays,
-           !cnSongs.isEmpty,
-           plateCatalog != nil {
-            return
-        }
-        // Even on first install after seed bootstrap, skip immediate network pull unless forced or seed was missing.
-        if !force, lastCNCatalogSync == nil, !cnSongs.isEmpty, plateCatalog != nil {
-            lastCNCatalogSync = Date()
-            return
-        }
-
+    private func performLXNSCatalogSync() async -> Error? {
+        guard !isFetchingCNSongs else { return nil }
         isFetchingCNSongs = true
         defer { isFetchingCNSongs = false }
         do {
@@ -611,33 +631,25 @@ final class DataStore {
             dataVersion = stamp
             lastCNCatalogSync = Date()
             await storeCNBaseline(convertedSongs)
-
-            if serverRegion == .cn {
-                await applySongs(cnSongs, epoch: regionEpoch)
-                if force {
-                    let plateCount = plateCatalog?.groups.count ?? 0
-                    statusMessage = "落雪国服曲库与牌子规则已同步（共 \(convertedSongs.count) 首，\(plateCount) 组牌子）"
-                }
-            } else if let catalog = zetarakuCatalog {
-                await applyZetarakuCatalog(catalog, for: serverRegion, epoch: regionEpoch)
-            }
+            return nil
         } catch {
-            guard serverRegion == .cn else { return }
-            statusMessage = force ? "曲库更新失败：\(error.localizedDescription)" : nil
-            if force {
-                syncNotice = DataSyncNotice(
-                    kind: .songs,
-                    message: "国服曲库同步失败，正在使用本地缓存数据。请稍后重试。\n\(error.localizedDescription)"
-                )
-            }
+            return error
         }
     }
 
     func refreshChartStatsIfStale(force: Bool = false) async {
         guard !isSyncingStats else { return }
-        let fiveDays: TimeInterval = 5 * 24 * 3600
-        if !force, let last = lastChartStatsSync, Date().timeIntervalSince(last) < fiveDays, !chartStats.isEmpty {
-            return
+        if force {
+            let manualCooldown: TimeInterval = 5 * 60
+            if let last = lastChartStatsSync, Date().timeIntervalSince(last) < manualCooldown, !chartStats.isEmpty {
+                statusMessage = "近期已刷新过拟合定数，当前已是最新数据"
+                return
+            }
+        } else {
+            let fiveDays: TimeInterval = 5 * 24 * 3600
+            if let last = lastChartStatsSync, Date().timeIntervalSince(last) < fiveDays, !chartStats.isEmpty {
+                return
+            }
         }
         isSyncingStats = true
         defer { isSyncingStats = false }

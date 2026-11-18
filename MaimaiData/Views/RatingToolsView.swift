@@ -2,11 +2,10 @@ import SwiftUI
 
 struct RatingToolsView: View {
     @Environment(DataStore.self) private var store
-    @Environment(\.colorScheme) private var colorScheme
 
     @State private var path = NavigationPath()
-    @State private var showProfilePopover = false
-    @State private var syncToast: String?
+    @State private var isProfileExpanded = false
+    @State private var toast = ToastState()
     @State private var syncErrorMessage: String?
 
     private enum ToolRoute: Hashable {
@@ -32,8 +31,15 @@ struct RatingToolsView: View {
             .sensoryFeedback(.selection, trigger: store.activeProfileId)
             .navigationTitle("Rating 与查分")
             .navigationBarTitleDisplayMode(.inline)
-            .statusToast(syncToast)
+            .statusToast(toast)
             .errorAlert("同步失败", message: $syncErrorMessage)
+            .onDisappear {
+                var tx = Transaction()
+                tx.disablesAnimations = true
+                withTransaction(tx) {
+                    isProfileExpanded = false
+                }
+            }
             .navigationDestination(for: ToolRoute.self) { route in
                 switch route {
                 case .prober:
@@ -66,28 +72,28 @@ struct RatingToolsView: View {
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center, spacing: AppTheme.Space.s) {
-                    if let activeProfile = store.activeProfile {
+                    if store.activeProfile != nil {
                         Button {
-                            showProfilePopover = true
+                            withAnimation(.snappy(duration: 0.22)) {
+                                isProfileExpanded.toggle()
+                            }
                         } label: {
                             HStack(alignment: .center, spacing: 6) {
                                 Text(store.displayPlayerName)
                                     .font(AppTheme.Typography.cardTitle)
                                     .foregroundStyle(.primary)
                                     .lineLimit(1)
+                                    .transaction { $0.animation = nil }
 
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(AppTheme.Typography.caption2Bold)
+                                Image(systemName: "chevron.down")
+                                    .font(AppTheme.Typography.captionBold)
                                     .foregroundStyle(.secondary)
+                                    .rotationEffect(.degrees(isProfileExpanded ? 180 : 0))
                             }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击切换成绩档案")
-                        .popover(isPresented: $showProfilePopover, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
-                            profileSwitcherPopover(activeProfileId: activeProfile.id)
-                                .presentationCompactAdaptation(.popover)
-                        }
+                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击展开成绩档案切换列表")
                     } else {
                         Text("未添加档案")
                             .font(AppTheme.Typography.cardTitle)
@@ -122,6 +128,11 @@ struct RatingToolsView: View {
                     }
                 }
 
+                if isProfileExpanded, let activeProfile = store.activeProfile {
+                    inlineProfileSelector(activeProfileId: activeProfile.id)
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 Button {
                     path.append(isLoggedIn ? ToolRoute.prober : ToolRoute.accountManagement)
                 } label: {
@@ -148,67 +159,49 @@ struct RatingToolsView: View {
         }
     }
 
-    private func profileSwitcherPopover(activeProfileId: UUID) -> some View {
-        VStack(spacing: 0) {
-            ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
-                if idx > 0 {
-                    Divider().padding(.leading, AppTheme.Space.m)
+    private func inlineProfileSelector(activeProfileId: UUID) -> some View {
+        AppInsetGroup {
+            VStack(spacing: 0) {
+                ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
+                    if idx > 0 {
+                        Divider().padding(.leading, AppTheme.Space.m)
+                    }
+                    let isCurrent = (profile.id == activeProfileId)
+
+                    Button {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            isProfileExpanded = false
+                        }
+                        guard !isCurrent else { return }
+                        store.switchProfile(to: profile.id)
+                        toast.show("已切换至 \(profile.displayTitle)", duration: 1.6)
+                    } label: {
+                        ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
+                            .padding(.horizontal, AppTheme.Space.m)
+                            .frame(minHeight: 46)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .appInsetRowHighlight(isCurrent)
                 }
-                let isCurrent = (profile.id == activeProfileId)
-                let rowFill = isCurrent
-                    ? AppTheme.accent.opacity(colorScheme == .dark ? 0.14 : 0.07)
-                    : Color.clear
+
+                Divider().padding(.leading, AppTheme.Space.m)
 
                 Button {
-                    showProfilePopover = false
-                    guard !isCurrent else { return }
-                    store.switchProfile(to: profile.id)
-                    Task {
-                        withAnimation {
-                            syncToast = "已切换至 \(profile.displayTitle)"
-                        }
-                        await dismissToast($syncToast, after: 1.6, animated: true)
-                    }
+                    isProfileExpanded = false
+                    path.append(ToolRoute.accountManagement)
                 } label: {
-                    ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
-                        .padding(.horizontal, AppTheme.Space.m)
-                        .frame(minHeight: 46)
-                        .background(rowFill)
-                        .contentShape(Rectangle())
+                    AppInsetRow(title: "管理成绩档案", showsChevron: true)
                 }
                 .buttonStyle(.plain)
             }
-
-            Divider()
-
-            Button {
-                showProfilePopover = false
-                path.append(ToolRoute.accountManagement)
-            } label: {
-                HStack(spacing: AppTheme.Space.s) {
-                    Image(systemName: "slider.horizontal.3")
-                        .font(AppTheme.Typography.captionBold)
-                    Text("管理成绩档案")
-                        .font(AppTheme.Typography.rowTitle)
-                    Spacer()
-                }
-                .foregroundStyle(AppTheme.accentText)
-                .padding(.horizontal, AppTheme.Space.m)
-                .frame(minHeight: 46)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
         }
-        .frame(width: 236)
     }
 
     private func syncRecords() async {
         do {
             try await store.syncActiveProfileRecords()
-            withAnimation {
-                syncToast = "成绩已同步"
-            }
-            await dismissToast($syncToast, after: 2, animated: true)
+            toast.show("成绩已同步", duration: 1.8)
         } catch let error as MaimaiAPIError {
             syncErrorMessage = error.recoveryMessage
         } catch {

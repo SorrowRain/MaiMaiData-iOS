@@ -118,7 +118,7 @@ struct VersionCheckView: View {
                             Image(activeScope.asset)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(width: 92, height: 36, alignment: .leading)
+                                .frame(width: 92, height: 36, alignment: .center)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(activeScope.title)

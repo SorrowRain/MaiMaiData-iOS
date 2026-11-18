@@ -146,10 +146,7 @@ private struct ServerRegionSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppSectionCard(
-                    title: "计算与曲库区服",
-                    subtitle: "切换区服将按对应版本的曲库定数、B35/B15 划分及 AP+1 规则重新计算当前成绩单"
-                ) {
+                AppSectionCard(title: "计算与曲库区服") {
                     AppInsetGroup {
                         VStack(spacing: 0) {
                             ForEach(Array(MaimaiConstants.ServerRegion.allCases.enumerated()), id: \.element.id) { idx, region in
@@ -173,19 +170,12 @@ private struct ServerRegionSettingsView: View {
 
     private func regionRow(_ region: MaimaiConstants.ServerRegion) -> some View {
         let isSelected = (store.serverRegion == region)
-        let ruleHint: String = {
-            switch region {
-            case .cn: return "国服现行曲库与官方牌子规则"
-            case .intl: return "国际服曲库 · 两代 B15 · AP 额外 +1"
-            case .jp: return "日服最新曲库 · 两代 B15 · AP 额外 +1"
-            }
-        }()
 
         return Button {
             guard !isSelected else { return }
             Task { await store.switchServerRegion(region) }
         } label: {
-            AppInsetRow(title: region.displayName, subtitle: ruleHint) {
+            AppInsetRow(title: region.displayName) {
                 if store.isSyncingSongs && isSelected && region != .cn {
                     ProgressView().controlSize(.small)
                 } else if isSelected {
@@ -197,6 +187,7 @@ private struct ServerRegionSettingsView: View {
             }
         }
         .buttonStyle(.plain)
+        .appInsetRowHighlight(isSelected)
     }
 }
 
@@ -259,22 +250,19 @@ private struct DataAndStorageSettingsView: View {
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppSectionCard(
-                    title: "数据在线更新",
-                    subtitle: "曲库、别名与牌子规则优先读取本地缓存，可按需手动拉取最新数据"
-                ) {
+                AppSectionCard(title: "数据在线更新") {
                     AppInsetGroup {
                         VStack(spacing: 0) {
                             AppInsetRow(
-                                title: store.serverRegion == .cn ? "国服曲库与牌子规则" : "\(store.serverRegion.shortName)曲库与 ID 映射",
-                                subtitle: store.activeCatalogSubtitle
+                                title: "曲库与规则",
+                                subtitle: store.lastCatalogSyncText
                             ) {
                                 AppInlineButton(
                                     title: "检查更新",
                                     icon: "arrow.down.circle",
                                     isLoading: store.isSyncingSongs
                                 ) {
-                                    Task { await store.syncActiveRegionSongs(force: true) }
+                                    Task { await store.syncAllCatalogsAndRules(force: true) }
                                 }
                             }
 

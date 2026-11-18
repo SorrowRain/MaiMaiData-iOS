@@ -151,8 +151,8 @@ MaimaiData/
 | `AppCard` | `Containers.swift` | 页面基础圆角卡片（支持浅色白底/深色 `surfaceDark`、可选左上淡渐变 `tint` 与细描边） |
 | `AppSectionHeader` | `Containers.swift` | 带左侧蓝色渐变竖条的标准分组标题栏（含可选 `subtitle` 与右侧 `trailing` 槽位） |
 | `AppSectionCard` | `Containers.swift` | 组合 `AppCard` + `AppSectionHeader` 的页面主力业务卡片，凡带标题的卡片一律使用它 |
-| `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器，用于承载设置开关组、工具入口列表、数据表格或指标块 |
-| `AppInsetRow` | `Containers.swift` | `AppInsetGroup` 内的标准行（支持左侧图标块、主副标题、右侧控件与导航箭头，禁止在业务页手写重复行） |
+| `AppInsetGroup` | `Containers.swift` | 卡片内部的浅底圆角内嵌容器（内置 `clipShape` 自动裁切首尾行外侧圆角），用于承载设置组、工具入口列表、数据表格或指标块 |
+| `AppInsetRow` / `.appInsetRowHighlight` | `Containers.swift` | `AppInsetGroup` 内的标准行及显式 `Rectangle()` 通栏高亮修饰符（严禁对表格行裸调 `.background(color)` 以免继承外层圆角） |
 | `FlowLayout` | `Containers.swift` | 自适应折行流式布局，用于筛选条件 Chip、歌曲别名胶囊等多标签排布 |
 | `PhotoPreviewScaffold` | `Containers.swift` | 全屏纯黑底图片缩放预览、系统分享与保存相册通用脚手架（`CoverZoomView` 与 `B50PreviewSheet` 共用） |
 | `RatingTierTable` | `RatingTierTable.swift` | 谱面各达成率分段（含 SSS 区间 +1 跳分线）单曲分与 B50 净涨分对照表（未登录自动退化为两列） |
@@ -188,7 +188,7 @@ MaimaiData/
 | :--- | :--- | :--- |
 | `AppTextField` / `AppSecureField` | `Forms.swift` | 标准单行输入框与带显隐切换的密码框（内置 50pt 最小高度、整框点击热区与聚焦高亮边框；除顶部胶囊搜索栏外，表单与工具页严禁直接使用裸 `TextField`） |
 | `KeyboardDismiss.hide()` / `.dismissKeyboardOnTap()` | `Forms.swift` / `Feedback.swift` | 收起第一响应者键盘及点击空白区域收起键盘修饰符 |
-| `StatusToast` / `.statusToast(_:)` / `dismissToast(...)` | `Feedback.swift` | 底部液态玻璃轻提示胶囊、标准底部过渡挂载修饰符与防覆盖延时自动消失工具函数 |
+| `ToastState` / `.statusToast(_:)` | `Feedback.swift` | 底部液态玻璃轻提示控制器（自动取消上一次倒计时防连点截断）与挂载修饰符 |
 | `SyncStatusBanner` | `Feedback.swift` | 曲库读取/同步进度及失败精准重试横幅 |
 | `.errorAlert(_:message:)` | `Feedback.swift` | 绑定 `String?` 错误消息的标准系统弹窗修饰符（关闭自动置 `nil`） |
 | `PhotoLibrarySaver` / `ShareSheet` / `ZoomableImageScrollView` | `UIKitBridges.swift` | 系统相册只写权限保存、`UIActivityViewController` 分享桥接、6 约束双指/双击缩放视图 |

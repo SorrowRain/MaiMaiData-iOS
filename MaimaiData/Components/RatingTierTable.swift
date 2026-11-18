@@ -4,7 +4,6 @@ import SwiftUI
 /// Used by both `SongDetailView` (3 columns when logged in, 2 columns when logged out)
 /// and `RatingCalculatorView` (2 columns).
 struct RatingTierTable: View {
-    @Environment(\.colorScheme) private var colorScheme
     let rows: [RatingCalculator.TierRow]
     var showB50Column: Bool = false
     var region: MaimaiConstants.ServerRegion = .cn
@@ -100,11 +99,7 @@ struct RatingTierTable: View {
         }
         .padding(.horizontal, AppTheme.Space.m)
         .padding(.vertical, 9)
-        .background(
-            row.isCurrentTier
-                ? AppTheme.accent.opacity(colorScheme == .dark ? 0.18 : 0.09)
-                : Color.clear
-        )
+        .appInsetRowHighlight(row.isCurrentTier)
         .opacity(row.isPassed ? 0.52 : 1.0)
         .accessibilityElement(children: .combine)
     }

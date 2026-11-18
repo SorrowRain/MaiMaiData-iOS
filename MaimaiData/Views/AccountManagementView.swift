@@ -2,11 +2,10 @@ import SwiftUI
 
 struct AccountManagementView: View {
     @Environment(DataStore.self) private var store
-    @Environment(\.colorScheme) private var colorScheme
 
     @State private var showAddProfileSheet = false
     @State private var pendingDeleteProfile: ScoreProfile?
-    @State private var toastMessage: String?
+    @State private var toast = ToastState()
     @State private var errorMessage: String?
 
     private var isPendingDeleteActive: Bool {
@@ -47,7 +46,6 @@ struct AccountManagementView: View {
                                 }
                             }
                         }
-                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous))
                     }
                 }
 
@@ -92,7 +90,7 @@ struct AccountManagementView: View {
         .sensoryFeedback(.selection, trigger: store.activeProfileId)
         .navigationTitle("成绩档案")
         .navigationBarTitleDisplayMode(.inline)
-        .statusToast(toastMessage)
+        .statusToast(toast)
         .sheet(isPresented: $showAddProfileSheet) {
             LoginSheet()
         }
@@ -123,20 +121,12 @@ struct AccountManagementView: View {
 
     private func profileRow(_ profile: ScoreProfile) -> some View {
         let isCurrent = (profile.id == store.activeProfileId)
-        let rowFill = isCurrent
-            ? AppTheme.accent.opacity(colorScheme == .dark ? 0.14 : 0.07)
-            : Color.clear
 
         return HStack(spacing: AppTheme.Space.xs) {
             Button {
                 guard !isCurrent else { return }
                 store.switchProfile(to: profile.id)
-                Task {
-                    withAnimation {
-                        toastMessage = "已切换至 \(profile.displayTitle)"
-                    }
-                    await dismissToast($toastMessage, after: 1.6, animated: true)
-                }
+                toast.show("已切换至 \(profile.displayTitle)", duration: 1.6)
             } label: {
                 ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
                     .frame(maxWidth: .infinity, minHeight: AppTheme.rowMinHeight, alignment: .leading)
@@ -159,7 +149,7 @@ struct AccountManagementView: View {
         }
         .padding(.leading, AppTheme.Space.m)
         .padding(.trailing, AppTheme.Space.s)
-        .background(rowFill)
+        .appInsetRowHighlight(isCurrent)
         .contextMenu {
             Button(role: .destructive) {
                 pendingDeleteProfile = profile
@@ -172,10 +162,7 @@ struct AccountManagementView: View {
     private func syncActiveProfile() async {
         do {
             try await store.syncActiveProfileRecords()
-            withAnimation {
-                toastMessage = "成绩已同步"
-            }
-            await dismissToast($toastMessage, after: 2, animated: true)
+            toast.show("成绩已同步", duration: 1.8)
         } catch let error as MaimaiAPIError {
             errorMessage = error.recoveryMessage
         } catch {
