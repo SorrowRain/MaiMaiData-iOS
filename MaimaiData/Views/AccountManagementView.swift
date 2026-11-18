@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AccountManagementView: View {
     @Environment(DataStore.self) private var store
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var showAddProfileSheet = false
     @State private var pendingDeleteProfile: ScoreProfile?
@@ -14,14 +15,11 @@ struct AccountManagementView: View {
     }
 
     var body: some View {
+        @Bindable var storeBindable = store
+
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppSectionCard(
-                    title: "已存成绩档案",
-                    subtitle: store.profiles.isEmpty
-                        ? "支持添加多个落雪咖啡屋或水鱼查分器档案并随时本地切换"
-                        : "点击档案即可秒切本地成绩单"
-                ) {
+                AppSectionCard(title: "已存成绩档案") {
                     if store.activeProfile != nil {
                         AppInlineButton(
                             title: "同步当前",
@@ -49,6 +47,7 @@ struct AccountManagementView: View {
                                 }
                             }
                         }
+                        .clipShape(RoundedRectangle(cornerRadius: AppTheme.Radius.inset, style: .continuous))
                     }
                 }
 
@@ -59,10 +58,36 @@ struct AccountManagementView: View {
                 ) {
                     showAddProfileSheet = true
                 }
+
+                AppSectionCard(title: "B50 图片与玩家名称") {
+                    VStack(spacing: AppTheme.itemSpacing) {
+                        AppInsetGroup {
+                            Toggle(
+                                "使用查分器返回昵称",
+                                isOn: $storeBindable.useProberNickname.animation(.snappy(duration: 0.2))
+                            )
+                            .font(AppTheme.Typography.rowTitle)
+                            .tint(AppTheme.accent)
+                            .padding(.horizontal, AppTheme.Space.m)
+                            .frame(minHeight: AppTheme.rowMinHeight)
+                        }
+
+                        if !store.useProberNickname {
+                            AppTextField(
+                                placeholder: "输入自定义显示的玩家昵称",
+                                text: $storeBindable.customNickname
+                            )
+                            .submitLabel(.done)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                }
             }
             .padding(.horizontal, AppTheme.pagePadding)
             .padding(.vertical, AppTheme.Space.m)
+            .dismissKeyboardOnTap()
         }
+        .scrollDismissesKeyboard(.interactively)
         .appPageBackground()
         .sensoryFeedback(.selection, trigger: store.activeProfileId)
         .navigationTitle("成绩档案")
@@ -98,14 +123,11 @@ struct AccountManagementView: View {
 
     private func profileRow(_ profile: ScoreProfile) -> some View {
         let isCurrent = (profile.id == store.activeProfileId)
-        let providerTint = profile.provider == .lxns ? AppTheme.Palette.ratingPurple : AppTheme.accent
+        let rowFill = isCurrent
+            ? AppTheme.accent.opacity(colorScheme == .dark ? 0.14 : 0.07)
+            : Color.clear
 
-        var subParts = [profile.subtitleText]
-        if let syncedAt = profile.lastSyncedAt {
-            subParts.append(syncedAt.formatted(date: .abbreviated, time: .shortened))
-        }
-
-        return HStack(spacing: AppTheme.Space.s) {
+        return HStack(spacing: AppTheme.Space.xs) {
             Button {
                 guard !isCurrent else { return }
                 store.switchProfile(to: profile.id)
@@ -116,32 +138,9 @@ struct AccountManagementView: View {
                     await dismissToast($toastMessage, after: 1.6, animated: true)
                 }
             } label: {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: AppTheme.Space.s) {
-                        Text(profile.displayTitle)
-                            .font(AppTheme.Typography.rowTitle)
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-
-                        AppCapsuleLabel(
-                            text: profile.provider.shortName,
-                            tint: providerTint,
-                            style: .compact
-                        )
-
-                        if isCurrent {
-                            AppCapsuleLabel(text: "当前", style: .compact)
-                        }
-                    }
-
-                    Text(subParts.joined(separator: " · "))
-                        .font(AppTheme.Typography.caption)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity, minHeight: AppTheme.rowMinHeight, alignment: .leading)
-                .contentShape(Rectangle())
+                ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
+                    .frame(maxWidth: .infinity, minHeight: AppTheme.rowMinHeight, alignment: .leading)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 
@@ -160,6 +159,7 @@ struct AccountManagementView: View {
         }
         .padding(.leading, AppTheme.Space.m)
         .padding(.trailing, AppTheme.Space.s)
+        .background(rowFill)
         .contextMenu {
             Button(role: .destructive) {
                 pendingDeleteProfile = profile

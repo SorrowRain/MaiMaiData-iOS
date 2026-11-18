@@ -232,6 +232,7 @@ final class ScoreProfileAndLXNSTests: XCTestCase {
 
         let shinGroup = try XCTUnwrap(plateCatalog.groups.first { $0.id == "真" })
         XCTAssertEqual(shinGroup.basicToMasterSongIds.count, 85)
+        XCTAssertEqual(shinGroup.resolvedVersionAsset, "maimai")
         // `ジングルベル` (ID 70) is officially excluded from 真極 / 真神 / 真舞舞
         XCTAssertFalse(shinGroup.basicToMasterSongIds.contains(70))
         XCTAssertEqual(shinGroup.badges, ["真極", "真神", "真舞舞"])

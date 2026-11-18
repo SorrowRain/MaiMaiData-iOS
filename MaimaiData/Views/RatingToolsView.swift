@@ -2,8 +2,10 @@ import SwiftUI
 
 struct RatingToolsView: View {
     @Environment(DataStore.self) private var store
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var path = NavigationPath()
+    @State private var showProfilePopover = false
     @State private var syncToast: String?
     @State private var syncErrorMessage: String?
 
@@ -65,56 +67,27 @@ struct RatingToolsView: View {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center, spacing: AppTheme.Space.s) {
                     if let activeProfile = store.activeProfile {
-                        Menu {
-                            Section("切换成绩档案") {
-                                ForEach(store.profiles) { profile in
-                                    Button {
-                                        guard profile.id != activeProfile.id else { return }
-                                        store.switchProfile(to: profile.id)
-                                        Task {
-                                            withAnimation {
-                                                syncToast = "已切换至 \(profile.displayTitle)"
-                                            }
-                                            await dismissToast($syncToast, after: 1.6, animated: true)
-                                        }
-                                    } label: {
-                                        if profile.id == activeProfile.id {
-                                            Label("\(profile.displayTitle)（\(profile.provider.shortName)）", systemImage: "checkmark")
-                                        } else {
-                                            Text("\(profile.displayTitle)（\(profile.provider.shortName)）")
-                                        }
-                                    }
-                                }
-                            }
-                            Divider()
-                            Button {
-                                path.append(ToolRoute.accountManagement)
-                            } label: {
-                                Label("管理成绩档案…", systemImage: "person.2")
-                            }
+                        Button {
+                            showProfilePopover = true
                         } label: {
-                            HStack(alignment: .center, spacing: AppTheme.Space.s) {
+                            HStack(alignment: .center, spacing: 6) {
                                 Text(store.displayPlayerName)
                                     .font(AppTheme.Typography.cardTitle)
                                     .foregroundStyle(.primary)
                                     .lineLimit(1)
 
-                                AppCapsuleLabel(
-                                    text: activeProfile.provider.shortName,
-                                    tint: activeProfile.provider == .lxns ? AppTheme.Palette.ratingPurple : AppTheme.accent,
-                                    style: .compact
-                                )
-
-                                if store.profiles.count > 1 {
-                                    Image(systemName: "chevron.up.chevron.down")
-                                        .font(AppTheme.Typography.caption2Bold)
-                                        .foregroundStyle(.secondary)
-                                }
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(AppTheme.Typography.caption2Bold)
+                                    .foregroundStyle(.secondary)
                             }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel("当前档案 \(store.displayPlayerName)，点击切换或管理成绩档案")
+                        .accessibilityLabel("当前玩家 \(store.displayPlayerName)，点击切换成绩档案")
+                        .popover(isPresented: $showProfilePopover, attachmentAnchor: .rect(.bounds), arrowEdge: .top) {
+                            profileSwitcherPopover(activeProfileId: activeProfile.id)
+                                .presentationCompactAdaptation(.popover)
+                        }
                     } else {
                         Text("未添加档案")
                             .font(AppTheme.Typography.cardTitle)
@@ -175,6 +148,60 @@ struct RatingToolsView: View {
         }
     }
 
+    private func profileSwitcherPopover(activeProfileId: UUID) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
+                if idx > 0 {
+                    Divider().padding(.leading, AppTheme.Space.m)
+                }
+                let isCurrent = (profile.id == activeProfileId)
+                let rowFill = isCurrent
+                    ? AppTheme.accent.opacity(colorScheme == .dark ? 0.14 : 0.07)
+                    : Color.clear
+
+                Button {
+                    showProfilePopover = false
+                    guard !isCurrent else { return }
+                    store.switchProfile(to: profile.id)
+                    Task {
+                        withAnimation {
+                            syncToast = "已切换至 \(profile.displayTitle)"
+                        }
+                        await dismissToast($syncToast, after: 1.6, animated: true)
+                    }
+                } label: {
+                    ScoreProfileRowLabel(profile: profile, isSelected: isCurrent)
+                        .padding(.horizontal, AppTheme.Space.m)
+                        .frame(minHeight: 46)
+                        .background(rowFill)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+
+            Divider()
+
+            Button {
+                showProfilePopover = false
+                path.append(ToolRoute.accountManagement)
+            } label: {
+                HStack(spacing: AppTheme.Space.s) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(AppTheme.Typography.captionBold)
+                    Text("管理成绩档案")
+                        .font(AppTheme.Typography.rowTitle)
+                    Spacer()
+                }
+                .foregroundStyle(AppTheme.accentText)
+                .padding(.horizontal, AppTheme.Space.m)
+                .frame(minHeight: 46)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(width: 236)
+    }
+
     private func syncRecords() async {
         do {
             try await store.syncActiveProfileRecords()
@@ -199,8 +226,7 @@ struct RatingToolsView: View {
                         AppInsetRow(
                             icon: "trophy.fill",
                             iconColor: AppTheme.accent,
-                            title: "Best 50",
-                            subtitle: "查看 B35 / B15 成绩明细并导出成绩图"
+                            title: "Best 50"
                         )
                     }
                     .buttonStyle(.plain)
@@ -211,10 +237,7 @@ struct RatingToolsView: View {
                         AppInsetRow(
                             icon: "square.grid.3x3.fill",
                             iconColor: AppTheme.Palette.ratingPurple,
-                            title: "牌子与版本进度表",
-                            subtitle: store.serverRegion == .cn
-                                ? "基于落雪官方牌子曲表查看将 / 极 / 神 / 舞舞进度"
-                                : "按\(store.serverRegion.shortName)版本查看各难度完成度进度"
+                            title: "牌子进度表"
                         )
                     }
                     .buttonStyle(.plain)
@@ -225,8 +248,7 @@ struct RatingToolsView: View {
                         AppInsetRow(
                             icon: "slider.horizontal.3",
                             iconColor: AppTheme.Palette.ratingOrange,
-                            title: "等级进度表",
-                            subtitle: "按 1~15 级定数分组查看全难度完成情况"
+                            title: "等级进度表"
                         )
                     }
                     .buttonStyle(.plain)
@@ -244,8 +266,7 @@ struct RatingToolsView: View {
                     AppInsetRow(
                         icon: "function",
                         iconColor: AppTheme.Palette.ratingBlue,
-                        title: "Rating 计算器",
-                        subtitle: "按定数查询各分段单曲得分与目标总分反推"
+                        title: "Rating 计算器"
                     )
                 }
                 .buttonStyle(.plain)

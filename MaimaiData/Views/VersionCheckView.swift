@@ -16,7 +16,6 @@ struct VersionCheckView: View {
     private struct CheckScopeItem {
         let title: String
         let asset: String
-        let badgeSummary: String?
         let cnGroup: CNPlateRuleGroup?
     }
 
@@ -27,22 +26,21 @@ struct VersionCheckView: View {
                 return cnGroups.map { group in
                     CheckScopeItem(
                         title: group.title,
-                        asset: group.versionAsset,
-                        badgeSummary: group.badges.isEmpty ? nil : group.badgeSummary,
+                        asset: group.resolvedVersionAsset,
                         cnGroup: group
                     )
                 }
             }
         }
         return MaimaiConstants.checklistVersions(for: store.serverRegion).map { ver in
-            CheckScopeItem(title: ver.name, asset: ver.asset, badgeSummary: nil, cnGroup: nil)
+            CheckScopeItem(title: ver.name, asset: ver.asset, cnGroup: nil)
         }
     }
 
     private var activeScope: CheckScopeItem {
         let items = scopeItems
         guard !items.isEmpty else {
-            return CheckScopeItem(title: "舞萌DX", asset: "maimaidx_cn", badgeSummary: nil, cnGroup: nil)
+            return CheckScopeItem(title: "舞萌DX", asset: "maimaidx_cn", cnGroup: nil)
         }
         let idx = min(max(0, store.activeVersionCheckIndex), items.count - 1)
         return items[idx]
@@ -112,13 +110,6 @@ struct VersionCheckView: View {
             }
             : groupedSongs
 
-        let subtitleText: String = {
-            if let badgeSummary = activeScope.badgeSummary {
-                return "\(allSongs.count) 首 \(selectedDifficulty.shortName) · \(badgeSummary)"
-            }
-            return "共 \(allSongs.count) 首 \(selectedDifficulty.shortName) 曲目"
-        }()
-
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppCard(padding: AppTheme.cardPadding, tint: diffTint) {
@@ -127,13 +118,13 @@ struct VersionCheckView: View {
                             Image(activeScope.asset)
                                 .resizable()
                                 .scaledToFit()
-                                .frame(height: 36)
+                                .frame(width: 92, height: 36, alignment: .leading)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(activeScope.title)
                                     .font(AppTheme.Typography.rowTitle)
                                     .lineLimit(1)
-                                Text(subtitleText)
+                                Text("共 \(allSongs.count) 首歌曲")
                                     .font(AppTheme.Typography.caption)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
@@ -144,7 +135,7 @@ struct VersionCheckView: View {
 
                         HStack(spacing: AppTheme.Space.s) {
                             Menu {
-                                Picker("版本或牌子", selection: $storeBindable.activeVersionCheckIndex) {
+                                Picker("牌子或版本", selection: $storeBindable.activeVersionCheckIndex) {
                                     ForEach(Array(items.enumerated()), id: \.offset) { idx, item in
                                         Text(item.title).tag(idx)
                                     }
@@ -178,7 +169,7 @@ struct VersionCheckView: View {
                     ContentUnavailableView(
                         "已全部达成 \(displayMode.title)",
                         systemImage: "checkmark.seal.fill",
-                        description: Text("当前筛选下全部 \(selectedDifficulty.shortName) 谱面均已达成该目标")
+                        description: Text("当前筛选下全部谱面均已达成该目标")
                     )
                     .padding(.top, AppTheme.Space.xl)
                 } else {
@@ -210,7 +201,7 @@ struct VersionCheckView: View {
         .appPageBackground()
         .sensoryFeedback(.selection, trigger: store.activeVersionCheckIndex)
         .sensoryFeedback(.selection, trigger: selectedDifficulty)
-        .navigationTitle(store.serverRegion == .cn ? "牌子与版本进度" : "版本进度表")
+        .navigationTitle("牌子进度表")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             if groupedSongs.isEmpty && !store.songs.isEmpty {

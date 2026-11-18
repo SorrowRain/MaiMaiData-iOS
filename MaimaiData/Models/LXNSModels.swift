@@ -291,7 +291,7 @@ struct CNPlateRuleGroup: Codable, Identifiable, Equatable, Hashable {
         case remasterSongIds = "remaster_song_ids"
     }
 
-    var badgeSummary: String {
-        badges.isEmpty ? "当前版本进度" : badges.joined(separator: " / ")
+    var resolvedVersionAsset: String {
+        id == "真" ? "maimai" : versionAsset
     }
 }

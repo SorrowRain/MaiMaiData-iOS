@@ -12,7 +12,7 @@ enum LXNSCatalogConverter {
     ]
 
     private static let knownPlateMetadata: [String: (id: String, title: String, asset: String)] = [
-        "真": ("真", "真 · maimai ~ PLUS", "maimai_plus"),
+        "真": ("真", "真 · maimai ~ PLUS", "maimai"),
         "超": ("超", "超 · GreeN", "maimai_green"),
         "檄": ("檄", "檄 · GreeN PLUS", "maimai_green_plus"),
         "橙": ("橙", "橙 · ORANGE", "maimai_orange"),

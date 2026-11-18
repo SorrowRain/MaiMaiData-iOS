@@ -22,7 +22,7 @@ struct SettingsView: View {
 
     private var activeProfileSummary: String {
         guard let profile = store.activeProfile else { return "未添加" }
-        return "\(profile.displayTitle) · \(profile.provider.shortName)"
+        return profile.displayTitle
     }
 
     var body: some View {
@@ -230,32 +230,10 @@ private struct PreferencesSettingsView: View {
                         }
                     }
                 }
-
-                AppSectionCard(title: "Best50 图片与玩家名称") {
-                    VStack(spacing: AppTheme.itemSpacing) {
-                        AppInsetGroup {
-                            settingToggleRow(
-                                title: "使用查分器返回昵称",
-                                isOn: $storeBindable.useProberNickname.animation(.snappy(duration: 0.2))
-                            )
-                        }
-
-                        if !store.useProberNickname {
-                            AppTextField(
-                                placeholder: "输入自定义显示的玩家昵称",
-                                text: $storeBindable.customNickname
-                            )
-                            .submitLabel(.done)
-                            .transition(.opacity.combined(with: .move(edge: .top)))
-                        }
-                    }
-                }
             }
             .padding(.horizontal, AppTheme.pagePadding)
             .padding(.vertical, AppTheme.Space.m)
-            .dismissKeyboardOnTap()
         }
-        .scrollDismissesKeyboard(.interactively)
         .appPageBackground()
         .navigationTitle("检索与显示偏好")
         .navigationBarTitleDisplayMode(.inline)

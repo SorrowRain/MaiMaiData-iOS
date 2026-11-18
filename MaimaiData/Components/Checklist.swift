@@ -38,12 +38,7 @@ struct ChecklistStatsHeader: View {
     @Binding var onlyUnfinished: Bool
 
     var body: some View {
-        AppSectionCard(
-            title: "完成度统计",
-            subtitle: onlyUnfinished
-                ? "\(displayMode.title) · 仅未达成"
-                : "当前：\(displayMode.title)"
-        ) {
+        AppSectionCard(title: "完成度统计") {
             AppInlineButton(
                 title: "仅看未达成",
                 icon: onlyUnfinished ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle",

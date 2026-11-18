@@ -408,3 +408,36 @@ struct PhotoPreviewScaffold<Placeholder: View>: View {
         await dismissToast($saveStatus, after: 2.2, animated: true, ifContains: message)
     }
 }
+
+/// Shared single-line score profile row content (fixed-width provider tag on the left + player ID + trailing selection mark),
+/// reused by both `AccountManagementView` and `RatingToolsView`'s quick switcher popover.
+struct ScoreProfileRowLabel: View {
+    let profile: ScoreProfile
+    let isSelected: Bool
+
+    var body: some View {
+        let providerTint = profile.provider == .lxns ? AppTheme.Palette.ratingPurple : AppTheme.accent
+
+        HStack(spacing: AppTheme.Space.s) {
+            AppCapsuleLabel(
+                text: profile.provider.shortName,
+                tint: providerTint,
+                style: .compact
+            )
+
+            Text(profile.displayTitle)
+                .font(isSelected ? AppTheme.Typography.songTitle : AppTheme.Typography.rowTitle)
+                .foregroundStyle(isSelected ? AppTheme.accentText : .primary)
+                .lineLimit(1)
+
+            Spacer(minLength: AppTheme.Space.s)
+
+            if isSelected {
+                Image(systemName: "checkmark")
+                    .font(AppTheme.Typography.captionBold)
+                    .foregroundStyle(AppTheme.accentText)
+                    .accessibilityLabel("当前选中")
+            }
+        }
+    }
+}
