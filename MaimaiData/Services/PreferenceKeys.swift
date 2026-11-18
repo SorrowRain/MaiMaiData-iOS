@@ -4,13 +4,10 @@ import Foundation
 enum PreferenceKeys {
     static let favorites = "favorite_ids"
     static let searchHistory = "search_history"
-    static let savedAccounts = "saved_accounts"
-    static let username = "df_username"
-    static let password = "df_password"
-    static let cookie = "df_cookie"
-    static let dfNickname = "df_nickname"
+    static let activeProfileId = "active_score_profile_id"
     static let dataVersion = "song_data_version"
     static let serverRegion = "server_region"
+    static let cnCatalogSync = "cn_catalog_sync_ts"
     static let zetarakuSync = "zetaraku_sync_ts"
     static let chartStatsSync = "chart_stats_sync_ts"
     static let showAlias = "enable_show_alias"
@@ -22,6 +19,13 @@ enum PreferenceKeys {
     static let lastVersionCheckIntl = "last_version_check_intl"
     static let lastVersionCheckJp = "last_version_check_jp"
     static let lastLevelCheck = "last_level_check"
+
+    // Legacy single-provider keys retained strictly for one-time migration
+    static let savedAccounts = "saved_accounts"
+    static let username = "df_username"
+    static let password = "df_password"
+    static let cookie = "df_cookie"
+    static let dfNickname = "df_nickname"
 }
 
 extension PreferenceKeys {

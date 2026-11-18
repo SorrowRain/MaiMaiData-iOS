@@ -28,13 +28,13 @@ struct ProberView: View {
                 )
 
                 if targetList.isEmpty {
-                    if store.currentCookie.isEmpty && store.currentUsername.isEmpty {
+                    if !store.isLoggedIn {
                         ContentUnavailableView {
-                            Label("尚未登录水鱼查分器", systemImage: "person.crop.circle.badge.exclamationmark")
+                            Label("尚未添加成绩档案", systemImage: "person.crop.circle.badge.exclamationmark")
                         } description: {
-                            Text("登录水鱼查分器后即可查看 B35 / B15 成绩并生成 Best50 图")
+                            Text("连接落雪咖啡屋或水鱼查分器后即可查看 B35 / B15 并生成 Best50 图")
                         } actions: {
-                            AppInlineButton(title: "前往登录", icon: "person.badge.key.fill") {
+                            AppInlineButton(title: "添加成绩档案", icon: "person.badge.key.fill") {
                                 showLoginSheet = true
                             }
                         }
@@ -43,7 +43,7 @@ struct ProberView: View {
                         ContentUnavailableView(
                             "暂无成绩数据",
                             systemImage: "tray",
-                            description: Text("下拉刷新从水鱼查分器拉取最新成绩")
+                            description: Text("下拉刷新从当前查分器拉取最新成绩")
                         )
                         .padding(.top, 48)
                     }
@@ -109,7 +109,7 @@ struct ProberView: View {
         }
         .errorAlert("提示", message: $errorMessage)
         .task {
-            if store.records.isEmpty && !store.currentCookie.isEmpty {
+            if store.records.isEmpty && store.isLoggedIn {
                 await refreshRecords()
             }
         }
@@ -144,7 +144,7 @@ struct ProberView: View {
 
     private func refreshRecords() async {
         do {
-            try await store.fetchRecordsWithCurrentCookie()
+            try await store.syncActiveProfileRecords()
         } catch is CancellationError {
             return
         } catch let urlError as URLError where urlError.code == .cancelled {

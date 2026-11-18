@@ -1,32 +1,5 @@
 import Foundation
 
-struct AppUpdateInfo: Codable {
-    let dataVersion4: String?
-    let dataUrl4: String?
-    let dataVersion5: String?
-    let dataUrl5: String?
-
-    enum CodingKeys: String, CodingKey {
-        case dataVersion4 = "data_version_4"
-        case dataUrl4 = "data_url_4"
-        case dataVersion5 = "data_version_5"
-        case dataUrl5 = "data_url_5"
-    }
-
-    var bestDataVersionAndURL: (version: String, url: String)? {
-        if let v5 = dataVersion5, let u5 = dataUrl5, !u5.isEmpty {
-            if let v4 = dataVersion4, VersionString.isNewer(v4, than: v5), let u4 = dataUrl4, !u4.isEmpty {
-                return (v4, u4)
-            }
-            return (v5, u5)
-        }
-        if let v4 = dataVersion4, let u4 = dataUrl4, !u4.isEmpty {
-            return (v4, u4)
-        }
-        return nil
-    }
-}
-
 struct ChartStatsResponse: Codable {
     let charts: [String: [ChartStatEntry]]
 }
@@ -40,6 +13,7 @@ struct ChartStatEntry: Codable {
 }
 
 struct ProberRecordsResponse: Codable {
+    let username: String?
     let nickname: String?
     let records: [ProberRecord]?
     let status: String?
@@ -171,6 +145,93 @@ struct ProberRecord: Codable, Identifiable, Hashable {
     }
 }
 
+enum ScoreProvider: String, Codable, CaseIterable, Identifiable, Hashable {
+    case lxns
+    case divingFish
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .lxns: return "落雪咖啡屋"
+        case .divingFish: return "水鱼查分器"
+        }
+    }
+
+    var shortName: String {
+        switch self {
+        case .lxns: return "落雪"
+        case .divingFish: return "水鱼"
+        }
+    }
+}
+
+enum ScoreAuthMethod: String, Codable, Hashable {
+    case lxnsOAuth
+    case lxnsPersonalToken
+    case divingFishPassword
+    case divingFishImportToken
+
+    var provider: ScoreProvider {
+        switch self {
+        case .lxnsOAuth, .lxnsPersonalToken:
+            return .lxns
+        case .divingFishPassword, .divingFishImportToken:
+            return .divingFish
+        }
+    }
+
+    var shortTitle: String {
+        switch self {
+        case .lxnsOAuth: return "OAuth 授权"
+        case .lxnsPersonalToken: return "个人密钥"
+        case .divingFishPassword: return "账号密码"
+        case .divingFishImportToken: return "导入 Token"
+        }
+    }
+}
+
+struct ScoreProfile: Codable, Identifiable, Equatable, Hashable {
+    let id: UUID
+    let provider: ScoreProvider
+    var authMethod: ScoreAuthMethod
+    /// Stable deduplication identifier within a provider (e.g. Diving-Fish username, LXNS OIDC `sub`, or token hash).
+    var accountKey: String
+    /// Secondary human-readable handle (e.g. username or friend code).
+    var username: String
+    /// In-game / prober nickname returned by the provider.
+    var nickname: String
+    var lastSyncedAt: Date?
+
+    var displayTitle: String {
+        let trimmedNick = nickname.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedNick.isEmpty { return trimmedNick }
+        let trimmedUser = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedUser.isEmpty { return trimmedUser }
+        return "\(provider.shortName)档案"
+    }
+
+    var subtitleText: String {
+        var parts: [String] = [provider.shortName, authMethod.shortTitle]
+        let trimmedUser = username.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedUser.isEmpty && trimmedUser != displayTitle {
+            parts.append(trimmedUser)
+        }
+        return parts.joined(separator: " · ")
+    }
+}
+
+struct ScoreProfileSecret: Codable, Equatable {
+    var password: String = ""
+    var cookie: String = ""
+    var importToken: String = ""
+    var personalToken: String = ""
+    var accessToken: String = ""
+    var refreshToken: String = ""
+    var accessTokenExpiresAt: TimeInterval? = nil
+}
+
+/// Legacy single-provider model retained strictly for seamless Keychain migration.
 struct SavedAccount: Codable, Identifiable, Equatable {
     var id: String { username }
     let username: String

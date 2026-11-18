@@ -14,6 +14,7 @@ struct SongData: Codable, Identifiable, Hashable {
     var remoteCoverName: String? = nil
     var preferRemoteCover: Bool? = nil
     var sortOrder: Int? = nil
+    var isDisabled: Bool? = nil
 
     enum CodingKeys: String, CodingKey {
         case basicInfo = "basic_info"
@@ -29,6 +30,7 @@ struct SongData: Codable, Identifiable, Hashable {
         case remoteCoverName = "remote_cover"
         case preferRemoteCover = "prefer_remote_cover"
         case sortOrder = "sort_order"
+        case isDisabled = "is_disabled"
     }
 
     var numericId: Int { Int(id) ?? 0 }

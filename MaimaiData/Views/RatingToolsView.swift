@@ -27,6 +27,7 @@ struct RatingToolsView: View {
                 .padding(.vertical, AppTheme.Space.m)
             }
             .appPageBackground()
+            .sensoryFeedback(.selection, trigger: store.activeProfileId)
             .navigationTitle("Rating 与查分")
             .navigationBarTitleDisplayMode(.inline)
             .statusToast(syncToast)
@@ -63,10 +64,63 @@ struct RatingToolsView: View {
         return AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
             VStack(alignment: .leading, spacing: AppTheme.Space.m) {
                 HStack(alignment: .center, spacing: AppTheme.Space.s) {
-                    Text(isLoggedIn ? store.displayPlayerName : "未登录")
-                        .font(AppTheme.Typography.cardTitle)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
+                    if let activeProfile = store.activeProfile {
+                        Menu {
+                            Section("切换成绩档案") {
+                                ForEach(store.profiles) { profile in
+                                    Button {
+                                        guard profile.id != activeProfile.id else { return }
+                                        store.switchProfile(to: profile.id)
+                                        Task {
+                                            withAnimation {
+                                                syncToast = "已切换至 \(profile.displayTitle)"
+                                            }
+                                            await dismissToast($syncToast, after: 1.6, animated: true)
+                                        }
+                                    } label: {
+                                        if profile.id == activeProfile.id {
+                                            Label("\(profile.displayTitle)（\(profile.provider.shortName)）", systemImage: "checkmark")
+                                        } else {
+                                            Text("\(profile.displayTitle)（\(profile.provider.shortName)）")
+                                        }
+                                    }
+                                }
+                            }
+                            Divider()
+                            Button {
+                                path.append(ToolRoute.accountManagement)
+                            } label: {
+                                Label("管理成绩档案…", systemImage: "person.2")
+                            }
+                        } label: {
+                            HStack(alignment: .center, spacing: AppTheme.Space.s) {
+                                Text(store.displayPlayerName)
+                                    .font(AppTheme.Typography.cardTitle)
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+
+                                AppCapsuleLabel(
+                                    text: activeProfile.provider.shortName,
+                                    tint: activeProfile.provider == .lxns ? AppTheme.Palette.ratingPurple : AppTheme.accent,
+                                    style: .compact
+                                )
+
+                                if store.profiles.count > 1 {
+                                    Image(systemName: "chevron.up.chevron.down")
+                                        .font(AppTheme.Typography.caption2Bold)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("当前档案 \(store.displayPlayerName)，点击切换或管理成绩档案")
+                    } else {
+                        Text("未添加档案")
+                            .font(AppTheme.Typography.cardTitle)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                    }
 
                     if store.serverRegion != .cn {
                         AppCapsuleLabel(
@@ -75,7 +129,7 @@ struct RatingToolsView: View {
                         )
                     }
 
-                    Spacer()
+                    Spacer(minLength: 4)
 
                     if isLoggedIn {
                         AppInlineButton(
@@ -87,7 +141,7 @@ struct RatingToolsView: View {
                         }
                     } else {
                         AppInlineButton(
-                            title: "去登录",
+                            title: "添加档案",
                             icon: "person.crop.circle.badge.plus"
                         ) {
                             path.append(ToolRoute.accountManagement)
@@ -116,24 +170,26 @@ struct RatingToolsView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(isLoggedIn ? "查看 Best 50 成绩详情" : "前往账号管理登录水鱼查分器")
+                .accessibilityLabel(isLoggedIn ? "查看 Best 50 成绩详情" : "前往添加成绩档案")
             }
         }
     }
 
     private func syncRecords() async {
         do {
-            try await store.fetchRecordsWithCurrentCookie()
+            try await store.syncActiveProfileRecords()
             withAnimation {
                 syncToast = "成绩已同步"
             }
             await dismissToast($syncToast, after: 2, animated: true)
+        } catch let error as MaimaiAPIError {
+            syncErrorMessage = error.recoveryMessage
         } catch {
             syncErrorMessage = error.localizedDescription
         }
     }
 
-    // MARK: - 2. Records & Plate Progress Section (iOS Health Grouped Style)
+    // MARK: - 2. Records & Plate Progress Section
 
     private var recordsAndProgressSection: some View {
         AppSectionCard(title: "成绩与牌子进度") {
@@ -155,8 +211,10 @@ struct RatingToolsView: View {
                         AppInsetRow(
                             icon: "square.grid.3x3.fill",
                             iconColor: AppTheme.Palette.ratingPurple,
-                            title: "版本进度表 / 牌子查询",
-                            subtitle: "按\(store.serverRegion.shortName)版本查看 Master 将 / 极 / 神 / 舞舞进度"
+                            title: "牌子与版本进度表",
+                            subtitle: store.serverRegion == .cn
+                                ? "基于落雪官方牌子曲表查看将 / 极 / 神 / 舞舞进度"
+                                : "按\(store.serverRegion.shortName)版本查看各难度完成度进度"
                         )
                     }
                     .buttonStyle(.plain)

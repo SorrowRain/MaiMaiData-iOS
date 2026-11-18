@@ -2,8 +2,14 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(DataStore.self) private var store
-    @State private var cacheSizeText: String = "计算中..."
-    @State private var showAcknowledgmentsSheet = false
+
+    private enum SettingsRoute: Hashable {
+        case scoreProfiles
+        case serverRegion
+        case preferences
+        case dataAndStorage
+        case acknowledgments
+    }
 
     private var appVersionText: String {
         let info = Bundle.main.infoDictionary
@@ -14,198 +20,245 @@ struct SettingsView: View {
         return "v\(short)"
     }
 
+    private var activeProfileSummary: String {
+        guard let profile = store.activeProfile else { return "未添加" }
+        return "\(profile.displayTitle) · \(profile.provider.shortName)"
+    }
+
     var body: some View {
         @Bindable var storeBindable = store
 
         NavigationStack {
             ScrollView {
                 VStack(spacing: AppTheme.cardSpacing) {
-                    // 1. 水鱼查分器账号（Push 进入二级页面 AccountManagementView）
-                    AppSectionCard(title: "水鱼查分器账号") {
-                        NavigationLink {
-                            AccountManagementView()
-                        } label: {
-                            AppInsetGroup {
-                                AppInsetRow(
-                                    title: store.currentUsername.isEmpty ? "当前未登录" : store.displayPlayerName,
-                                    subtitle: (!store.currentUsername.isEmpty && store.displayPlayerName != store.currentUsername)
-                                        ? store.currentUsername
-                                        : nil
-                                ) {
-                                    Text(store.currentUsername.isEmpty ? "登录 / 管理" : "切换账号")
-                                        .font(AppTheme.Typography.inlineAction)
-                                        .foregroundStyle(AppTheme.accentText)
-                                }
-                            }
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    // 2. 游戏区服
-                    AppSectionCard(title: "游戏区服") {
+                    // 1. 账号与区服
+                    AppSectionCard(title: "账号与区服") {
                         AppInsetGroup {
-                            AppInsetRow(title: "当前曲库与区服") {
-                                HStack(spacing: AppTheme.Space.s) {
-                                    if store.isSyncingSongs && store.serverRegion != .cn {
-                                        ProgressView().controlSize(.small)
-                                    }
-                                    Menu {
-                                        Picker(
-                                            "游戏区服",
-                                            selection: Binding(
-                                                get: { store.serverRegion },
-                                                set: { region in
-                                                    Task { await store.switchServerRegion(region) }
-                                                }
-                                            )
-                                        ) {
-                                            ForEach(MaimaiConstants.ServerRegion.allCases) { region in
-                                                Text(region.displayName).tag(region)
+                            VStack(spacing: 0) {
+                                NavigationLink(value: SettingsRoute.scoreProfiles) {
+                                    directoryRow(title: "成绩档案", value: activeProfileSummary)
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider().padding(.leading, AppTheme.Space.m)
+
+                                NavigationLink(value: SettingsRoute.serverRegion) {
+                                    AppInsetRow(title: "游戏区服", showsChevron: true) {
+                                        HStack(spacing: AppTheme.Space.s) {
+                                            if store.isSyncingSongs && store.serverRegion != .cn {
+                                                ProgressView().controlSize(.small)
                                             }
+                                            Text(store.serverRegion.shortName)
+                                                .font(AppTheme.Typography.body)
+                                                .foregroundStyle(.secondary)
                                         }
-                                    } label: {
-                                        AppMenuCapsule(title: store.serverRegion.shortName)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 3. 曲库与搜索
-                    AppSectionCard(title: "曲库与搜索") {
-                        AppInsetGroup {
-                            VStack(spacing: 0) {
-                                settingToggleRow(
-                                    title: "曲目详情页显示别名",
-                                    isOn: $storeBindable.enableShowAlias
-                                )
-                                Divider().padding(.leading, AppTheme.Space.m)
-                                settingToggleRow(
-                                    title: "搜索时匹配曲目别名",
-                                    isOn: $storeBindable.enableAliasSearch
-                                )
-                                Divider().padding(.leading, AppTheme.Space.m)
-                                settingToggleRow(
-                                    title: "搜索时匹配谱师名称",
-                                    isOn: $storeBindable.enableCharterSearch
-                                )
-                            }
-                        }
-                    }
-
-                    // 3. Best50 图片设置（关闭水鱼昵称时才展示自定义昵称输入框）
-                    AppSectionCard(title: "Best50 图片设置") {
-                        VStack(spacing: AppTheme.itemSpacing) {
-                            AppInsetGroup {
-                                settingToggleRow(
-                                    title: "使用水鱼查分器昵称",
-                                    isOn: $storeBindable.useDivingFishNickname.animation(.snappy(duration: 0.2))
-                                )
-                            }
-
-                            if !store.useDivingFishNickname {
-                                AppTextField(
-                                    placeholder: "输入生成 Best50 时显示的玩家昵称",
-                                    text: $storeBindable.customNickname
-                                )
-                                .submitLabel(.done)
-                                .transition(.opacity.combined(with: .move(edge: .top)))
-                            }
-                        }
-                    }
-
-                    // 4. 数据与同步
-                    AppSectionCard(title: "数据与同步") {
-                        AppInsetGroup {
-                            VStack(spacing: 0) {
-                                AppInsetRow(
-                                    title: "本地曲库",
-                                    subtitle: store.activeCatalogSubtitle
-                                ) {
-                                    AppInlineButton(
-                                        title: "检查更新",
-                                        icon: "arrow.down.circle",
-                                        isLoading: store.isSyncingSongs
-                                    ) {
-                                        Task { await store.syncActiveRegionSongs(force: true) }
-                                    }
-                                }
-
-                                Divider().padding(.leading, AppTheme.Space.m)
-
-                                AppInsetRow(
-                                    title: "水鱼拟合定数",
-                                    subtitle: store.lastChartStatsSync?.formatted(date: .abbreviated, time: .shortened) ?? "尚未同步"
-                                ) {
-                                    AppInlineButton(
-                                        title: "立即刷新",
-                                        icon: "arrow.clockwise",
-                                        isLoading: store.isSyncingStats
-                                    ) {
-                                        Task { await store.refreshChartStatsIfStale(force: true) }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // 5. 存储与缓存
-                    AppSectionCard(title: "存储与缓存") {
-                        AppInsetGroup {
-                            AppInsetRow(
-                                title: "封面磁盘缓存",
-                                subtitle: "当前占用 \(cacheSizeText)",
-                                monospacedSubtitle: true
-                            ) {
-                                AppInlineButton(
-                                    title: "清除缓存",
-                                    icon: "trash",
-                                    tint: AppTheme.destructive
-                                ) {
-                                    CoverImageCache.shared.clearCache()
-                                    refreshCacheSize()
-                                }
-                            }
-                        }
-                    }
-
-                    // 6. 关于
-                    AppSectionCard(title: "关于 MaimaiData") {
-                        AppInsetGroup {
-                            VStack(spacing: 0) {
-                                aboutRow(title: "版本", value: appVersionText)
-                                Divider().padding(.leading, AppTheme.Space.m)
-                                Button {
-                                    showAcknowledgmentsSheet = true
-                                } label: {
-                                    AppInsetRow(title: "致谢与参考") {
-                                        Text("查看详情")
-                                            .font(AppTheme.Typography.inlineAction)
-                                            .foregroundStyle(AppTheme.accentText)
                                     }
                                 }
                                 .buttonStyle(.plain)
                             }
                         }
                     }
+
+                    // 2. 偏好与数据
+                    AppSectionCard(title: "偏好与数据") {
+                        AppInsetGroup {
+                            VStack(spacing: 0) {
+                                NavigationLink(value: SettingsRoute.preferences) {
+                                    directoryRow(title: "检索与显示偏好")
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider().padding(.leading, AppTheme.Space.m)
+
+                                NavigationLink(value: SettingsRoute.dataAndStorage) {
+                                    AppInsetRow(title: "数据同步与存储", showsChevron: true) {
+                                        if store.isSyncingSongs || store.isSyncingStats {
+                                            ProgressView().controlSize(.small)
+                                        }
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                    }
+
+                    // 3. 关于
+                    AppSectionCard(title: "关于 MaimaiData") {
+                        AppInsetGroup {
+                            VStack(spacing: 0) {
+                                NavigationLink(value: SettingsRoute.acknowledgments) {
+                                    directoryRow(title: "致谢与参考")
+                                }
+                                .buttonStyle(.plain)
+
+                                Divider().padding(.leading, AppTheme.Space.m)
+
+                                AppInsetRow(title: "版本") {
+                                    Text(appVersionText)
+                                        .font(AppTheme.Typography.body)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
                 }
                 .padding(.horizontal, AppTheme.pagePadding)
                 .padding(.vertical, AppTheme.Space.m)
-                .dismissKeyboardOnTap()
             }
-            .scrollDismissesKeyboard(.interactively)
             .appPageBackground()
-            .sensoryFeedback(.selection, trigger: store.serverRegion)
             .navigationTitle("设置与数据")
             .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                refreshCacheSize()
-            }
-            .sheet(isPresented: $showAcknowledgmentsSheet) {
-                AcknowledgmentsSheet()
+            .navigationDestination(for: SettingsRoute.self) { route in
+                switch route {
+                case .scoreProfiles:
+                    AccountManagementView()
+                case .serverRegion:
+                    ServerRegionSettingsView()
+                case .preferences:
+                    PreferencesSettingsView()
+                case .dataAndStorage:
+                    DataAndStorageSettingsView()
+                case .acknowledgments:
+                    AcknowledgmentsView()
+                }
             }
             .errorAlert("同步结果", message: $storeBindable.statusMessage)
         }
+    }
+
+    private func directoryRow(title: String, value: String? = nil) -> some View {
+        AppInsetRow(title: title, showsChevron: true) {
+            if let value {
+                Text(value)
+                    .font(AppTheme.Typography.body)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+// MARK: - Secondary Page 1: 游戏区服选择
+
+private struct ServerRegionSettingsView: View {
+    @Environment(DataStore.self) private var store
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: AppTheme.cardSpacing) {
+                AppSectionCard(
+                    title: "计算与曲库区服",
+                    subtitle: "切换区服将按对应版本的曲库定数、B35/B15 划分及 AP+1 规则重新计算当前成绩单"
+                ) {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
+                            ForEach(Array(MaimaiConstants.ServerRegion.allCases.enumerated()), id: \.element.id) { idx, region in
+                                if idx > 0 {
+                                    Divider().padding(.leading, AppTheme.Space.m)
+                                }
+                                regionRow(region)
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.pagePadding)
+            .padding(.vertical, AppTheme.Space.m)
+        }
+        .appPageBackground()
+        .sensoryFeedback(.selection, trigger: store.serverRegion)
+        .navigationTitle("游戏区服")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func regionRow(_ region: MaimaiConstants.ServerRegion) -> some View {
+        let isSelected = (store.serverRegion == region)
+        let ruleHint: String = {
+            switch region {
+            case .cn: return "国服现行曲库与官方牌子规则"
+            case .intl: return "国际服曲库 · 两代 B15 · AP 额外 +1"
+            case .jp: return "日服最新曲库 · 两代 B15 · AP 额外 +1"
+            }
+        }()
+
+        return Button {
+            guard !isSelected else { return }
+            Task { await store.switchServerRegion(region) }
+        } label: {
+            AppInsetRow(title: region.displayName, subtitle: ruleHint) {
+                if store.isSyncingSongs && isSelected && region != .cn {
+                    ProgressView().controlSize(.small)
+                } else if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(AppTheme.Typography.subheadlineBold)
+                        .foregroundStyle(AppTheme.accentText)
+                        .accessibilityLabel("已选中")
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Secondary Page 2: 检索与显示偏好
+
+private struct PreferencesSettingsView: View {
+    @Environment(DataStore.self) private var store
+
+    var body: some View {
+        @Bindable var storeBindable = store
+
+        ScrollView {
+            VStack(spacing: AppTheme.cardSpacing) {
+                AppSectionCard(title: "曲库与搜索") {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
+                            settingToggleRow(
+                                title: "曲目详情页显示别名",
+                                isOn: $storeBindable.enableShowAlias
+                            )
+                            Divider().padding(.leading, AppTheme.Space.m)
+                            settingToggleRow(
+                                title: "搜索时匹配曲目别名",
+                                isOn: $storeBindable.enableAliasSearch
+                            )
+                            Divider().padding(.leading, AppTheme.Space.m)
+                            settingToggleRow(
+                                title: "搜索时匹配谱师名称",
+                                isOn: $storeBindable.enableCharterSearch
+                            )
+                        }
+                    }
+                }
+
+                AppSectionCard(title: "Best50 图片与玩家名称") {
+                    VStack(spacing: AppTheme.itemSpacing) {
+                        AppInsetGroup {
+                            settingToggleRow(
+                                title: "使用查分器返回昵称",
+                                isOn: $storeBindable.useProberNickname.animation(.snappy(duration: 0.2))
+                            )
+                        }
+
+                        if !store.useProberNickname {
+                            AppTextField(
+                                placeholder: "输入自定义显示的玩家昵称",
+                                text: $storeBindable.customNickname
+                            )
+                            .submitLabel(.done)
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.pagePadding)
+            .padding(.vertical, AppTheme.Space.m)
+            .dismissKeyboardOnTap()
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .appPageBackground()
+        .navigationTitle("检索与显示偏好")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func settingToggleRow(title: String, isOn: Binding<Bool>) -> some View {
@@ -215,13 +268,85 @@ struct SettingsView: View {
             .padding(.horizontal, AppTheme.Space.m)
             .frame(minHeight: AppTheme.rowMinHeight)
     }
+}
 
-    private func aboutRow(title: String, value: String) -> some View {
-        AppInsetRow(title: title) {
-            Text(value)
-                .font(AppTheme.Typography.body)
-                .foregroundStyle(.secondary)
+// MARK: - Secondary Page 3: 数据同步与存储
+
+private struct DataAndStorageSettingsView: View {
+    @Environment(DataStore.self) private var store
+    @State private var cacheSizeText: String = "计算中..."
+
+    var body: some View {
+        @Bindable var storeBindable = store
+
+        ScrollView {
+            VStack(spacing: AppTheme.cardSpacing) {
+                AppSectionCard(
+                    title: "数据在线更新",
+                    subtitle: "曲库、别名与牌子规则优先读取本地缓存，可按需手动拉取最新数据"
+                ) {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
+                            AppInsetRow(
+                                title: store.serverRegion == .cn ? "国服曲库与牌子规则" : "\(store.serverRegion.shortName)曲库与 ID 映射",
+                                subtitle: store.activeCatalogSubtitle
+                            ) {
+                                AppInlineButton(
+                                    title: "检查更新",
+                                    icon: "arrow.down.circle",
+                                    isLoading: store.isSyncingSongs
+                                ) {
+                                    Task { await store.syncActiveRegionSongs(force: true) }
+                                }
+                            }
+
+                            Divider().padding(.leading, AppTheme.Space.m)
+
+                            AppInsetRow(
+                                title: "水鱼拟合定数",
+                                subtitle: store.lastChartStatsSync?.formatted(date: .abbreviated, time: .shortened) ?? "尚未同步"
+                            ) {
+                                AppInlineButton(
+                                    title: "立即刷新",
+                                    icon: "arrow.clockwise",
+                                    isLoading: store.isSyncingStats
+                                ) {
+                                    Task { await store.refreshChartStatsIfStale(force: true) }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                AppSectionCard(title: "本地存储") {
+                    AppInsetGroup {
+                        AppInsetRow(
+                            title: "封面磁盘缓存",
+                            subtitle: "当前占用 \(cacheSizeText)",
+                            monospacedSubtitle: true
+                        ) {
+                            AppInlineButton(
+                                title: "清除缓存",
+                                icon: "trash",
+                                tint: AppTheme.destructive
+                            ) {
+                                CoverImageCache.shared.clearCache()
+                                refreshCacheSize()
+                            }
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.pagePadding)
+            .padding(.vertical, AppTheme.Space.m)
         }
+        .appPageBackground()
+        .navigationTitle("数据同步与存储")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            refreshCacheSize()
+        }
+        .errorAlert("同步结果", message: $storeBindable.statusMessage)
     }
 
     private func refreshCacheSize() {
@@ -230,9 +355,9 @@ struct SettingsView: View {
     }
 }
 
-private struct AcknowledgmentsSheet: View {
-    @Environment(\.dismiss) private var dismiss
+// MARK: - Secondary Page 4: 致谢与参考
 
+private struct AcknowledgmentsView: View {
     private struct ReferenceItem: Identifiable {
         var id: String { name }
         let name: String
@@ -242,30 +367,20 @@ private struct AcknowledgmentsSheet: View {
         let displayHost: String
     }
 
-    private static let designReferences: [ReferenceItem] = [
-        ReferenceItem(
-            name: "PaperPig / MaimaiData",
-            tag: "客户端参考",
-            summary: "Android 端开源舞萌 DX 查询工具，为本项目提供了基础功能形态、国服离线曲库结构与部分贴图素材参考。",
-            urlString: "https://github.com/PaperPig/MaimaiData",
-            displayHost: "github.com/PaperPig/MaimaiData"
-        )
-    ]
-
     private static let proberReferences: [ReferenceItem] = [
         ReferenceItem(
-            name: "Diving-Fish（水鱼查分器）",
-            tag: "查分与统计",
-            summary: "提供国服玩家成绩同步接口、水鱼全服拟合定数统计数据以及曲绘封面兜底服务。",
-            urlString: "https://github.com/Diving-Fish/maimaidx-prober",
-            displayHost: "diving-fish.com"
-        ),
-        ReferenceItem(
             name: "LXNS（落雪咖啡屋）",
-            tag: "曲绘镜像",
-            summary: "提供国内高速稳定的高清曲绘 CDN 镜像服务与舞萌 DX 曲库数据结构参考。",
+            tag: "查分与国服曲库",
+            summary: "提供落雪账号成绩同步接口、国服曲库与别名公共数据、官方版本牌子曲目规则以及国内高速高清曲绘 CDN 镜像服务。",
             urlString: "https://maimai.lxns.net",
             displayHost: "maimai.lxns.net"
+        ),
+        ReferenceItem(
+            name: "Diving-Fish（水鱼查分器）",
+            tag: "查分与拟合统计",
+            summary: "提供水鱼账号成绩同步接口、全服大数据拟合定数统计以及曲绘封面兜底服务。",
+            urlString: "https://github.com/Diving-Fish/maimaidx-prober",
+            displayHost: "diving-fish.com"
         )
     ]
 
@@ -293,35 +408,38 @@ private struct AcknowledgmentsSheet: View {
         )
     ]
 
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: AppTheme.cardSpacing) {
-                    referenceSection(title: "客户端与设计参考", items: Self.designReferences)
-                    referenceSection(title: "查分器与曲绘服务", items: Self.proberReferences)
-                    referenceSection(title: "多区服数据与社区生态", items: Self.multiRegionReferences)
+    private static let designReferences: [ReferenceItem] = [
+        ReferenceItem(
+            name: "PaperPig / MaimaiData",
+            tag: "早期客户端参考",
+            summary: "Android 端开源舞萌 DX 查询工具，为本项目早期提供了功能形态与部分静态贴图素材参考。",
+            urlString: "https://github.com/PaperPig/MaimaiData",
+            displayHost: "github.com/PaperPig/MaimaiData"
+        )
+    ]
 
-                    AppSectionCard(title: "版权与免责声明") {
-                        AppInsetGroup(padding: AppTheme.Space.m) {
-                            Text("《maimai でらっくす》与《舞萌 DX》游戏本体及其曲绘封面、版本标识、评级贴图等相关美术与音乐素材版权均归 SEGA 及华立科技（Wahlap）所有。本应用为非商用开源工具，仅作玩家个人谱面查询与算分辅助使用。")
-                                .font(AppTheme.Typography.caption)
-                                .foregroundStyle(.secondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
+    var body: some View {
+        ScrollView {
+            VStack(spacing: AppTheme.cardSpacing) {
+                referenceSection(title: "查分器与核心数据源", items: Self.proberReferences)
+                referenceSection(title: "多区服数据与社区生态", items: Self.multiRegionReferences)
+                referenceSection(title: "客户端形态参考", items: Self.designReferences)
+
+                AppSectionCard(title: "版权与免责声明") {
+                    AppInsetGroup(padding: AppTheme.Space.m) {
+                        Text("《maimai でらっくす》与《舞萌 DX》游戏本体及其曲绘封面、版本标识、评级贴图等相关美术与音乐素材版权均归 SEGA 及华立科技（Wahlap）所有。本应用为非商用开源工具，仅作玩家个人谱面查询与算分辅助使用。")
+                            .font(AppTheme.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .padding(.horizontal, AppTheme.pagePadding)
-                .padding(.vertical, AppTheme.Space.m)
             }
-            .appPageBackground()
-            .navigationTitle("致谢与参考")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("关闭") { dismiss() }
-                }
-            }
+            .padding(.horizontal, AppTheme.pagePadding)
+            .padding(.vertical, AppTheme.Space.m)
         }
+        .appPageBackground()
+        .navigationTitle("致谢与参考")
+        .navigationBarTitleDisplayMode(.inline)
     }
 
     private func referenceSection(title: String, items: [ReferenceItem]) -> some View {
@@ -351,25 +469,24 @@ private struct AcknowledgmentsSheet: View {
                         .foregroundStyle(.primary)
                         .lineLimit(1)
 
-                    AppCapsuleLabel(text: item.tag, style: .compact)
-
                     Spacer(minLength: AppTheme.Space.xs)
 
-                    Image(systemName: "arrow.up.right")
-                        .font(AppTheme.Typography.captionBold)
-                        .foregroundStyle(.tertiary)
+                    AppCapsuleLabel(text: item.tag, style: .compact)
                 }
 
                 Text(item.summary)
                     .font(AppTheme.Typography.caption)
                     .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.leading)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Text(item.displayHost)
-                    .font(AppTheme.Typography.captionMono)
-                    .foregroundStyle(AppTheme.accentText)
-                    .lineLimit(1)
+                HStack(spacing: AppTheme.Space.xs) {
+                    Image(systemName: "arrow.up.right.square")
+                        .font(AppTheme.Typography.caption2Bold)
+                    Text(item.displayHost)
+                        .font(AppTheme.Typography.captionMono)
+                        .lineLimit(1)
+                }
+                .foregroundStyle(AppTheme.accentText)
             }
         }
     }

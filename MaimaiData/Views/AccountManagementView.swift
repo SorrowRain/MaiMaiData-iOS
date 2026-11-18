@@ -3,37 +3,49 @@ import SwiftUI
 struct AccountManagementView: View {
     @Environment(DataStore.self) private var store
 
-    @State private var showAddAccountSheet = false
-    @State private var switchingUsername: String?
-    @State private var pendingDeleteAccount: SavedAccount?
+    @State private var showAddProfileSheet = false
+    @State private var pendingDeleteProfile: ScoreProfile?
+    @State private var toastMessage: String?
     @State private var errorMessage: String?
 
-    private var isPendingDeleteLoggedIn: Bool {
-        guard let acct = pendingDeleteAccount else { return false }
-        return !store.currentUsername.isEmpty && acct.username == store.currentUsername
+    private var isPendingDeleteActive: Bool {
+        guard let target = pendingDeleteProfile else { return false }
+        return target.id == store.activeProfileId
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
                 AppSectionCard(
-                    title: "已保存账号",
-                    subtitle: store.savedAccounts.isEmpty ? "添加水鱼查分器账号后可随时切换" : "点击账号即可切换并同步成绩"
+                    title: "已存成绩档案",
+                    subtitle: store.profiles.isEmpty
+                        ? "支持添加多个落雪咖啡屋或水鱼查分器档案并随时本地切换"
+                        : "点击档案即可秒切本地成绩单"
                 ) {
-                    if store.savedAccounts.isEmpty {
+                    if store.activeProfile != nil {
+                        AppInlineButton(
+                            title: "同步当前",
+                            icon: "arrow.clockwise",
+                            isLoading: store.isSyncingRecords
+                        ) {
+                            Task { await syncActiveProfile() }
+                        }
+                    }
+                } content: {
+                    if store.profiles.isEmpty {
                         AppInsetGroup(padding: AppTheme.cardPadding) {
-                            Text("暂无已保存账号，点击下方按钮添加")
+                            Text("暂无成绩档案，点击下方按钮选择落雪或水鱼添加")
                                 .font(AppTheme.Typography.caption)
                                 .foregroundStyle(.secondary)
                         }
                     } else {
                         AppInsetGroup {
                             VStack(spacing: 0) {
-                                ForEach(Array(store.savedAccounts.enumerated()), id: \.element.id) { idx, acct in
+                                ForEach(Array(store.profiles.enumerated()), id: \.element.id) { idx, profile in
                                     if idx > 0 {
                                         Divider().padding(.leading, AppTheme.Space.m)
                                     }
-                                    accountRow(acct)
+                                    profileRow(profile)
                                 }
                             }
                         }
@@ -41,78 +53,100 @@ struct AccountManagementView: View {
                 }
 
                 AppPrimaryButton(
-                    title: "添加账号",
+                    title: "添加成绩档案",
                     icon: "plus.circle.fill",
-                    isDisabled: switchingUsername != nil
+                    isDisabled: store.isSyncingRecords
                 ) {
-                    showAddAccountSheet = true
+                    showAddProfileSheet = true
                 }
             }
             .padding(.horizontal, AppTheme.pagePadding)
             .padding(.vertical, AppTheme.Space.m)
         }
         .appPageBackground()
-        .navigationTitle("账号管理")
+        .sensoryFeedback(.selection, trigger: store.activeProfileId)
+        .navigationTitle("成绩档案")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showAddAccountSheet) {
+        .statusToast(toastMessage)
+        .sheet(isPresented: $showAddProfileSheet) {
             LoginSheet()
         }
         .alert(
-            isPendingDeleteLoggedIn ? "退出并删除账号" : "删除账号",
+            isPendingDeleteActive ? "移除当前成绩档案" : "移除成绩档案",
             isPresented: Binding(
-                get: { pendingDeleteAccount != nil },
-                set: { if !$0 { pendingDeleteAccount = nil } }
+                get: { pendingDeleteProfile != nil },
+                set: { if !$0 { pendingDeleteProfile = nil } }
             ),
-            presenting: pendingDeleteAccount
-        ) { acct in
-            Button(isPendingDeleteLoggedIn ? "退出并删除" : "删除", role: .destructive) {
-                store.removeSavedAccount(username: acct.username)
-                pendingDeleteAccount = nil
+            presenting: pendingDeleteProfile
+        ) { profile in
+            Button("移除", role: .destructive) {
+                store.removeProfile(id: profile.id)
+                pendingDeleteProfile = nil
             }
             Button("取消", role: .cancel) {
-                pendingDeleteAccount = nil
+                pendingDeleteProfile = nil
             }
-        } message: { acct in
-            if !store.currentUsername.isEmpty && acct.username == store.currentUsername {
-                Text("账号「\(acct.username)」当前处于登录状态，确定要退出登录并删除该账号吗？")
+        } message: { profile in
+            if profile.id == store.activeProfileId {
+                Text("确定要移除当前使用的成绩档案「\(profile.displayTitle)」及其本地缓存成绩吗？")
             } else {
-                Text("确定要删除已保存的账号「\(acct.username)」吗？")
+                Text("确定要移除成绩档案「\(profile.displayTitle)」及其本地缓存成绩吗？")
             }
         }
-        .errorAlert("切换账号失败", message: $errorMessage)
+        .errorAlert("同步失败", message: $errorMessage)
     }
 
-    private func accountRow(_ acct: SavedAccount) -> some View {
-        let isCurrent = !store.currentUsername.isEmpty && acct.username == store.currentUsername
+    private func profileRow(_ profile: ScoreProfile) -> some View {
+        let isCurrent = (profile.id == store.activeProfileId)
+        let providerTint = profile.provider == .lxns ? AppTheme.Palette.ratingPurple : AppTheme.accent
+
+        var subParts = [profile.subtitleText]
+        if let syncedAt = profile.lastSyncedAt {
+            subParts.append(syncedAt.formatted(date: .abbreviated, time: .shortened))
+        }
+
         return HStack(spacing: AppTheme.Space.s) {
             Button {
-                Task { await switchToSavedAccount(acct) }
-            } label: {
-                HStack(spacing: AppTheme.Space.s) {
-                    Text(acct.username)
-                        .font(AppTheme.Typography.rowTitle)
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-
-                    if isCurrent {
-                        AppCapsuleLabel(text: "当前", style: .compact)
+                guard !isCurrent else { return }
+                store.switchProfile(to: profile.id)
+                Task {
+                    withAnimation {
+                        toastMessage = "已切换至 \(profile.displayTitle)"
                     }
-
-                    Spacer(minLength: 4)
-
-                    if switchingUsername == acct.username {
-                        ProgressView()
-                            .controlSize(.small)
-                    }
+                    await dismissToast($toastMessage, after: 1.6, animated: true)
                 }
+            } label: {
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: AppTheme.Space.s) {
+                        Text(profile.displayTitle)
+                            .font(AppTheme.Typography.rowTitle)
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        AppCapsuleLabel(
+                            text: profile.provider.shortName,
+                            tint: providerTint,
+                            style: .compact
+                        )
+
+                        if isCurrent {
+                            AppCapsuleLabel(text: "当前", style: .compact)
+                        }
+                    }
+
+                    Text(subParts.joined(separator: " · "))
+                        .font(AppTheme.Typography.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+                .padding(.vertical, 10)
                 .frame(maxWidth: .infinity, minHeight: AppTheme.rowMinHeight, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(switchingUsername != nil)
 
             Button {
-                pendingDeleteAccount = acct
+                pendingDeleteProfile = profile
             } label: {
                 Image(systemName: "trash")
                     .font(AppTheme.Typography.body)
@@ -121,29 +155,31 @@ struct AccountManagementView: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .disabled(switchingUsername != nil)
-            .accessibilityLabel("删除账号 \(acct.username)")
+            .disabled(store.isSyncingRecords)
+            .accessibilityLabel("移除成绩档案 \(profile.displayTitle)")
         }
         .padding(.leading, AppTheme.Space.m)
         .padding(.trailing, AppTheme.Space.s)
         .contextMenu {
             Button(role: .destructive) {
-                pendingDeleteAccount = acct
+                pendingDeleteProfile = profile
             } label: {
-                Label("删除账号", systemImage: "trash")
+                Label("移除档案", systemImage: "trash")
             }
         }
     }
 
-    private func switchToSavedAccount(_ acct: SavedAccount) async {
-        switchingUsername = acct.username
-        defer { switchingUsername = nil }
+    private func syncActiveProfile() async {
         do {
-            try await store.loginAndSyncRecords(username: acct.username, password: acct.password)
+            try await store.syncActiveProfileRecords()
+            withAnimation {
+                toastMessage = "成绩已同步"
+            }
+            await dismissToast($toastMessage, after: 2, animated: true)
         } catch let error as MaimaiAPIError {
             errorMessage = error.recoveryMessage
         } catch {
-            errorMessage = "登录失败：\(error.localizedDescription)\n请检查网络连接后重试。"
+            errorMessage = "同步失败：\(error.localizedDescription)"
         }
     }
 }

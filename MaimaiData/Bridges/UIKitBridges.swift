@@ -1,4 +1,7 @@
+import AuthenticationServices
+import CryptoKit
 import Photos
+import Security
 import SwiftUI
 import UIKit
 
@@ -157,5 +160,94 @@ struct TabCrossfadeBridge: UIViewControllerRepresentable {
                 onResolveTabBarController?(tbc)
             }
         }
+    }
+}
+
+enum WebAuthSessionError: LocalizedError {
+    case cancelled
+    case missingCallbackURL
+
+    var errorDescription: String? {
+        switch self {
+        case .cancelled:
+            return nil
+        case .missingCallbackURL:
+            return "未收到授权回调地址"
+        }
+    }
+}
+
+/// Runs an OAuth 2.0 `ASWebAuthenticationSession` bound to the active key window.
+@MainActor
+final class WebAuthSessionRunner: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private var activeSession: ASWebAuthenticationSession?
+
+    func authenticate(url: URL, callbackScheme: String) async throws -> URL {
+        try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callbackURLScheme: callbackScheme
+            ) { [weak self] callbackURL, error in
+                Task { @MainActor in
+                    self?.activeSession = nil
+                    if let error {
+                        if let authError = error as? ASWebAuthenticationSessionError,
+                           authError.code == .canceledLogin {
+                            continuation.resume(throwing: WebAuthSessionError.cancelled)
+                        } else {
+                            continuation.resume(throwing: error)
+                        }
+                        return
+                    }
+                    guard let callbackURL else {
+                        continuation.resume(throwing: WebAuthSessionError.missingCallbackURL)
+                        return
+                    }
+                    continuation.resume(returning: callbackURL)
+                }
+            }
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = false
+            self.activeSession = session
+            session.start()
+        }
+    }
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        let scenes = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }
+        if let keyWindow = scenes
+            .first(where: { $0.activationState == .foregroundActive })?
+            .windows
+            .first(where: \.isKeyWindow) {
+            return keyWindow
+        }
+        if let anyWindow = scenes.flatMap(\.windows).first {
+            return anyWindow
+        }
+        return ASPresentationAnchor()
+    }
+}
+
+enum PKCEHelper {
+    static func randomURLSafeString(byteCount: Int = 32) -> String {
+        var bytes = [UInt8](repeating: 0, count: byteCount)
+        _ = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        return base64URLEncode(Data(bytes))
+    }
+
+    static func generateCodeVerifier() -> String {
+        randomURLSafeString(byteCount: 48)
+    }
+
+    static func codeChallengeS256(for verifier: String) -> String {
+        let digest = SHA256.hash(data: Data(verifier.utf8))
+        return base64URLEncode(Data(digest))
+    }
+
+    private static func base64URLEncode(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }

@@ -33,6 +33,16 @@ targets:
     platform: iOS
     sources:
       - path: MaimaiData
+    info:
+      path: MaimaiData/Info.plist
+      properties:
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleURLTypes:
+          - CFBundleTypeRole: Editor
+            CFBundleURLName: dev.0xsr.maimaidata.oauth
+            CFBundleURLSchemes:
+              - maimaidata
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: dev.0xsr.maimaidata
