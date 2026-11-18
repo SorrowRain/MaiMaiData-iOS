@@ -419,8 +419,8 @@ enum MaimaiAPI {
         string: "https://api.github.com/repos/SorrowRain/MaimaiData/releases/latest"
     )!
 
-    static func fetchLatestGitHubRelease() async throws -> AppReleaseInfo? {
-        var req = URLRequest(url: githubLatestReleaseURL, timeoutInterval: 6)
+    static func fetchLatestGitHubRelease(timeout: TimeInterval = 6) async throws -> AppReleaseInfo? {
+        var req = URLRequest(url: githubLatestReleaseURL, timeoutInterval: timeout)
         req.setValue(appUserAgent, forHTTPHeaderField: "User-Agent")
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         let (data, resp) = try await session.data(for: req)

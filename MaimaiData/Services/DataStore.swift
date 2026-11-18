@@ -362,7 +362,7 @@ final class DataStore {
         defer { isCheckingAppUpdate = false }
 
         do {
-            let latest = try await MaimaiAPI.fetchLatestGitHubRelease()
+            let latest = try await MaimaiAPI.fetchLatestGitHubRelease(timeout: manual ? 12 : 6)
             UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: Keys.appUpdateCheck)
             let currentShort = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
 
