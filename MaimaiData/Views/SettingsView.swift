@@ -8,7 +8,13 @@ struct SettingsView: View {
         case serverRegion
         case preferences
         case dataAndStorage
+        case about
         case acknowledgments
+    }
+
+    private var shortVersionText: String {
+        let short = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0.0"
+        return "v\(short)"
     }
 
     private var appVersionText: String {
@@ -83,21 +89,20 @@ struct SettingsView: View {
                     }
 
                     // 3. 关于
-                    AppSectionCard(title: "关于 MaimaiData") {
+                    AppSectionCard(title: "关于") {
                         AppInsetGroup {
                             VStack(spacing: 0) {
-                                NavigationLink(value: SettingsRoute.acknowledgments) {
-                                    directoryRow(title: "致谢与参考")
+                                NavigationLink(value: SettingsRoute.about) {
+                                    directoryRow(title: "关于 MaimaiData", value: shortVersionText)
                                 }
                                 .buttonStyle(.plain)
 
                                 Divider()
 
-                                AppInsetRow(title: "版本") {
-                                    Text(appVersionText)
-                                        .font(AppTheme.Typography.body)
-                                        .foregroundStyle(.secondary)
+                                NavigationLink(value: SettingsRoute.acknowledgments) {
+                                    directoryRow(title: "致谢与参考")
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
                     }
@@ -118,6 +123,8 @@ struct SettingsView: View {
                     PreferencesSettingsView()
                 case .dataAndStorage:
                     DataAndStorageSettingsView()
+                case .about:
+                    AboutView(versionText: appVersionText)
                 case .acknowledgments:
                     AcknowledgmentsView()
                 }
@@ -321,7 +328,138 @@ private struct DataAndStorageSettingsView: View {
     }
 }
 
-// MARK: - Secondary Page 4: 致谢与参考
+// MARK: - Secondary Page 4: 关于 MaimaiData
+
+private struct AboutView: View {
+    let versionText: String
+
+    private static let repoURL = URL(string: "https://github.com/SorrowRain/MaimaiData")!
+    private static let releasesURL = URL(string: "https://github.com/SorrowRain/MaimaiData/releases")!
+    private static let issuesURL = URL(string: "https://github.com/SorrowRain/MaimaiData/issues")!
+    private static let licenseURL = URL(string: "https://github.com/SorrowRain/MaimaiData/blob/main/LICENSE")!
+    private static let authorURL = URL(string: "https://github.com/SorrowRain")!
+
+    var body: some View {
+        let iconShape = RoundedRectangle(cornerRadius: AppTheme.Radius.card, style: .continuous)
+
+        ScrollView {
+            VStack(spacing: AppTheme.cardSpacing) {
+                AppCard(padding: AppTheme.cardPadding, tint: AppTheme.accent) {
+                    VStack(spacing: AppTheme.Space.s) {
+                        Image("app_logo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 72, height: 72)
+                            .clipShape(iconShape)
+                            .overlay(
+                                iconShape.strokeBorder(Color.primary.opacity(0.08), lineWidth: 1)
+                            )
+
+                        Text("MaimaiData")
+                            .font(AppTheme.Typography.heroTitle)
+                            .foregroundStyle(.primary)
+
+                        AppCapsuleLabel(text: versionText, style: .count)
+
+                        Text("舞萌 DX 多区服曲库检索与成绩查询工具")
+                            .font(AppTheme.Typography.caption)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.top, 2)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, AppTheme.Space.xs)
+                }
+
+                AppSectionCard(title: "项目与反馈") {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
+                            externalLinkRow(
+                                title: "GitHub 开源仓库",
+                                subtitle: "github.com/SorrowRain/MaimaiData",
+                                url: Self.repoURL
+                            )
+
+                            Divider()
+
+                            externalLinkRow(
+                                title: "版本发布与下载",
+                                subtitle: "GitHub Releases",
+                                url: Self.releasesURL
+                            )
+
+                            Divider()
+
+                            externalLinkRow(
+                                title: "问题反馈与建议",
+                                subtitle: "GitHub Issues",
+                                url: Self.issuesURL
+                            )
+                        }
+                    }
+                }
+
+                AppSectionCard(title: "开源信息") {
+                    AppInsetGroup {
+                        VStack(spacing: 0) {
+                            externalValueRow(
+                                title: "开源协议",
+                                value: "Apache-2.0",
+                                url: Self.licenseURL
+                            )
+
+                            Divider()
+
+                            externalValueRow(
+                                title: "开发者",
+                                value: "SorrowRain",
+                                url: Self.authorURL
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, AppTheme.pagePadding)
+            .padding(.vertical, AppTheme.Space.m)
+        }
+        .appPageBackground()
+        .navigationTitle("关于")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+
+    private func externalLinkRow(title: String, subtitle: String, url: URL) -> some View {
+        Link(destination: url) {
+            AppInsetRow(
+                title: title,
+                subtitle: subtitle,
+                monospacedSubtitle: true
+            ) {
+                Image(systemName: "arrow.up.right.square")
+                    .font(AppTheme.Typography.captionBold)
+                    .foregroundStyle(AppTheme.accentText)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func externalValueRow(title: String, value: String, url: URL) -> some View {
+        Link(destination: url) {
+            AppInsetRow(title: title) {
+                HStack(spacing: 6) {
+                    Text(value)
+                        .font(AppTheme.Typography.body)
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(AppTheme.Typography.captionBold)
+                        .foregroundStyle(AppTheme.accentText)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Secondary Page 5: 致谢与参考
 
 private struct AcknowledgmentsView: View {
     private struct ReferenceItem: Identifiable {
