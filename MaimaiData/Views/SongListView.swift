@@ -340,13 +340,6 @@ private struct SongRowView: View {
 
                     HStack(spacing: 6) {
                         GenreCapsuleTag(genre: song.basicInfo.genre)
-
-                        if song.basicInfo.bpm > 0 {
-                            Text("BPM \(song.basicInfo.bpm)")
-                                .font(AppTheme.Typography.captionMono)
-                                .foregroundStyle(.secondary)
-                        }
-
                         Spacer(minLength: 0)
                     }
 

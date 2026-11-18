@@ -146,7 +146,7 @@ private struct ServerRegionSettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppSectionCard(title: "计算与曲库区服") {
+                AppSectionCard(title: "曲库区服") {
                     AppInsetGroup {
                         VStack(spacing: 0) {
                             ForEach(Array(MaimaiConstants.ServerRegion.allCases.enumerated()), id: \.element.id) { idx, region in

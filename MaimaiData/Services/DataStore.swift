@@ -1194,13 +1194,14 @@ final class DataStore {
     }
 
     /// Baseline single-song rating a chart must exceed to increase total B50 rating.
-    /// Returns `nil` when the user is not logged in or when viewing non-CN servers.
+    /// Returns `nil` when no score profile is logged in.
     func b50BaselineRating(forSong song: SongData, difficultyIndex: Int, summary: Best50Summary? = nil) -> Int? {
-        guard isLoggedIn, serverRegion == .cn, song.numericId > 0, song.isDisabled != true else { return nil }
+        guard isLoggedIn, !song.isUtage, song.isDisabled != true else { return nil }
         let resolved = summary ?? best35AndBest15()
         let bucket = song.basicInfo.isNew ? resolved.b15 : resolved.b35
         let limit = song.basicInfo.isNew ? 15 : 35
-        if let existing = bucket.first(where: { $0.songId == song.numericId && $0.levelIndex == difficultyIndex }) {
+        if song.numericId > 0,
+           let existing = bucket.first(where: { $0.songId == song.numericId && $0.levelIndex == difficultyIndex }) {
             return existing.computedRating
         }
         if bucket.count >= limit {

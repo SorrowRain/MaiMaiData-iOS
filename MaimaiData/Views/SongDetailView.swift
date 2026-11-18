@@ -459,7 +459,7 @@ struct SongDetailView: View {
             }
         } else {
             let record = store.record(forSongId: currentSong.numericId, difficultyIndex: chart.index)
-            let showB50 = store.isLoggedIn && store.serverRegion == .cn
+            let showB50 = store.isLoggedIn
             let baseline = showB50 ? store.b50BaselineRating(forSong: currentSong, difficultyIndex: chart.index) : nil
             let rows = RatingCalculator.buildTierRows(
                 ds: chart.ds,

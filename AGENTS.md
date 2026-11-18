@@ -203,7 +203,7 @@ MaimaiData/
    - 国服曲目（`numericId > 0`）优先走国内高可用 CDN：`https://assets2.lxns.net/maimai/jacket/{baseJacketId}.png` 优先，水鱼 5 位补零地址兜底，缓存 Key 统一按 `jacket_{baseJacketId}` 归并；日服/国际服独占曲目（`numericId == 0`）走 Zetaraku CloudFront 封面 CDN，缓存 Key 按 `jacket_remote_{stem}` 隔离，严禁与国服取模 ID 混用。
 2. **多区服切换与算分新规一致性 (`ZetarakuCatalogConverter` & `DataStore`)**：
    - 国服（`.cn`）保持水鱼原始定数与算分规则；日服（`.jp`）与国际服（`.intl`）由 `ZetarakuCatalogConverter` 融合国服歌曲 ID 与社区别名，B15 采用 `CiRCLE` 起实行的**两代半版本规则**（`.jp`：`MAGiCAL` + `CiRCLE PLUS`；`.intl`：`CiRCLE PLUS` + `CiRCLE`），且达成 `AP / AP+` 单曲 Rating 额外 `+1`。
-   - 在非国服模式下，曲目详情页「分段 Rating 对照」固定退化为两列（隐藏 `B50 可加` 列），避免缺少日服/国际服新曲成绩时产生误导性的推分提示。
+   - 只要存在激活成绩档案（`store.isLoggedIn`），三个区服下的曲目详情页「分段 Rating 对照」统一展示全部三列（含按当前区服 B35/B15 底线计算的 `B50 可加` 净涨分）。
 3. **搜索框中文输入法防闪屏 (`SongFilterCriteria.isActive` & `SongListView`)**：
    - `SongFilterCriteria.isActive` **绝对不能包含 `!keyword.isEmpty`**。中文输入法选词上屏瞬间会先清空拼音再填入汉字，若 `keyword` 计入 `isActive` 会导致「已筛选」摘要卡片在选词瞬间反复挂载/卸载引起列表剧烈跳动。
    - 搜索历史卡片统一由 `.onChange(of: isSearchFocused)` 驱动展开收起，并在 `onDisappear` 中关闭动画重置焦点，防止键盘弹起时点进详情页再返回出现布局跳动。

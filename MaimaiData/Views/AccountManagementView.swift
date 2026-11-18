@@ -18,7 +18,7 @@ struct AccountManagementView: View {
 
         ScrollView {
             VStack(spacing: AppTheme.cardSpacing) {
-                AppSectionCard(title: "已存成绩档案") {
+                AppSectionCard(title: "成绩档案") {
                     if store.activeProfile != nil {
                         AppInlineButton(
                             title: "同步当前",
@@ -57,7 +57,7 @@ struct AccountManagementView: View {
                     showAddProfileSheet = true
                 }
 
-                AppSectionCard(title: "B50 图片与玩家名称") {
+                AppSectionCard(title: "B50 图片玩家名称") {
                     VStack(spacing: AppTheme.itemSpacing) {
                         AppInsetGroup {
                             Toggle(
