@@ -45,12 +45,13 @@ struct MainTabView: View {
                     openURL(tfURL)
                     store.availableAppUpdate = nil
                 }
-            }
-            Button("知道了", role: .cancel) {
-                store.availableAppUpdate = nil
-            }
-            Button("忽略此版本") {
-                store.ignoreAppUpdate(version: release.version)
+                Button("稍后", role: .cancel) {
+                    store.availableAppUpdate = nil
+                }
+            } else {
+                Button("知道了", role: .cancel) {
+                    store.availableAppUpdate = nil
+                }
             }
         } message: { release in
             if release.notes.isEmpty {
