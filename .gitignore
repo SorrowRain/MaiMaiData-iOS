@@ -1,4 +1,10 @@
-# Xcode
+# macOS & Editor
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Xcode / iOS
 build/
 DerivedData/
 *.pbxuser
@@ -14,13 +20,26 @@ xcuserdata/
 *.moved-aside
 *.hmap
 *.ipa
+*.xcarchive
 *.dSYM.zip
 *.dSYM
 *.xcresult
-
-# Swift Package Manager
 .build/
 .swiftpm/
+.airbuild/
 
-# macOS
-.DS_Store
+# Android / Gradle / Kotlin
+.gradle/
+.kotlin/
+app/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Signing Secrets (NEVER commit)
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+keystore.properties

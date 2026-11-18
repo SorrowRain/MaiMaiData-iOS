@@ -1,72 +1,70 @@
-# MaimaiData for iOS
+# MaimaiData
 
-一款使用 SwiftUI 原生开发的舞萌 DX（maimai DX）iOS 工具应用，提供离线曲库多维检索、谱面物量与容错扣分分析、Rating 计算反推，以及水鱼查分器成绩同步与 Best 50 成绩图导出。
+一款**双端纯原生**的舞萌 DX（maimai DX）曲库检索与查分工具，采用 **SwiftUI（iOS）** 与 **Jetpack Compose（Android）** 1:1 镜像同构开发，提供统一、克制、流畅的多区服曲库与成绩管理体验。
 
-## 功能概览
+## 仓库结构
 
-- **曲库与多维检索**：支持**国服 / 国际服 / 日服**三区服切换；支持按曲名、别名、谱师、歌曲 ID 搜索（内置搜索历史），支持按等级、精确小数定数、歌曲分类、对应区服收录版本及收藏状态组合筛选与多难度排序。
-- **谱面详情与容错参考**：展示各难度定数（含升降定数及跨服国服定数对比）、水鱼拟合定数、谱师、物量比例分布条，以及 Tap / Hold / Slide / Break 单项容错损失达成率参考，支持高清曲绘双指缩放预览、分享与保存相册。
-- **水鱼查分器与 Best 50**：支持水鱼查分器多账号管理与切换，支持旧版本 B35 / 现行版本 B15 成绩列表查看（支持按日服 / 国际服最新定数与 `AP +1` 新规模拟重排）及 Best 50 成绩图离屏并发渲染导出。
-- **进度表与实用工具**：内置按当前区服版本分组的 Master 完成度进度表（牌子查询）、按 1～15 级定数分组的全难度完成度进度表、单曲 Rating 即时计算器与目标总 Rating 达成率反推。
+```text
+MaimaiData/
+├── MaimaiData-iOS/        # iOS 客户端（SwiftUI，iOS 17.0+，支持 iOS 26+ Liquid Glass）
+├── MaimaiData-Android/    # Android 客户端（Jetpack Compose + Material 3，Android 8.0+ / API 26+）
+├── SHARED_SPEC.md         # 双端共享数据源、三级节流、多区服算分与牌子规则契约
+├── AGENTS.md              # 双端防偏移协同开发规范
+└── LICENSE                # Apache License 2.0
+```
 
-## 环境要求与构建测试
+## 核心功能
 
-- **运行环境**：iOS 17.0+（iPhone 竖屏；iOS 26+ 原生启用 Liquid Glass 液态玻璃，iOS 17 / 18 自动回退为自适应 Material 材质）
-- **开发环境**：Xcode 26+，Swift 5.10+
+- **多区服曲库与多维检索**：支持 **国服（CN）/ 国际服（INTL）/ 日服（JP）** 实时切换；支持曲名、别名、谱师、曲目 ID 搜索，支持按等级、精确小数定数、歌曲分类、对应区服版本与收藏状态组合筛选及多难度排序。
+- **谱面详情与容错分析**：展示各难度定数（含跨服国服定数对比与水鱼拟合定数）、物量分布条、Tap / Hold / Slide / Break 单项容错损失参考，以及高清曲绘缩放预览与相册保存。
+- **多供应方成绩档案**：支持 **落雪咖啡屋（OAuth 2.0 + PKCE / 个人 API 密钥）** 与 **水鱼查分器（账号密码 / Import-Token）** 多账号接入与毫秒级本地切换；凭据分别由 iOS Keychain 与 Android 应用私有存储隔离保护。
+- **Rating 计算与 Best 50 出图**：支持 B35 / B15 分段列表与 **Best 50 高清成绩图导出**；支持按日服 / 国际服新规（`AP +1` 与双代 B15）实时重排模拟。
+- **版本牌子与定数进度表**：支持国服官方牌子、日服 / 国际服旧框（含真超紫菫白輝舞/覇者）与 DX 全世代版本完成度进度表，以及 1～15 级定数完成度清单。
 
-### 本地开发与命令
+## 下载与安装
 
-1. **打开工程**：直接双击打开 `MaimaiData.xcodeproj` 选择真机或 iOS Simulator 运行。
-2. **工程配置同步**（可选）：若安装了 [XcodeGen](https://github.com/yonaskolb/XcodeGen)，在修改 `project.yml` 后可执行 `xcodegen generate` 重新生成工程配置。
-3. **命令行构建与测试**：
+前往 **[GitHub Releases](https://github.com/SorrowRain/MaimaiData/releases)** 下载对应平台安装包：
+
+- **Android**：下载已签名的 `.apk` 安装包直接安装。
+- **iOS**：Release 提供未签名的 `-unsigned.ipa`，签名后才能安装。可使用 AltStore 或 SideStore 签名安装，也可用 Xcode 打开 `MaimaiData-iOS/MaimaiData.xcodeproj` 编译到真机。
+
+## 本地构建与测试
+
+### iOS (`MaimaiData-iOS/`)
+
+- **环境要求**：Xcode 26+；应用支持 iOS 17.0+
+- **单元测试**（27 项用例）：
 
 ```bash
-# 编译应用与单元测试产物（无需签名，适合本地快速静态校验）
-xcodebuild build-for-testing \
-  -project MaimaiData.xcodeproj \
-  -scheme MaimaiData \
-  -destination 'generic/platform=iOS Simulator' \
-  CODE_SIGNING_ALLOWED=NO
-
-# 在指定模拟器上执行单元测试
+cd MaimaiData-iOS
 xcodebuild test \
   -project MaimaiData.xcodeproj \
   -scheme MaimaiData \
   -destination 'platform=iOS Simulator,name=iPhone 16'
 ```
 
-## 项目架构
+### Android (`MaimaiData-Android/`)
 
-```text
-MaimaiData/
-├── MaimaiDataApp.swift      # 应用入口（注入全局 DataStore，隔离单元测试宿主网络副作用）
-├── Theme/                   # 全局设计令牌（AppTheme：色彩、间距、圆角、语义字阶、页面背景）
-├── Components/              # 标准复用 UI 组件库（Badges、Buttons、Checklist、Containers、Feedback、Forms）
-├── Bridges/                 # UIKit 桥接能力（系统相册保存、分享面板、双指/双击缩放图片容器）
-├── Models/                  # 领域模型、难度与版本常量、Rating 换算算法与基础扩展
-├── Services/                # 全局状态 DataStore、网络层 MaimaiAPI、Keychain 凭据、曲绘双层缓存、B50 渲染与筛选纯函数
-├── Views/                   # 各业务页面视图与页面私有子视图
-└── Resources/               # 贴图资源 Assets.xcassets 与内置离线曲库种子 songdata_seed.json
-MaimaiDataTests/             # 单元测试（Rating 计算边界与曲库多维筛选排序）
+- **环境要求**：JDK 17 / 21，Android SDK Platform 35
+- **单元测试与构建**（27 项用例）：
+
+```bash
+cd MaimaiData-Android
+./gradlew testDebugUnitTest assembleDebug
 ```
 
-> 详细的架构分层边界、设计令牌速查表、标准组件选型清单与防回归红线请查阅 **[AGENTS.md](./AGENTS.md)**。新功能开发前请务必先阅读该规范。
-
-## 数据源与隐私说明
-
-- **离线优先**：应用内置 `songdata_seed.json` 离线曲库种子，首次启动无需联网即可检索曲库；联网时支持按需增量检查曲库与水鱼拟合定数（5 天缓存周期）更新，持久化于应用沙盒 `Application Support/MaimaiData/`。
-- **曲绘双层缓存**：曲绘优先从国内高可用 CDN 拉取，采用 `NSCache` 内存缓存 + `Caches/MaimaiCovers/` 磁盘缓存，可在「设置与数据」中随时查看占用并一键清理。
-- **凭据安全隔离**：水鱼查分器账号列表、密码与登录 Cookie **仅存储于本机系统 Keychain**（`kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly`），不写入 `UserDefaults`，也不向水鱼官方接口以外的任何第三方发送；本地成绩缓存文件名经 SHA-256 脱敏处理。
+- **正式签名打包**：在 `MaimaiData-Android/` 下放置本地 `keystore.properties` 与 `.jks` 密钥库后执行 `./gradlew assembleRelease`（密钥文件已在 `.gitignore` 中排除）。
 
 ## 致谢与参考
 
-- 功能设计与部分贴图素材参考自 Android 端开源项目 [PaperPig/MaimaiData](https://github.com/PaperPig/MaimaiData)
-- 谱面统计数据与玩家查分接口由 [Diving-Fish（水鱼查分器）](https://github.com/Diving-Fish/maimaidx-prober) 提供
-- 高清曲绘镜像源由 [LXNS（落雪咖啡屋）](https://lxns.net/) 与 Diving-Fish 提供
-- 曲目别名库来自 [Yuri-YuzuChaN/maimaiDX](https://github.com/Yuri-YuzuChaN/maimaiDX)
-- 日服与国际服曲库及封面数据源由 [zetaraku/arcade-songs-fetch](https://github.com/zetaraku/arcade-songs-fetch) 提供，曲目底层 ID 映射由 [DXRating](https://github.com/gekichumai/dxrating) 提供
+- **PaperPig / MaimaiData**（[GitHub](https://github.com/PaperPig/MaimaiData)）：早期功能形态与部分静态贴图素材参考
+- **LXNS（落雪咖啡屋）**（[maimai.lxns.net](https://maimai.lxns.net)）：国服官方曲库、别名、官方牌子规则、OAuth 接口与高清曲绘源
+- **Diving-Fish（水鱼查分器）**（[GitHub](https://github.com/Diving-Fish/maimaidx-prober)）：成绩查分接口、全服拟合定数统计与曲绘兜底
+- **zetaraku / arcade-songs-fetch**（[GitHub](https://github.com/zetaraku/arcade-songs-fetch)）：日服与国际服多区服曲库与外服封面源
+- **DXRating**（[GitHub](https://github.com/gekichumai/dxrating)）与 **Yuri-YuzuChaN/maimaiDX**（[GitHub](https://github.com/Yuri-YuzuChaN/maimaiDX)）：底层数字 ID 映射与社区别名素材支持
 
 ## 开源许可
 
-本项目基于 [Apache License 2.0](./LICENSE) 协议开源。  
+本项目基于 **[Apache License 2.0](./LICENSE)** 协议开源。
+
 Copyright © 2026 SorrowRain.
